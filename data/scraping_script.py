@@ -45,7 +45,7 @@ def get_web_info(book_id, start_page=1, output_dir="books", output_file=None, lo
 
             try:
                 # Wait until the 'g-paragraph' elements are found (or timeout after 120 seconds)
-                WebDriverWait(driver, 1200).until(EC.presence_of_element_located((By.CLASS_NAME, "g-paragraph")))
+                WebDriverWait(driver, 120).until(EC.presence_of_element_located((By.CLASS_NAME, "g-paragraph")))
             except TimeoutException:
                 print(f"Timeout waiting for page {current_page} to load for book {book_id}.")
                 break  # If the page doesn't load within 120 seconds, assume no more content
@@ -80,26 +80,35 @@ def get_web_info(book_id, start_page=1, output_dir="books", output_file=None, lo
         # Close the WebDriver and terminate the browser session after scraping is complete
         driver.quit()
 
-def scrape_multiple_books(book_ids, start_page=1, output_dir="books", log_file="scraping_log.txt"):
+def scrape_multiple_books(book_info, output_dir="books", log_file="scraping_log.txt"):
     """
     Scrapes multiple books in parallel using threads.
 
     Parameters:
-    book_ids (list): A list of book_ids to scrape.
-    start_page (int): The starting page for scraping each book. Defaults to 1.
+    book_info (dict): A dictionary mapping book_ids to their starting pages.
     output_dir (str): The directory where output files will be saved. Defaults to 'books'.
     log_file (str): The file where the last page scraped for each book will be logged.
     """
 
     # Use ThreadPoolExecutor to run scraping for each book in parallel
     with ThreadPoolExecutor() as executor:
-        # For each book_id, submit a separate task to run the get_web_info function
-        for book_id in book_ids:
+        # For each book_id and start_page, submit a separate task to run the get_web_info function
+        for book_id, start_page in book_info.items():
             executor.submit(get_web_info, book_id, start_page, output_dir, None, log_file)
 
 if __name__ == "__main__":
-    # List of book_ids to scrape (example)
-    books_to_scrape = [6315, 5921, 1557, 5925, 1529, 96961, 5968, 4012, 550]  # Add more book_ids as needed
+    # Dictionary of book_ids and their starting pages
+    books_to_scrape = {
+        6315: 1,
+        5921: 2,
+        1557: 1,
+        5925: 1,
+        1529: 1,
+        96961: 2,
+        5968: 1,
+        4012: 1,
+        550: 1
+    }  # Add more book_ids and their starting pages as needed
 
     # Start scraping multiple books in parallel and save in the 'books' folder
     scrape_multiple_books(books_to_scrape)
