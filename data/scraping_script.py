@@ -4,17 +4,17 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-import time
 from concurrent.futures import ThreadPoolExecutor
 
-def get_web_info(book_id, start_page=1, output_dir="books", output_file=None, log_file="scraping_log.txt"):
+def get_web_info(book_id, start_page=1, end_page=None, output_dir="books", output_file=None, log_file="scraping_log.txt"):
     """
     Scrapes paragraphs from a dynamically loading website for a given book_id.
-    Stops when no more paragraphs are found on a page.
+    Stops when no more paragraphs are found on a page or when the end_page is reached.
 
     Parameters:
     book_id (int): The unique identifier of the book to scrape.
     start_page (int): The starting page number for scraping. Defaults to 1.
+    end_page (int): The last page number to scrape. If None, continues until no more content is found.
     output_dir (str): The directory where output files will be saved. Defaults to 'books'.
     output_file (str): The name of the file where the scraped text will be saved.
                        Defaults to 'output_{book_id}.txt'.
@@ -37,7 +37,7 @@ def get_web_info(book_id, start_page=1, output_dir="books", output_file=None, lo
     last_scraped_page = 0
 
     try:
-        while True:
+        while end_page is None or current_page <= end_page:
             # Construct the URL for the current page
             url = f"https://ketabonline.com/ar/books/{book_id}/read?page={current_page}"
             driver.get(url)  # Load the page
@@ -48,15 +48,16 @@ def get_web_info(book_id, start_page=1, output_dir="books", output_file=None, lo
                 WebDriverWait(driver, 120).until(EC.presence_of_element_located((By.CLASS_NAME, "g-paragraph")))
             except TimeoutException:
                 print(f"Timeout waiting for page {current_page} to load for book {book_id}.")
-                break  # If the page doesn't load within 120 seconds, assume no more content
+                break  # If the page doesn't load within the timeout, stop scraping
 
             # Find all <p> elements with the class name 'g-paragraph' that contain the main content
             paragraphs = driver.find_elements(By.CLASS_NAME, "g-paragraph")
 
-            # If no paragraphs are found, assume we've reached the last page and exit the loop
+            # If no paragraphs are found, log this and skip to the next page
             if not paragraphs:
-                print(f"No more paragraphs found for book {book_id} on page {current_page}. Stopping...")
-                break
+                print(f"No paragraphs found for book {book_id} on page {current_page}. Skipping to next page...")
+                current_page += 1
+                continue  # Skip to the next page
 
             # Open the output file in append mode ('a'), to add new content without overwriting existing data
             with open(output_file, "a", encoding="utf-8") as file:
@@ -85,30 +86,30 @@ def scrape_multiple_books(book_info, output_dir="books", log_file="scraping_log.
     Scrapes multiple books in parallel using threads.
 
     Parameters:
-    book_info (dict): A dictionary mapping book_ids to their starting pages.
+    book_info (dict): A dictionary mapping book_ids to their starting pages and end pages.
     output_dir (str): The directory where output files will be saved. Defaults to 'books'.
     log_file (str): The file where the last page scraped for each book will be logged.
     """
 
     # Use ThreadPoolExecutor to run scraping for each book in parallel
     with ThreadPoolExecutor() as executor:
-        # For each book_id and start_page, submit a separate task to run the get_web_info function
-        for book_id, start_page in book_info.items():
-            executor.submit(get_web_info, book_id, start_page, output_dir, None, log_file)
+        # For each book_id, start_page, and end_page, submit a separate task to run the get_web_info function
+        for book_id, (start_page, end_page) in book_info.items():
+            executor.submit(get_web_info, book_id, start_page, end_page, output_dir, None, log_file)
 
 if __name__ == "__main__":
-    # Dictionary of book_ids and their starting pages
+    # Dictionary of book_ids, their starting pages, and their end pages
     books_to_scrape = {
-        6315: 1,
-        5921: 2,
-        1557: 1,
-        5925: 1,
-        1529: 1,
-        96961: 2,
-        5968: 1,
-        4012: 1,
-        550: 1
-    }  # Add more book_ids and their starting pages as needed
+        6315: (1, 2959),   
+        5921: (1, 3281),      
+        1557: (1, 2386),   
+        5925: (1, 495),   
+        1529: (1, 1231),   
+        96961: (1, 805),
+        5968: (1, 99), 
+        4012: (1, 1472),   
+        550: (1, 1920)        
+    }  # Add more book_ids and their starting and ending pages as needed
 
     # Start scraping multiple books in parallel and save in the 'books' folder
     scrape_multiple_books(books_to_scrape)
