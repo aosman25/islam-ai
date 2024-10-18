@@ -5,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from concurrent.futures import ThreadPoolExecutor
+import time
 
 def get_web_info(book_id, start_page=1, end_page=None, output_dir="books", output_file=None, log_file="scraping_log.txt"):
     """
@@ -37,18 +38,21 @@ def get_web_info(book_id, start_page=1, end_page=None, output_dir="books", outpu
     last_scraped_page = 0
 
     try:
-        while end_page is None or current_page <= end_page:
+        while current_page <= end_page:
             # Construct the URL for the current page
             url = f"https://ketabonline.com/ar/books/{book_id}/read?page={current_page}"
             driver.get(url)  # Load the page
             print(f"Scraping book {book_id}, page {current_page}: {url}")
 
+            # Wait for the 'g-paragraph' elements to load with a maximum wait time of 30 seconds
             try:
-                # Wait until the 'g-paragraph' elements are found (or timeout after 120 seconds)
-                WebDriverWait(driver, 120).until(EC.presence_of_element_located((By.CLASS_NAME, "g-paragraph")))
+                WebDriverWait(driver, 20).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "g-paragraph"))
+                )
             except TimeoutException:
-                print(f"Timeout waiting for page {current_page} to load for book {book_id}.")
-                break  # If the page doesn't load within the timeout, stop scraping
+                print(f"Timeout waiting for page {current_page} to load for book {book_id}. Skipping to the next page...")
+                current_page += 1
+                continue  # Skip to the next page if elements don't load in time
 
             # Find all <p> elements with the class name 'g-paragraph' that contain the main content
             paragraphs = driver.find_elements(By.CLASS_NAME, "g-paragraph")
