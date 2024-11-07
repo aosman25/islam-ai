@@ -79,8 +79,7 @@ def process_all_subfolders_and_files(parent_folder):
 
 if __name__ == "__main__":
     # Get the current directory (parent folder)
-    parent_folder = os.getcwd()
-
+    parent_folder = "E:\OneDrive\Desktop\تصدير من الشاملة\عام"
     # Process all subfolders and files in the parent folder
     process_all_subfolders_and_files(parent_folder)
 
