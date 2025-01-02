@@ -1,2 +1,6 @@
 .env
 marqo
+backups
+playground.py
+books_progress.json
+__pycache__

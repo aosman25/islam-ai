@@ -2,11 +2,13 @@ import os
 import shutil
 from bs4 import BeautifulSoup
 
+
 def html_to_text(file_path):
     """Extract text from an HTML file."""
-    with open(file_path, 'r', encoding='utf-8') as file:
-        soup = BeautifulSoup(file, 'html.parser')
+    with open(file_path, "r", encoding="utf-8") as file:
+        soup = BeautifulSoup(file, "html.parser")
         return soup.get_text()
+
 
 def combine_html_files_in_subfolder(subfolder):
     """Combine or convert HTML files in the specified subfolder into a single text file."""
@@ -22,7 +24,7 @@ def combine_html_files_in_subfolder(subfolder):
         return
 
     # Get all HTML files in the subfolder that match the pattern .htm
-    html_files = sorted([f for f in os.listdir(subfolder) if f.endswith('.htm')])
+    html_files = sorted([f for f in os.listdir(subfolder) if f.endswith(".htm")])
 
     if not html_files:
         print(f"No HTML files found in {subfolder}.")
@@ -34,24 +36,29 @@ def combine_html_files_in_subfolder(subfolder):
         file_path = os.path.join(subfolder, file_name)
         text = html_to_text(file_path)
 
-        with open(output_file, 'w', encoding='utf-8') as outfile:
+        with open(output_file, "w", encoding="utf-8") as outfile:
             outfile.write(text + "\n")
         print(f"Converted single file {file_name} to {output_file}.")
     else:
         # Combine the HTML files into a single text file
-        with open(output_file, 'w', encoding='utf-8') as outfile:
+        with open(output_file, "w", encoding="utf-8") as outfile:
             for file_name in html_files:
                 file_path = os.path.join(subfolder, file_name)
                 text = html_to_text(file_path)
-                outfile.write(text + "\n\n")  # Separate each file's content with a new line
+                outfile.write(
+                    text + "\n\n"
+                )  # Separate each file's content with a new line
                 print(f"Added {file_name} to {output_file}.")
 
         print(f"Combined HTML files have been saved to {output_file}")
 
+
 def move_single_html_to_folder(parent_folder):
     """Move individual .htm files in the parent folder into their own folder."""
     for file_name in os.listdir(parent_folder):
-        if file_name.endswith('.htm') and os.path.isfile(os.path.join(parent_folder, file_name)):
+        if file_name.endswith(".htm") and os.path.isfile(
+            os.path.join(parent_folder, file_name)
+        ):
             # Create a folder with the same name as the .htm file (without the extension)
             file_name_without_ext = os.path.splitext(file_name)[0]
             new_folder_path = os.path.join(parent_folder, file_name_without_ext)
@@ -66,6 +73,7 @@ def move_single_html_to_folder(parent_folder):
             shutil.move(old_file_path, new_file_path)
             print(f"Moved {file_name} to {new_folder_path}")
 
+
 def process_all_subfolders_and_files(parent_folder):
     """Process all subfolders and individual .htm files in the parent folder and its subfolders."""
     # Move single .htm files in the parent folder into their own folders
@@ -77,9 +85,10 @@ def process_all_subfolders_and_files(parent_folder):
             subfolder_path = os.path.join(root, subfolder)
             combine_html_files_in_subfolder(subfolder_path)
 
+
 if __name__ == "__main__":
     # Get the current directory (parent folder)
-    parent_folder = "E:\OneDrive\Desktop\تصدير من الشاملة\عام"
+    parent_folder = "E:\OneDrive\Desktop\تصدير من الشاملة"
     # Process all subfolders and files in the parent folder
     process_all_subfolders_and_files(parent_folder)
 
