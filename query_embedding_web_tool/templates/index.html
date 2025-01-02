@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Query Embeddings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Add Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Add Font Awesome for Islamic symbols -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-pattern"></div>
+    <div class="container">
+        <h1>Query Embeddings Generator</h1>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        <form method="post">
+            <textarea class="input-textarea" name="queries" placeholder="Enter your queries here, one per line">{{ queries }}</textarea>
+            <button type="submit" class="submit-btn">Generate Embeddings</button>
+        </form>
+        <div id="loading" class="loading">Generating embeddings... Please wait...</div>
+        {% if embeddings %}
+            <h2>Generated Embeddings</h2>
+            {% for embedding in embeddings %}
+                <div class="query-header">
+                    <div class="query-text">Query: "{{ queries.split('\n')[loop.index0] }}"</div>
+                    <div class="embedding-length">Vector Length: {{ embedding|length }}</div>
+                </div>
+                <div class="embedding">
+                    <textarea readonly>{{ embedding }}</textarea>
+                    <button class="copy-btn" data-embedding='{{ embedding }}'>Copy</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <div id="successMessage" class="success-message">Copied to clipboard!</div>
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    const btn = event.target;
+                    const originalText = btn.innerText;
+                    btn.innerText = 'Copied!';
+                    setTimeout(() => {
+                        btn.innerText = originalText;
+                    }, 1000);
+                })
+                .catch(err => {
+                    alert('Failed to copy: ' + err);
+                });
+        }
+        // Show loading state
+        document.querySelector('form').addEventListener('submit', function() {
+            document.getElementById('loading').style.display = 'block';
+        });
+
+        // Enhanced copy functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('copy-btn')) {
+                const text = e.target.dataset.embedding;
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        const message = document.getElementById('successMessage');
+                        message.classList.add('show-message');
+                        setTimeout(() => {
+                            message.classList.remove('show-message');
+                        }, 2000);
+                    })
+                    .catch(err => console.error('Failed to copy:', err));
+            }
+        });
+    </script>
+</body>
+</html>
