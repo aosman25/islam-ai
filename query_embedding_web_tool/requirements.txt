@@ -1,4 +1,5 @@
 Flask
 pymilvus
+pymilvus[model]
 python-dotenv
 gunicorn
