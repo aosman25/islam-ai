@@ -1,3 +1,4 @@
 Flask
 pymilvus
 python-dotenv
+gunicorn
