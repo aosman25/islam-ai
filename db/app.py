@@ -32,11 +32,67 @@ def create_library_schema():
     return schema
 
 
+def create_hybrid_library_schema():
+    schema = MilvusClient.create_schema(auto_id=False, enable_dyanmic_field=True)
+    schema.add_field(
+        field_name="id", datatype=DataType.VARCHAR, is_primary=True, max_length=50
+    )
+    schema.add_field(
+        field_name="dense_vector", datatype=DataType.FLOAT_VECTOR, dim=1536
+    )
+    schema.add_field(
+        field_name="sparse_vector",
+        datatype=DataType.SPARSE_FLOAT_VECTOR,
+    )
+    schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=10000)
+    schema.add_field(field_name="book_name", datatype=DataType.VARCHAR, max_length=500)
+    schema.add_field(field_name="knowledge", datatype=DataType.VARCHAR, max_length=500)
+    schema.add_field(field_name="category", datatype=DataType.VARCHAR, max_length=500)
+    schema.add_field(field_name="author", datatype=DataType.VARCHAR, max_length=500)
+    return schema
+
+
 def create_library_index_params():
     index_params = client.prepare_index_params()
     index_params.add_index(field_name="id", index_type="Trie")
     index_params.add_index(field_name="text", index_type="Trie")
-    index_params.add_index(field_name="vector", index_type="FLAT", metric_type="COSINE")
+    index_params.add_index(
+        field_name="vector",
+        index_type="HNSW",
+        M=48,
+        efConstruction=200,
+        metric_type="COSINE",
+    )
+    index_params.add_index(field_name="book_name", index_type="INVERTED")
+    index_params.add_index(field_name="knowledge", index_type="INVERTED")
+    index_params.add_index(field_name="category", index_type="INVERTED")
+    index_params.add_index(field_name="author", index_type="INVERTED")
+
+    return index_params
+
+
+def create_hybrid_library_index_params():
+    index_params = client.prepare_index_params()
+    index_params.add_index(field_name="id", index_type="Trie")
+    index_params.add_index(field_name="text", index_type="Trie")
+    index_params.add_index(
+        field_name="dense_vector",
+        index_name="dense_index",
+        index_type="HNSW",
+        M=48,
+        efConstruction=200,
+        metric_type="COSINE",
+    )
+    index_params.add_index(
+        field_name="sparse_vector",
+        index_name="sparse_index",
+        index_type="SPARSE_INVERTED_INDEX",  # Index type for sparse vectors
+        metric_type="IP",  # Currently, only IP (Inner Product) is supported for sparse vectors
+        params={
+            "drop_ratio_build": 0.2
+        },  # The ratio of small vector values to be dropped during indexing
+    )
+
     index_params.add_index(field_name="book_name", index_type="INVERTED")
     index_params.add_index(field_name="knowledge", index_type="INVERTED")
     index_params.add_index(field_name="category", index_type="INVERTED")
@@ -54,6 +110,19 @@ def create_library_collection():
             index_params=create_library_index_params(),
         )
         print("Successfully Created Islamic Library Collection!")
+    else:
+        print("Collection Already Exisits")
+
+
+def create_hybrid_library_collection():
+    if not client.has_collection(collection_name="islamic_library_hybrid"):
+        print("Creating Hybrid Islamic Library Collection...")
+        client.create_collection(
+            collection_name="islamic_library_hybrid",
+            schema=create_hybrid_library_schema(),
+            index_params=create_hybrid_library_index_params(),
+        )
+        print("Successfully Created Hybrid Islamic Library Collection!")
     else:
         print("Collection Already Exisits")
 
