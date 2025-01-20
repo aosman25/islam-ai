@@ -132,6 +132,8 @@ textarea:focus {
 /* Embedding Section */
 .embedding {
     display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     align-items: flex-start;
     margin-bottom: 1.5rem;
     gap: 1rem;
@@ -139,7 +141,7 @@ textarea:focus {
 }
 
 .embedding textarea {
-    height: 100px;
+    height: 150px;
     background: #f8f8f8;
     font-size: 13px;
 }
@@ -227,4 +229,87 @@ textarea:focus {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Sparse Vector Display */
+.embeddings-container {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.embedding-section {
+    flex: 1;
+    background: #f8f8f8;
+    padding: 1rem;
+    border-radius: 6px;
+}
+
+.embedding-section h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.sparse-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.sparse-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sparse-item textarea {
+    height: 60px;
+    font-size: 12px;
+}
+
+.sparse-item strong {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Add these new styles */
+.dropdown-container {
+    margin-top: 1rem;
+}
+
+.dropdown-btn {
+    width: 100%;
+    padding: 0.5rem;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.dropdown-btn:hover {
+    background: #e8e8e8;
+}
+
+.additional-details {
+    margin-top: 1rem;
+    transition: all 0.3s;
+}
+
+.additional-details.hidden {
+    display: none;
+}
+
+.sparse-details > .sparse-item:first-child {
+    margin-bottom: 1rem;
+}
+
+.sparse-details > .sparse-item:first-child textarea {
+    height: 100px;
+    font-size: 13px;
+    background: #fff;
+    border: 1px solid #ddd;
 }

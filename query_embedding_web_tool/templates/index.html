@@ -20,16 +20,48 @@
             <button type="submit" class="submit-btn">Generate Embeddings</button>
         </form>
         <div id="loading" class="loading">Generating embeddings... Please wait...</div>
-        {% if embeddings %}
+        {% if combined_embeddings %}
             <h2>Generated Embeddings</h2>
-            {% for embedding in embeddings %}
+            {% for dense, sparse in combined_embeddings %}
                 <div class="query-header">
                     <div class="query-text">Query: "{{ queries.split('\n')[loop.index0] }}"</div>
-                    <div class="embedding-length">Vector Length: {{ embedding|length }}</div>
                 </div>
-                <div class="embedding">
-                    <textarea readonly>{{ embedding }}</textarea>
-                    <button class="copy-btn" data-embedding='{{ embedding }}'>Copy</button>
+                <div class="embeddings-container">
+                    <div class="embedding-section">
+                        <h3>Dense Vector</h3>
+                        <div class="embedding-length">Vector Length: {{ dense|length }}</div>
+                        <div class="embedding">
+                            <textarea readonly>{{ dense }}</textarea>
+                            <button class="copy-btn" data-embedding='{{ dense }}'>Copy Dense</button>
+                        </div>
+                    </div>
+                    <div class="embedding-section">
+                        <h3>Sparse Vector</h3>
+                        <div class="embedding-length">Non-zero elements: {{ sparse.indices|length }}</div>
+                        <div class="sparse-details">
+                            <div class="sparse-item">
+                                <strong>Dictionary:</strong>
+                                <textarea readonly>{{ sparse.dictionary }}</textarea>
+                            </div>
+                            <div class="dropdown-container">
+                                <button class="dropdown-btn">Show Additional Details</button>
+                                <div class="additional-details hidden">
+                                    <div class="sparse-item">
+                                        <strong>Indices:</strong>
+                                        <textarea readonly>{{ sparse.indices }}</textarea>
+                                    </div>
+                                    <div class="sparse-item">
+                                        <strong>Values:</strong>
+                                        <textarea readonly>{{ sparse.vector_values }}</textarea>
+                                    </div>
+                                    <div class="sparse-item">
+                                        <strong>Terms:</strong>
+                                        <textarea readonly>{{ sparse.vocabulary }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             {% endfor %}
         {% endif %}
@@ -68,6 +100,16 @@
                         }, 2000);
                     })
                     .catch(err => console.error('Failed to copy:', err));
+            }
+        });
+
+        // Add dropdown functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('dropdown-btn')) {
+                const details = e.target.nextElementSibling;
+                details.classList.toggle('hidden');
+                e.target.textContent = details.classList.contains('hidden') ? 
+                    'Show Additional Details' : 'Hide Additional Details';
             }
         });
     </script>
