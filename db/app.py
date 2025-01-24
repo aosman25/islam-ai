@@ -1,10 +1,17 @@
-from pymilvus import MilvusClient, DataType, model
+from pymilvus import (
+    MilvusClient,
+    DataType,
+    model,
+    RRFRanker,
+    AnnSearchRequest,
+    WeightedRanker,
+)
 from dotenv import load_dotenv
 import os
 import math
 from utils import read_json_files
 import json
-import numpy as np
+import asyncio
 
 
 # Load Environment Variables
@@ -12,27 +19,14 @@ load_dotenv()
 
 # Step 1: Connect to Milvus
 print("Connecting to Milvus Database...")
-
-client = MilvusClient(uri="http://34.29.168.152:19530", token=os.getenv("MILVUS_TOKEN"))
+client = MilvusClient(
+    uri=f"http://{os.getenv("MILVUS_IP")}:19530", token=os.getenv("MILVUS_TOKEN")
+)
 
 print("Successfully Connected to Milvus!")
 
 
 def create_library_schema():
-    schema = MilvusClient.create_schema(auto_id=False, enable_dyanmic_field=True)
-    schema.add_field(
-        field_name="id", datatype=DataType.VARCHAR, is_primary=True, max_length=50
-    )
-    schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=1536)
-    schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=10000)
-    schema.add_field(field_name="book_name", datatype=DataType.VARCHAR, max_length=500)
-    schema.add_field(field_name="knowledge", datatype=DataType.VARCHAR, max_length=500)
-    schema.add_field(field_name="category", datatype=DataType.VARCHAR, max_length=500)
-    schema.add_field(field_name="author", datatype=DataType.VARCHAR, max_length=500)
-    return schema
-
-
-def create_hybrid_library_schema():
     schema = MilvusClient.create_schema(auto_id=False, enable_dyanmic_field=True)
     schema.add_field(
         field_name="id", datatype=DataType.VARCHAR, is_primary=True, max_length=50
@@ -57,30 +51,9 @@ def create_library_index_params():
     index_params.add_index(field_name="id", index_type="Trie")
     index_params.add_index(field_name="text", index_type="Trie")
     index_params.add_index(
-        field_name="vector",
-        index_type="HNSW",
-        M=48,
-        efConstruction=200,
-        metric_type="COSINE",
-    )
-    index_params.add_index(field_name="book_name", index_type="INVERTED")
-    index_params.add_index(field_name="knowledge", index_type="INVERTED")
-    index_params.add_index(field_name="category", index_type="INVERTED")
-    index_params.add_index(field_name="author", index_type="INVERTED")
-
-    return index_params
-
-
-def create_hybrid_library_index_params():
-    index_params = client.prepare_index_params()
-    index_params.add_index(field_name="id", index_type="Trie")
-    index_params.add_index(field_name="text", index_type="Trie")
-    index_params.add_index(
         field_name="dense_vector",
         index_name="dense_index",
-        index_type="HNSW",
-        M=48,
-        efConstruction=200,
+        index_type="FLAT",
         metric_type="COSINE",
     )
     index_params.add_index(
@@ -110,19 +83,6 @@ def create_library_collection():
             index_params=create_library_index_params(),
         )
         print("Successfully Created Islamic Library Collection!")
-    else:
-        print("Collection Already Exisits")
-
-
-def create_hybrid_library_collection():
-    if not client.has_collection(collection_name="islamic_library_hybrid"):
-        print("Creating Hybrid Islamic Library Collection...")
-        client.create_collection(
-            collection_name="islamic_library_hybrid",
-            schema=create_hybrid_library_schema(),
-            index_params=create_hybrid_library_index_params(),
-        )
-        print("Successfully Created Hybrid Islamic Library Collection!")
     else:
         print("Collection Already Exisits")
 
@@ -199,31 +159,62 @@ def embed_chunks(folder_path, batch_size=300):
 
 
 def upsert_entities(
-    folder_path, collection_name="islamic_library", partition_name="_default"
+    main_directory,
+    collection_name="islamic_library",
+    partition_name="_default",
+    hybrid=False,
 ):
-    batch_size = 17000
+    root_folder = os.path.dirname(os.getcwd())  # Set the root folder
+    main_folder_path = os.path.join(root_folder, main_directory)
+
+    folder_path_list = [
+        main_directory + "/" + name
+        for name in os.listdir(main_folder_path)
+        if os.path.isdir(os.path.join(main_folder_path, name))
+    ] or [main_directory]
+    batch_size = 12000
     if partition_name not in set(
         client.list_partitions(collection_name=collection_name)
     ):
         client.create_partition(
             collection_name=collection_name, partition_name=partition_name
         )
-    print("Reading Data from json files...")
-    books = read_json_files(folder_path)
-    for i in range(len(books)):
-        book_data, _ = books[i]
-        print(f"Upserting the data of book {i + 1} out of {len(books)} books...")
-        for j in range(0, len(book_data), batch_size):
+    for folder_path in folder_path_list:
+        print("Reading Data from json files...")
+        books = read_json_files(folder_path)
+        for i in range(len(books)):
+            book_data, _ = books[i]
+            print(f"Upserting the data of book {i + 1} out of {len(books)} books...")
+            for j in range(0, len(book_data), batch_size):
+                print(
+                    f"Processing batch {(j // batch_size) + 1} out of {math.ceil(len(book_data) / batch_size)} batches in book {i + 1}..."
+                )
+                batch_data = book_data[j : (j + batch_size)]
+                if not hybrid:
+                    client.upsert(
+                        collection_name=collection_name,
+                        partition_name=partition_name,
+                        data=batch_data,
+                    )
+                else:
+                    client.upsert(
+                        collection_name=collection_name,
+                        partition_name=partition_name,
+                        data=[
+                            {
+                                **chunk,
+                                "sparse_vector": {
+                                    int(key): value
+                                    for key, value in chunk["sparse_vector"].items()
+                                },
+                            }
+                            for chunk in batch_data
+                        ],
+                    )
             print(
-                f"Processing batch {(j // batch_size) + 1} out of {math.ceil(len(book_data) / batch_size)} batches in book {i + 1}..."
+                f"Successfully upserted the data of book {i + 1} out of {len(books)}!"
             )
-            batch_data = book_data[j : (j + batch_size)]
-            client.upsert(
-                collection_name=collection_name,
-                partition_name=partition_name,
-                data=batch_data,
-            )
-        print(f"Successfully upserted the data of book {i + 1} out of {len(books)}!")
+    return True
 
 
 def embed_query(queries):
@@ -236,3 +227,101 @@ def embed_query(queries):
     print("Successfully Connected to OpenAI Embedding model!")
     query_embeddings = openai_ef.encode_queries(queries)
     return query_embeddings
+
+
+def generate_sparse_vector(dense_vector):
+    return {key: value for key, value in enumerate(dense_vector) if value > 0}
+
+
+# New Version of RAG
+def add_sparse_vectors_to_books(main_directory):
+    root_folder = os.path.dirname(os.getcwd())  # Set the root folder
+    main_folder_path = os.path.join(root_folder, main_directory)
+
+    folder_path_list = [
+        main_directory + "/" + name
+        for name in os.listdir(main_folder_path)
+        if os.path.isdir(os.path.join(main_folder_path, name))
+    ] or [main_directory]
+
+    for folder_path in folder_path_list:
+        print("Reading Data from json files...")
+        books = read_json_files(folder_path)
+        for i in range(len(books)):
+            new_data = []
+            book_data, book_path = books[i]
+            print(f"Processing Book {i + 1} out of {len(books)} books...")
+            print(f"Generating Sparse Vectors for Book {i + 1} out of {len(books)}...")
+            texts = set()
+
+            for chunk in book_data:
+                if len((chunk["text"]).split(" ")) >= 50 and chunk["text"] not in texts:
+                    new_data.append(
+                        {
+                            "text": chunk["text"],
+                            "book_name": chunk["book_name"],
+                            "knowledge": chunk["knowledge"],
+                            "id": chunk["id"],
+                            "category": chunk["category"],
+                            "author": chunk["author"],
+                            "dense_vector": chunk["vector"],
+                            "sparse_vector": {
+                                key: value
+                                for key, value in enumerate(chunk["vector"])
+                                if value > 0
+                            },
+                        }
+                    )
+                    texts.add(chunk["text"])
+            # Your file path
+            file_path = "hybrid_embedded_chunked_data/" + "/".join(
+                book_path.split("/")[1:]
+            )
+
+            # Extract the directory from the file path
+            directory = os.path.dirname(file_path)
+
+            # Create the directory if it doesn't exist
+            os.makedirs(directory, exist_ok=True)
+
+            with open(
+                file_path,
+                "w",
+                encoding="utf-8",
+            ) as file:
+                json.dump(new_data, file, ensure_ascii=False, indent=4)
+    return True
+
+
+def hybrid_search(query, collection_name="islamic_library", limit=15, partitions=[]):
+    ranker = WeightedRanker(0.8, 0.2)
+    dense_vector = embed_query([query])[0].tolist()
+    sparse_vector = {key: value for key, value in enumerate(dense_vector) if value > 0}
+
+    req1 = AnnSearchRequest(
+        **{
+            "data": [dense_vector],
+            "anns_field": "dense_vector",
+            "param": {"metric_type": "COSINE"},
+            "limit": limit,
+        }
+    )
+    req2 = AnnSearchRequest(
+        **{
+            "data": [sparse_vector],
+            "anns_field": "sparse_vector",
+            "param": {"metric_type": "IP", "params": {"drop_ratio_build": 0.2}},
+            "limit": limit,
+        }
+    )
+    reqs = [req1, req2]
+
+    res = client.hybrid_search(
+        collection_name=collection_name,
+        reqs=reqs,
+        ranker=ranker,
+        limit=limit,
+        partition_names=partitions,
+    )
+
+    return res
