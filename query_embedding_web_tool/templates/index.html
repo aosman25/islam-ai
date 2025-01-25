@@ -41,8 +41,8 @@
       <h2>Generated Embeddings</h2>
       {% for dense, sparse in combined_embeddings %}
       <div class="query-header">
-        <div class="query-text">
-          Query: "{{ queries.split('\n')[loop.index0] }}"
+        <div name="query_list" class="query-text">
+          Query: "{{ query_list[loop.index0] }}"
         </div>
       </div>
       <div class="embeddings-container">
@@ -50,11 +50,17 @@
           <h3>Dense Vector</h3>
           <div class="embedding-length">Vector Length: {{ dense|length }}</div>
           <div class="embedding">
-            <textarea readonly>{{ dense }}</textarea>
-            <button class="copy-btn" data-embedding="{{ dense }}">
-              Copy Dense
-            </button>
+            <textarea style="width: 100%; height: 200px" readonly>
+{{ dense }}</textarea
+            >
           </div>
+          <button
+            style="width: 100%"
+            class="copy-btn"
+            data-embedding="{{ dense }}"
+          >
+            Copy Dense
+          </button>
         </div>
         <div class="embedding-section">
           <h3>Sparse Vector</h3>
@@ -63,9 +69,17 @@
           </div>
           <div class="sparse-details">
             <div class="sparse-item">
-              <strong>Dictionary:</strong>
-              <textarea readonly>{{ sparse.dictionary }}</textarea>
+              <textarea style="height: 200px" class="output-textarea" readonly>
+{{ sparse.dictionary }}</textarea
+              >
             </div>
+            <button
+              style="position: relative; bottom: 7px"
+              class="copy-btn"
+              data-embedding="{{  sparse.dictionary }}"
+            >
+              Copy Sparse
+            </button>
             <div class="dropdown-container">
               <button class="dropdown-btn">Show Additional Details</button>
               <div class="additional-details hidden">

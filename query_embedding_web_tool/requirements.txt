@@ -3,4 +3,3 @@ pymilvus
 pymilvus[model]
 python-dotenv
 gunicorn
-rank_bm25
