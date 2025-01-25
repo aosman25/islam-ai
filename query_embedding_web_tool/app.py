@@ -2,9 +2,7 @@ from flask import Flask, render_template, request
 from pymilvus import model
 import os
 from dotenv import load_dotenv
-from rank_bm25 import BM25Okapi
 from typing import List, Dict
-import numpy as np
 import json
 
 # Load Environment Variables
@@ -56,7 +54,11 @@ def index():
     if request.method == "POST":
         queries = request.form.get("queries")
         if queries:
-            query_list = [q.strip() for q in queries.strip().split("\n") if q.strip()]
+            query_list = [
+                q.replace("\r", "").strip()
+                for q in queries.split("\n")
+                if q.replace("\r", "").strip() != ""
+            ]
             if len(query_list) > 10:
                 return render_template(
                     "index.html",
@@ -71,6 +73,7 @@ def index():
                     "index.html",
                     combined_embeddings=combined_embeddings,
                     queries=queries,
+                    query_list=query_list,
                 )
             except Exception as e:
                 error_message = f"Error generating embeddings: {str(e)}"
@@ -84,4 +87,4 @@ def index():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
