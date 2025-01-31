@@ -1,5 +1,7 @@
 import os
 import json
+import tiktoken
+import transformers
 
 
 def read_json_files(folder_relative_path):
@@ -35,3 +37,38 @@ def read_json_files(folder_relative_path):
         print(f"Error traversing folder {folder_path}: {error}")
 
     return json_data
+
+
+def deepseek_tokenizer(txt):
+    chat_tokenizer_dir = "./config/"
+
+    tokenizer = transformers.AutoTokenizer.from_pretrained(
+        chat_tokenizer_dir, trust_remote_code=True
+    )
+
+    result = tokenizer.encode(txt)
+
+    return result
+
+
+def count_tokens(folder_relative_path, prompt, deepseek=True):
+    encoding = tiktoken.get_encoding("o200k_base")
+    print("Reading Data from json files...")
+    data = read_json_files(folder_relative_path)
+    print("Counting prompt tokens...")
+    prompt_tokens = (
+        len(deepseek_tokenizer(prompt)) if deepseek else len(encoding.encode(prompt))
+    )
+    print("Counting Input tokens...")
+    input_tokens = 0
+    for fatwa_source, _, _ in data:
+        for fatwa in fatwa_source:
+            input_tokens += (
+                len(deepseek_tokenizer(fatwa["question"] + fatwa["answer"]))
+                if deepseek
+                else len(encoding.encode(fatwa["question"] + fatwa["answer"]))
+            )
+
+    print(f"Total Prompt Tokens: {prompt_tokens}")
+    print(f"Total Input Tokens: {input_tokens}")
+    return prompt_tokens, input_tokens
