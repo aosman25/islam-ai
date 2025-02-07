@@ -172,4 +172,4 @@ def clean_fatwas(folder_path):
     print("Response saved to cleaned_fatwas.json")
 
 
-clean_fatwas("fatwas/islamweb_fatwas.json")
+clean_fatwas("fatwas")
