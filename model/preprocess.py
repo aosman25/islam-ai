@@ -84,7 +84,7 @@ def clean_fatwas(folder_path):
     )
     print("Reading JSON files...")
     json_files = read_json_files(folder_path)
-    for fatwa_source, _, _ in json_files:
+    for fatwa_source, _, file_name in json_files:
         fatwas_cnt = len(fatwa_source)
         fatwa_curr = 1
         cleaned_fatwas = []
@@ -140,7 +140,9 @@ def clean_fatwas(folder_path):
 
 **الفتوى الأصلية:**  {fatwa["answer"]}
 """
-            print(f"Cleaning Fatwa {fatwa_curr} out of {fatwas_cnt} with Aya...")
+            print(
+                f"Cleaning Fatwa {fatwa_curr} out of {fatwas_cnt} from {file_name} with Aya..."
+            )
             response = client.chat(
                 model="aya:latest",
                 messages=[
@@ -166,7 +168,9 @@ def clean_fatwas(folder_path):
                     "answer": response_dict["message"]["content"],
                 }
             )
-            print(f"Saving Cleaned Fatwa {fatwa_curr} out of {fatwas_cnt}...")
+            print(
+                f"Saving Cleaned Fatwa {fatwa_curr} out of {fatwas_cnt} from {file_name}..."
+            )
             # Save response to a JSON file
             with open("cleaned_fatwas.json", "w", encoding="utf-8") as json_file:
                 json.dump(cleaned_fatwas, json_file, indent=4, ensure_ascii=False)
