@@ -172,4 +172,6 @@ def clean_fatwas(folder_path):
     print("Response saved to cleaned_fatwas.json")
 
 
-clean_fatwas("fatwas")
+clean_fatwas(
+    "fatwas"
+)  # fatwas should be a folder in the root directory with the json files of fatwas
