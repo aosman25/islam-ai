@@ -2,3 +2,4 @@ fatwas_jsonl
 __pycache__
 .env
 playground.py
+cleaned_fatwas
