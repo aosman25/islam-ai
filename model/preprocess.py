@@ -172,14 +172,12 @@ def clean_fatwas(folder_path):
                 f"Saving Cleaned Fatwa {fatwa_curr} out of {fatwas_cnt} from {file_name}..."
             )
             # Save response to a JSON file
-            with open(
-                f"{file_name}_cleaned_fatwas.json", "w", encoding="utf-8"
-            ) as json_file:
+            with open(f"{file_name}_cleaned.json", "w", encoding="utf-8") as json_file:
                 json.dump(cleaned_fatwas, json_file, indent=4, ensure_ascii=False)
             fatwa_curr += 1
 
         print(
-            f"Successfully Cleaned All Fatwas for {file_name}! Saved to {file_name}_cleaned_fatwas.json."
+            f"Successfully Cleaned All Fatwas for {file_name}! Saved to {file_name}_cleaned.json."
         )
 
 
