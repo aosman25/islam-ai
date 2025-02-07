@@ -86,9 +86,22 @@ def clean_fatwas(folder_path):
     json_files = read_json_files(folder_path)
     for fatwa_source, _, file_name in json_files:
         fatwas_cnt = len(fatwa_source)
-        fatwa_curr = 1
-        cleaned_fatwas = []
-        for fatwa in fatwa_source:
+        file_path = f"{file_name}_cleaned.json"
+
+        # Check if file exists and read existing data
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as json_file:
+                try:
+                    cleaned_fatwas = json.load(json_file)  # Load existing JSON data
+                    if not isinstance(cleaned_fatwas, list):  # Ensure it's a list
+                        cleaned_fatwas = []
+                except json.JSONDecodeError:
+                    cleaned_fatwas = []  # If file is empty or invalid JSON, start fresh
+        else:
+            cleaned_fatwas = []
+        start = len(cleaned_fatwas)
+        fatwa_curr = start + 1
+        for fatwa in fatwa_source[start:]:
             prompt = f"""
 **المهمة**
 أنت مساعد تنظيف بيانات مخصص لإعداد مجموعة بيانات لتدريب نموذج محادثة فقهي إسلامي. دورك هو تحويل الفتاوى الخام إلى صيغة نظيفة ومنظمة ومتسقة، بحيث يكون النموذج الناتج قادرًا على الإجابة بأسلوب شيخ عالم، متعاطف، وواضح. **يجب الحفاظ على أكبر قدر ممكن من التفاصيل المهمة في الفتوى الأصلية. لا تُحذف أي معلومة شرعية ذات صلة، إلا إذا كانت مكررة أو غير ضرورية. إذا كان هناك تعليل فقهي موسع، حافظ عليه ولكن قدّمه بطريقة أكثر وضوحًا وانسيابية.احرص دائمًا أن تشير إلى الآيات القرآنية، الأحاديث النبوية الشريفة التي ذكرت في الفتوي ولا تأتي بنصوص شرعية من عندك. لا تضف أي جمل تمهيدية مثل "إليك الفتوى بعد إعادة الصياغة" أو "هذا هو النص المعدل".  لا تطرح أي أسئلة للمتابعة بعد تقديم الإجابة، فقط قدّم النص النهائي كما هو. يجب تكون الفتوي النهائية من 500 ل 800 كلمة.** التزم بالإرشادات التالية عند تعديل الفتاوى:
