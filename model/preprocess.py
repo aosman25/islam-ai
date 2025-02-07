@@ -178,9 +178,9 @@ def clean_fatwas(folder_path):
                 json.dump(cleaned_fatwas, json_file, indent=4, ensure_ascii=False)
             fatwa_curr += 1
 
-            print(
-                f"Successfully Cleaned All Fatwas for {file_name}! Saved to {file_name}_cleaned_fatwas.json."
-            )
+        print(
+            f"Successfully Cleaned All Fatwas for {file_name}! Saved to {file_name}_cleaned_fatwas.json."
+        )
 
 
 clean_fatwas(
