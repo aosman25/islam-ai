@@ -36,7 +36,9 @@ def convert_fatwas_to_jsonl(folder_relative_path, merge=False):
     print("[DEBUG] Starting conversion of fatwas to JSONL...")
     try:
         json_files = read_json_files(folder_relative_path)
-        print(f"[DEBUG] Found {len(json_files)} JSON file(s) in folder '{folder_relative_path}'.")
+        print(
+            f"[DEBUG] Found {len(json_files)} JSON file(s) in folder '{folder_relative_path}'."
+        )
     except Exception as e:
         print(f"[ERROR] Failed to read JSON files in '{folder_relative_path}': {e}")
         return
@@ -57,7 +59,7 @@ def convert_fatwas_to_jsonl(folder_relative_path, merge=False):
         random.shuffle(contents)
         print("[DEBUG] Shuffled merged contents.")
         training_dataset = contents[: (len(contents) - 256)]
-        validation_dataset = contents[(len(contents) - 256):]
+        validation_dataset = contents[(len(contents) - 256) :]
         print(f"[DEBUG] Training dataset size: {len(training_dataset)}")
         print(f"[DEBUG] Validation dataset size: {len(validation_dataset)}")
 
@@ -74,7 +76,9 @@ def convert_fatwas_to_jsonl(folder_relative_path, merge=False):
                     json.dump({"contents": example}, outfile, ensure_ascii=False)
                     outfile.write("\n")
             print(f"[DEBUG] Successfully wrote merged training data to {training_file}")
-            print(f"[DEBUG] Successfully wrote merged validation data to {validation_file}")
+            print(
+                f"[DEBUG] Successfully wrote merged validation data to {validation_file}"
+            )
         except Exception as e:
             print(f"[ERROR] Failed to write merged JSONL files: {e}")
     else:
@@ -95,7 +99,9 @@ def convert_fatwas_to_jsonl(folder_relative_path, merge=False):
                     for example in contents:
                         json.dump({"contents": example}, outfile, ensure_ascii=False)
                         outfile.write("\n")
-                print(f"[DEBUG] Successfully converted '{file_name}' to JSONL: {output_file}")
+                print(
+                    f"[DEBUG] Successfully converted '{file_name}' to JSONL: {output_file}"
+                )
             except Exception as e:
                 print(f"[ERROR] Failed to write JSONL file for '{file_name}': {e}")
 
@@ -108,7 +114,9 @@ def clean_fatwas(folder_path):
     print("Reading JSON files...")
     try:
         json_files = read_json_files(folder_path)
-        print(f"[DEBUG] Found {len(json_files)} JSON file(s) in folder '{folder_path}'.")
+        print(
+            f"[DEBUG] Found {len(json_files)} JSON file(s) in folder '{folder_path}'."
+        )
     except Exception as e:
         print(f"[ERROR] Failed to read JSON files in '{folder_path}': {e}")
         return
@@ -117,10 +125,24 @@ def clean_fatwas(folder_path):
         print(f"[DEBUG] Processing file '{file_name}'")
         fatwas_cnt = len(fatwa_source)
         print(f"[DEBUG] Total fatwas in file '{file_name}': {fatwas_cnt}")
-        fatwa_curr = 1
-        cleaned_fatwas = []
-        for fatwa in fatwa_source:
-            print(f"[DEBUG] Preparing cleaning for Fatwa {fatwa_curr} out of {fatwas_cnt} in file '{file_name}'")
+        file_path = f"{file_name}_cleaned.json"
+        # Check if file exists and read existing data
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as json_file:
+                try:
+                    cleaned_fatwas = json.load(json_file)  # Load existing JSON data
+                    if not isinstance(cleaned_fatwas, list):  # Ensure it's a list
+                        cleaned_fatwas = []
+                except json.JSONDecodeError:
+                    cleaned_fatwas = []  # If file is empty or invalid JSON, start fresh
+        else:
+            cleaned_fatwas = []
+        start = len(cleaned_fatwas)
+        fatwa_curr = start + 1
+        for fatwa in fatwa_source[start:]:
+            print(
+                f"[DEBUG] Preparing cleaning for Fatwa {fatwa_curr} out of {fatwas_cnt} in file '{file_name}'"
+            )
             prompt = f"""
 
 ### **المهمة:**
@@ -192,7 +214,9 @@ def clean_fatwas(folder_path):
 
 **الفتوى الأصلية:**  {fatwa["answer"]}
 """
-            print(f"[DEBUG] Sending request to Aya for Fatwa {fatwa_curr} of {fatwas_cnt} in '{file_name}'")
+            print(
+                f"[DEBUG] Sending request to Aya for Fatwa {fatwa_curr} of {fatwas_cnt} in '{file_name}'"
+            )
             try:
                 response = client.chat(
                     model="aya:latest",
@@ -207,49 +231,67 @@ def clean_fatwas(folder_path):
                         "num_ctx": 13000,
                         "num_predict": 1200,
                         "repetition_penalty": 1.2,  # Penalize repeated tokens
-                        "presence_penalty": 0.8,    # Encourage diversity
-                        "frequency_penalty": 0.6,   # Penalize frequent tokens
+                        "presence_penalty": 0.8,  # Encourage diversity
+                        "frequency_penalty": 0.6,  # Penalize frequent tokens
                     },
                 )
             except Exception as e:
-                print(f"[ERROR] API call to Aya failed for Fatwa {fatwa_curr} in '{file_name}': {e}")
+                print(
+                    f"[ERROR] API call to Aya failed for Fatwa {fatwa_curr} in '{file_name}': {e}"
+                )
                 fatwa_curr += 1
                 continue
 
             print(f"[DEBUG] Received response for Fatwa {fatwa_curr}")
             # Convert response to a dictionary if needed
-            response_dict = response.dict() if hasattr(response, "dict") else response.__dict__
+            response_dict = (
+                response.dict() if hasattr(response, "dict") else response.__dict__
+            )
             content = response_dict.get("message", {}).get("content")
 
             # Clean the response content by removing unwanted phrases
             if content:
                 # Define a flexible regex pattern to match variations of the unwanted phrase
-                unwanted_intro_pattern = r"^\s*حسناً،?\s*سأبدأ\s*الإجابة\s*مباشرة[:：]?\s*"
+                unwanted_intro_pattern = (
+                    r"^\s*حسناً،?\s*سأبدأ\s*الإجابة\s*مباشرة[:：]?\s*"
+                )
 
                 # Remove any sequence that matches the pattern
                 content = re.sub(unwanted_intro_pattern, "", content).strip()
 
                 # Debug log to check cleaned content
-                print(f"[DEBUG] Cleaned response content for Fatwa {fatwa_curr}: {content[:100]}...")  # Show first 100 chars
+                print(
+                    f"[DEBUG] Cleaned response content for Fatwa {fatwa_curr}: {content[:100]}..."
+                )  # Show first 100 chars
             else:
-                print(f"[WARNING] No content found in the response for Fatwa {fatwa_curr}")
+                print(
+                    f"[WARNING] No content found in the response for Fatwa {fatwa_curr}"
+                )
             cleaned_fatwas.append(
                 {
                     "question": fatwa["question"],
                     "answer": content if content else "No content returned",
                 }
             )
-            print(f"[DEBUG] Saving Cleaned Fatwa {fatwa_curr} out of {fatwas_cnt} from file '{file_name}'")
+            print(
+                f"[DEBUG] Saving Cleaned Fatwa {fatwa_curr} out of {fatwas_cnt} from file '{file_name}'"
+            )
             try:
-                with open(f"{file_name}_cleaned.json", "w", encoding="utf-8") as json_file:
+                with open(file_path, "w", encoding="utf-8") as json_file:
                     json.dump(cleaned_fatwas, json_file, indent=4, ensure_ascii=False)
-                print(f"[DEBUG] Successfully saved Cleaned Fatwa {fatwa_curr} to '{file_name}_cleaned.json'")
+                print(
+                    f"[DEBUG] Successfully saved Cleaned Fatwa {fatwa_curr} to '{file_name}_cleaned.json'"
+                )
             except Exception as e:
                 print(f"[ERROR] Failed to write cleaned fatwas for '{file_name}': {e}")
             fatwa_curr += 1
 
-        print(f"[DEBUG] Successfully cleaned all fatwas in file '{file_name}'. Cleaned data saved to '{file_name}_cleaned.json'.")
+        print(
+            f"[DEBUG] Successfully cleaned all fatwas in file '{file_name}'. Cleaned data saved to '{file_name}_cleaned.json'."
+        )
 
 
 # Call the pipeline function
-clean_fatwas("/Users/alhassanahmed/Desktop/AI chatbot/fatwas")  # Replace 'fatwas' with the actual folder path if different
+clean_fatwas(
+    "/Users/alhassanahmed/Desktop/AI chatbot/fatwas"
+)  # Replace 'fatwas' with the actual folder path if different
