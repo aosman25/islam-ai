@@ -11,7 +11,6 @@ import os
 import math
 from utils import read_json_files
 import json
-import asyncio
 
 
 # Load Environment Variables
@@ -291,37 +290,3 @@ def add_sparse_vectors_to_books(main_directory):
             ) as file:
                 json.dump(new_data, file, ensure_ascii=False, indent=4)
     return True
-
-
-def hybrid_search(query, collection_name="islamic_library", limit=15, partitions=[]):
-    ranker = WeightedRanker(0.8, 0.2)
-    dense_vector = embed_query([query])[0].tolist()
-    sparse_vector = {key: value for key, value in enumerate(dense_vector) if value > 0}
-
-    req1 = AnnSearchRequest(
-        **{
-            "data": [dense_vector],
-            "anns_field": "dense_vector",
-            "param": {"metric_type": "COSINE"},
-            "limit": limit,
-        }
-    )
-    req2 = AnnSearchRequest(
-        **{
-            "data": [sparse_vector],
-            "anns_field": "sparse_vector",
-            "param": {"metric_type": "IP", "params": {"drop_ratio_build": 0.2}},
-            "limit": limit,
-        }
-    )
-    reqs = [req1, req2]
-
-    res = client.hybrid_search(
-        collection_name=collection_name,
-        reqs=reqs,
-        ranker=ranker,
-        limit=limit,
-        partition_names=partitions,
-    )
-
-    return res
