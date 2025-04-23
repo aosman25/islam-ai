@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from typing import List, Dict
 import json
+from encoders import DeepInfraEncoder
 
 # Load Environment Variables
 load_dotenv()
@@ -16,11 +17,18 @@ openai_ef = model.dense.OpenAIEmbeddingFunction(
     dimensions=1536,
 )
 
+deepinfra_ef = DeepInfraEncoder(deepinfra_api_key=os.getenv("DEEPINFRA_API_KEY"))
 
 def embed_query(queries):
-    query_embeddings = openai_ef.encode_queries(queries)
-    # Convert numpy arrays to lists
-    return [embedding.tolist() for embedding in query_embeddings]
+    if os.getenv("DEEPINFRA") == "True":
+        query_embeddings = deepinfra_ef(queries)
+        # Convert numpy arrays to lists
+        return query_embeddings
+    else:
+        query_embeddings = openai_ef.encode_queries(queries)
+        # Convert numpy arrays to lists
+        return [embedding.tolist() for embedding in query_embeddings]
+
 
 
 def generate_sparse_vector(dense_vector):
