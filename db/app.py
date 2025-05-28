@@ -2,16 +2,15 @@ from pymilvus import (
     MilvusClient,
     DataType,
     model,
-    RRFRanker,
-    AnnSearchRequest,
-    WeightedRanker,
 )
 from dotenv import load_dotenv
 import os
 import math
-from utils import read_json_files
+from db.utils import read_json_files
 import json
-
+from modules.encoders import DeepInfraEncoder
+from dotenv import load_dotenv
+load_dotenv()
 
 # Load Environment Variables
 load_dotenv()
@@ -31,13 +30,13 @@ def create_library_schema():
         field_name="id", datatype=DataType.VARCHAR, is_primary=True, max_length=50
     )
     schema.add_field(
-        field_name="dense_vector", datatype=DataType.FLOAT_VECTOR, dim=1536
+        field_name="dense_vector", datatype=DataType.FLOAT_VECTOR, dim=1024
     )
     schema.add_field(
         field_name="sparse_vector",
         datatype=DataType.SPARSE_FLOAT_VECTOR,
     )
-    schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=10000)
+    schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=65535)
     schema.add_field(field_name="book_name", datatype=DataType.VARCHAR, max_length=500)
     schema.add_field(field_name="knowledge", datatype=DataType.VARCHAR, max_length=500)
     schema.add_field(field_name="category", datatype=DataType.VARCHAR, max_length=500)
@@ -86,20 +85,23 @@ def create_library_collection():
         print("Collection Already Exisits")
 
 
-def embed_chunks(folder_path, batch_size=300):
-    print("Connecting to OpenAI Embedding model...")
-    openai_ef = model.dense.OpenAIEmbeddingFunction(
-        model_name="text-embedding-3-small",  # Specify the model name
-        api_key=os.getenv("OPEN_AI_API_KEY"),  # Provide your OpenAI API key
-        dimensions=1536,  # Set the embedding dimensionality
-    )
-    print("Successfully Connected to OpenAI Embedding model!")
-
+def embed_chunks(folder_path, batch_size=300, deepinfra=True):
+    print("Connecting to DeepInfra Embedding model...")
+    if deepinfra:
+        deepinfra_ef = DeepInfraEncoder(deepinfra_api_key=os.getenv("DEEPINFRA_API_KEY"))
+    else:
+        openai_ef = model.dense.OpenAIEmbeddingFunction(
+            model_name="text-embedding-3-small",  # Specify the model name
+            api_key=os.getenv("OPEN_AI_API_KEY"),  # Provide your OpenAI API key
+            dimensions=1536,  # Set the embedding dimensionality
+        )
+        print("Successfully Connected to OpenAI Embedding model!")
     processed = 0
     total_batches = 0  # Counter for total processed batches across all books
     print("Reading Data from json files....")
     books = read_json_files(folder_path, skip=True)
-    with open("books_progress.json", "r", encoding="utf-8") as file:
+    root_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root_folder,"db","books_progress.json"), "r", encoding="utf-8") as file:
         books_progress = json.load(file)
     print(f"Processing {len(books)} books ...")
     for book_data, book_path in books:
@@ -120,7 +122,7 @@ def embed_chunks(folder_path, batch_size=300):
             documents = []
             for datum in book_chunk:
                 documents.append(datum["text"])
-            embeddings = openai_ef.encode_documents(documents)
+            embeddings = deepinfra_ef(documents) if deepinfra else openai_ef.encode_documents(documents) 
 
             print(
                 f"Successfully processed batch {curr_batch + 1} out of {batches_count} batches in book {processed + 1}!"
@@ -131,7 +133,10 @@ def embed_chunks(folder_path, batch_size=300):
                     book_data
                 ):  # Check to ensure you don't exceed the book data length
                     break
-                book_data[j]["vector"] = embedding.tolist()
+                if deepinfra:
+                    book_data[j]["dense_vector"] = embedding
+                else:
+                    book_data[j]["dense_vector"] = embedding.tolist()
 
             # Increment the batch counters
             curr_batch += 1
@@ -148,7 +153,7 @@ def embed_chunks(folder_path, batch_size=300):
 
         with open(book_path, "w", encoding="utf-8") as file:
             json.dump(book_data, file, ensure_ascii=False, indent=4)
-        with open("books_progress.json", "w", encoding="utf-8") as file:
+        with open(os.path.join(root_folder,"db","books_progress.json"), "w", encoding="utf-8") as file:
             json.dump(books_progress, file, ensure_ascii=False, indent=4)
 
         print(f"Successfully processed book {processed + 1} out of {len(books)} books!")
@@ -163,11 +168,9 @@ def upsert_entities(
     partition_name="_default",
     hybrid=False,
 ):
-    root_folder = os.path.dirname(os.getcwd())  # Set the root folder
-    main_folder_path = os.path.join(root_folder, main_directory)
-
+    main_folder_path = main_directory
     folder_path_list = [
-        main_directory + "/" + name
+        main_directory + '/'  + name
         for name in os.listdir(main_folder_path)
         if os.path.isdir(os.path.join(main_folder_path, name))
     ] or [main_directory]
@@ -202,10 +205,7 @@ def upsert_entities(
                         data=[
                             {
                                 **chunk,
-                                "sparse_vector": {
-                                    int(key): value
-                                    for key, value in chunk["sparse_vector"].items()
-                                },
+                                "sparse_vector": generate_sparse_vector(chunk["dense_vector"])
                             }
                             for chunk in batch_data
                         ],
@@ -216,15 +216,18 @@ def upsert_entities(
     return True
 
 
-def embed_query(queries):
-    print("Connecting to OpenAI Embedding model...")
-    openai_ef = model.dense.OpenAIEmbeddingFunction(
-        model_name="text-embedding-3-small",  # Specify the model name
-        api_key=os.getenv("OPEN_AI_API_KEY"),  # Provide your OpenAI API key
-        dimensions=1536,  # Set the embedding dimensionality
-    )
-    print("Successfully Connected to OpenAI Embedding model!")
-    query_embeddings = openai_ef.encode_queries(queries)
+def embed_query(queries, deepinfra = True):
+    if deepinfra:
+        deepinfra_ef = DeepInfraEncoder(deepinfra_api_key=os.getenv("DEEPINFRA_API_KEY"))
+    else:
+        openai_ef = model.dense.OpenAIEmbeddingFunction(
+            model_name="text-embedding-3-small",  # Specify the model name
+            api_key=os.getenv("OPEN_AI_API_KEY"),  # Provide your OpenAI API key
+            dimensions=1536,  # Set the embedding dimensionality
+        )
+        print("Successfully Connected to OpenAI Embedding model!")
+
+    query_embeddings = deepinfra_ef(queries) if deepinfra else openai_ef.encode_queries(queries)
     return query_embeddings
 
 
@@ -234,7 +237,7 @@ def generate_sparse_vector(dense_vector):
 
 # New Version of RAG
 def add_sparse_vectors_to_books(main_directory):
-    root_folder = os.path.dirname(os.getcwd())  # Set the root folder
+    root_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # Set the root folder
     main_folder_path = os.path.join(root_folder, main_directory)
 
     folder_path_list = [
@@ -264,11 +267,7 @@ def add_sparse_vectors_to_books(main_directory):
                             "category": chunk["category"],
                             "author": chunk["author"],
                             "dense_vector": chunk["vector"],
-                            "sparse_vector": {
-                                key: value
-                                for key, value in enumerate(chunk["vector"])
-                                if value > 0
-                            },
+                            "sparse_vector": generate_sparse_vector(chunk["vector"]),
                         }
                     )
                     texts.add(chunk["text"])
@@ -290,3 +289,10 @@ def add_sparse_vectors_to_books(main_directory):
             ) as file:
                 json.dump(new_data, file, ensure_ascii=False, indent=4)
     return True
+
+
+root_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+input_folder = os.path.join(root_folder,"db","chunked_data", "العقيدة")
+
+print(embed_query(["ما موقف السلف من آيات الصفات مثل: {الرحمن على العرش استوى}؟"]))
+
