@@ -1,84 +1,136 @@
-from modules.encoders import DeepInfraEncoder
 import os
-from dotenv import load_dotenv
-from semantic_chunkers import StatisticalChunker
 import json
 import uuid
-import re
+import multiprocessing
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from modules.encoders import DeepInfraEncoder
+from semantic_chunkers import StatisticalChunker
+from threading import Lock
+from dotenv import load_dotenv
+
 load_dotenv()
 
+# Global progress tracking
+progress_lock = Lock()
+completed = 0
+total_tasks = 0
 
-def clean_text(text):
-    # Regular expression to match "{book_name}(ص: {number})"
-    pattern = r"\b[\w\u0600-\u06FF]+\s*\(ص:\s*\d+\)"
-    
-    # Find the first occurrence of the pattern
-    match = re.search(pattern, text)
-    if match:
-        text = text[match.start():]  # Remove everything before the first match
+def process_book(book_md_path, book_json_path, output_folder, encoder_config):
+    global completed
 
-    # Remove all occurrences of the pattern
-    text = re.sub(pattern, "", text)
+    book_name = os.path.splitext(os.path.basename(book_md_path))[0]
 
-    # Remove all newlines and extra spaces
-    cleaned_text = " ".join(text.split())
+    # Load metadata
+    with open(book_json_path, "r", encoding="utf-8") as jf:
+        metadata = json.load(jf)
 
-    return cleaned_text
+    knowledge = metadata.get("knowledge", "")
+    category = metadata.get("category", "")
+    author = metadata.get("author", "")
 
-def semantic_chunk_books(input_folder, output_folder, authors):
-    encoder = DeepInfraEncoder(deepinfra_api_key=os.getenv("DEEPINFRA_API_KEY"))
-    chunker = StatisticalChunker(encoder=encoder)
+    with open(book_md_path, "r", encoding="utf-8") as f:
+        book_text = f.read()
+
+    # Create encoder and chunker
+    encoder = DeepInfraEncoder(**encoder_config)
+    chunker = StatisticalChunker(
+        encoder=encoder,
+        min_split_tokens=1000,
+        max_split_tokens=5000,
+        split_tokens_tolerance=0,
+        enable_statistics=False
+    )
+
+    chunks = chunker(docs=[book_text])
+    all_chunks = []
+    for chunkList in chunks:
+        for chunk in chunkList:
+            all_chunks.append({
+                "book_name": book_name,
+                "knowledge": knowledge,
+                "id": str(uuid.uuid4()),
+                "order": len(all_chunks),
+                "category": category,
+                "author": author,
+                "text": " ".join(chunk.splits)
+            })
+
+    category_folder = output_folder if category == knowledge else os.path.join(output_folder, category)
+    os.makedirs(category_folder, exist_ok=True)
+    output_book_path = os.path.join(category_folder, f"{book_name}.json")
+
+    with open(output_book_path, "w", encoding="utf-8") as json_file:
+        json.dump(all_chunks, json_file, ensure_ascii=False, indent=4)
+
+    # Print progress
+    with progress_lock:
+        global completed, total_tasks
+        completed += 1
+        print(f"[{completed}/{total_tasks}] Finished: {book_name}")
+
+    return book_name
+
+
+def semantic_chunk_books(input_folder, output_folder):
+    global total_tasks
+    encoder_config = {
+        "deepinfra_api_key": os.getenv("DEEPINFRA_API_KEY"),
+        "name": "BAAI/bge-m3-multi"
+    }
+
+    processed_books_path = os.path.join(output_folder, "processed_books.json")
+    if os.path.exists(processed_books_path):
+        with open(processed_books_path, "r", encoding="utf-8") as f:
+            processed_books = set(json.load(f))
+    else:
+        processed_books = set()
+
+    tasks = []
     for root, _, files in os.walk(input_folder):
         for file in files:
-            all_chunks = []  # List to store all chunks
-            all_chunks = []
-            book_path = os.path.join(root, file)
-            with open(book_path, "r", encoding="utf-8") as f:
-                print("Reading Book Content...")
-                book_text = f.read()
+            if not file.endswith(".md"):
+                continue
 
-            # Determine metadata
-            knowledge = os.path.basename(input_folder)  # This is the input folder name
-            category = os.path.basename(root) if os.path.relpath(root, input_folder) != '.' else knowledge
-            book_name = os.path.splitext(file)[0]  # Book name without extension
-            author = authors.get(book_name, "")  # Retrieve author from dictionary or use empty string if not found
-            book_text = clean_text(book_text)
-            # Save the cleaned text to a new file
-            with open("cleaned_book.txt", "w", encoding="utf-8") as f:
-                f.write(book_text)
-            chunks = chunker(docs=[book_text]) 
-            for chunkList in chunks:
-                for chunk in chunkList:
-                    all_chunks.append({
-                        "book_name": book_name,
-                        "knowledge": knowledge,
-                        "id": str(uuid.uuid4()),  # Unique ID for each chunk
-                        "category": category,
-                        "author": author,
-                        "text": " ".join(chunk.splits)
-                        })
-            # Define the output path including category as subfolder, or directly in root folder if no category
-            if category == knowledge:  # If the category is the same as the knowledge folder, no subfolder
-                category_folder = output_folder
-            else:
-                category_folder = os.path.join(output_folder, category)
+            book_name = os.path.splitext(file)[0]
+            if book_name in processed_books:
+                continue
 
-            os.makedirs(category_folder, exist_ok=True)
-            output_book_path = os.path.join(category_folder, f"{book_name}.json")
+            book_md_path = os.path.join(root, file)
+            book_json_path = os.path.join(root, book_name + ".json")
 
-            # Write all chunks to a single JSON file
-            with open(output_book_path, "w", encoding="utf-8") as json_file:
-                json.dump(all_chunks, json_file, ensure_ascii=False, indent=4)
+            if not os.path.exists(book_json_path):
+                continue
 
-root_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-input_folder = os.path.join(root_folder, "raw_data", "العقيدة")
-output_folder = os.path.join(root_folder, "chunked_data", "العقيدة")
-authors = {"العقيدة التدمرية": "ابن تيمية"}
+            tasks.append((book_md_path, book_json_path))
 
-print("Resolved root:", root_folder)
-print("Resolved input:", input_folder)
-print("Exists:", os.path.exists(input_folder))
+    total_tasks = len(tasks)
+    if total_tasks == 0:
+        print("✅ No new books to process.")
+        return
+
+    cpu_cores = multiprocessing.cpu_count()
+    max_workers = min(32, cpu_cores * 2)
+    print(f"🔄 Processing {total_tasks} books using {max_workers} threads...\n")
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(process_book, md, js, output_folder, encoder_config)
+            for md, js in tasks
+        ]
+
+        for future in as_completed(futures):
+            book_name = future.result()
+            processed_books.add(book_name)
+
+    with open(processed_books_path, "w", encoding="utf-8") as f:
+        json.dump(list(processed_books), f, ensure_ascii=False, indent=2)
+
+    print("\n✅ All books processed.")
 
 
-semantic_chunk_books(input_folder, output_folder, authors)
-
+# Usage
+if __name__ == "__main__":
+    root_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    input_folder = os.path.join(root_folder, "raw_books", "العقيدة")
+    output_folder = os.path.join(root_folder, "chunked_books", "العقيدة")
+    semantic_chunk_books(input_folder, output_folder)
