@@ -24,6 +24,7 @@ def process_book(book_md_path, book_json_path, output_folder, encoder_config):
     with open(book_json_path, "r", encoding="utf-8") as jf:
         metadata = json.load(jf)
 
+    book_id = metadata.get("book_id", "")
     knowledge = metadata.get("knowledge", "")
     category = metadata.get("category", "")
     author = metadata.get("author", "")
@@ -46,12 +47,13 @@ def process_book(book_md_path, book_json_path, output_folder, encoder_config):
     for chunkList in chunks:
         for chunk in chunkList:
             all_chunks.append({
-                "book_name": book_name,
-                "knowledge": knowledge,
                 "id": str(uuid.uuid4()),
+                "book_id": book_id,
+                "book_name": book_name,
                 "order": len(all_chunks),
-                "category": category,
                 "author": author,
+                "knowledge": knowledge,
+                "category": category,
                 "text": " ".join(chunk.splits)
             })
 

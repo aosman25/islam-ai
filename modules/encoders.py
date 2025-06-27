@@ -15,7 +15,7 @@ class DeepInfraEncoder(BaseModel):
     token_limit: int = 8192  # Token limit
     type: str = "deepinfra"
     max_retries: int = 3
-    name: Optional[str] = "intfloat/multilingual-e5-large"
+    name: Optional[str] = None
     deepinfra_base_url: Optional[str] = "https://api.deepinfra.com/v1/openai"
     deepinfra_api_key: Optional[str] = None
     score_threshold: Optional[float] = None
