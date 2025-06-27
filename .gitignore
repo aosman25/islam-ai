@@ -1,8 +1,6 @@
-embedded_chunked_data
-raw_chunked_data
-raw_data
-chunked_data
-chroma
-hybrid_embedded_chunked_data
-fatwas
+__pycache__
+.env
+**/*venv/
+books
 archive
+islamic_library.csv
