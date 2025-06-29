@@ -1,0 +1,25 @@
+[
+  { "field_name": "id", "index_type": "INVERTED" },
+  { "field_name": "book_id", "index_type": "INVERTED" },
+  { "field_name": "book_name", "index_type": "INVERTED" },
+  { "field_name": "order", "index_type": "STL_SORT" },
+  { "field_name": "author", "index_type": "INVERTED" },
+  { "field_name": "knowledge", "index_type": "INVERTED" },
+  { "field_name": "category", "index_type": "INVERTED" },
+  { "field_name": "text", "index_type": "Trie" },
+  {
+    "field_name": "dense_vector",
+    "index_name": "dense_index",
+    "index_type": "FLAT",
+    "metric_type": "COSINE"
+  },
+  {
+    "field_name": "sparse_vector",
+    "index_name": "sparse_index",
+    "index_type": "SPARSE_INVERTED_INDEX",
+    "metric_type": "IP",
+    "params": {
+      "drop_ratio_build": 0.2
+    }
+  }
+]
