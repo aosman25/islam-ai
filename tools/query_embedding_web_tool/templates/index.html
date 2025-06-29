@@ -64,13 +64,10 @@
         </div>
         <div class="embedding-section">
           <h3>Sparse Vector</h3>
-          <div class="embedding-length">
-            Non-zero elements: {{ sparse.indices|length }}
-          </div>
           <div class="sparse-details">
             <div class="sparse-item">
               <textarea style="height: 200px" class="output-textarea" readonly>
-{{ sparse.dictionary }}</textarea
+{{ sparse }}</textarea
               >
             </div>
             <button
@@ -80,23 +77,6 @@
             >
               Copy Sparse
             </button>
-            <div class="dropdown-container">
-              <button class="dropdown-btn">Show Additional Details</button>
-              <div class="additional-details hidden">
-                <div class="sparse-item">
-                  <strong>Indices:</strong>
-                  <textarea readonly>{{ sparse.indices }}</textarea>
-                </div>
-                <div class="sparse-item">
-                  <strong>Values:</strong>
-                  <textarea readonly>{{ sparse.vector_values }}</textarea>
-                </div>
-                <div class="sparse-item">
-                  <strong>Terms:</strong>
-                  <textarea readonly>{{ sparse.vocabulary }}</textarea>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

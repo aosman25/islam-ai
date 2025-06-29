@@ -1,60 +1,37 @@
 from flask import Flask, render_template, request
-from pymilvus import model
 import os
+import httpx
 from dotenv import load_dotenv
 from typing import List, Dict
 import json
-from encoders import DeepInfraEncoder
 
-# Load Environment Variables
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
-openai_ef = model.dense.OpenAIEmbeddingFunction(
-    model_name="text-embedding-3-small",
-    api_key=os.getenv("OPEN_AI_API_KEY"),
-    dimensions=1536,
-)
 
-deepinfra_ef = DeepInfraEncoder(deepinfra_api_key=os.getenv("DEEPINFRA_API_KEY"))
+def embed_query(queries: List[str]) -> Dict[str, List]:
+    payload = {
+        "input_text": queries,
+        "dense": True,
+        "sparse": True,
+        "colbert": False
+    }
 
-def embed_query(queries):
-    if os.getenv("DEEPINFRA") == "True":
-        query_embeddings = deepinfra_ef(queries)
-        # Convert numpy arrays to lists
-        return query_embeddings
+    url = os.getenv("QUERY_SERVER_URL_INTERNAL") if os.getenv("TESTING") == "FALSE" else os.getenv("QUERY_SERVER_URL_TESTING")
+    timeout = httpx.Timeout(30.0)
+
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            response = client.post(url, json=payload)
+    except httpx.RequestError as e:
+        raise RuntimeError(f"Failed to reach embedding server: {e}") from e
+
+    if response.status_code == 200:
+        return response.json()
     else:
-        query_embeddings = openai_ef.encode_queries(queries)
-        # Convert numpy arrays to lists
-        return [embedding.tolist() for embedding in query_embeddings]
-
-
-
-def generate_sparse_vector(dense_vector):
-    return {key: round(value, 4) for key, value in enumerate(dense_vector) if value > 0}
-
-
-def create_sparse_vector(dense_embeddings: List[List[float]]) -> List[Dict]:
-    results = []
-
-    for dense_embedding in dense_embeddings:
-        # Generate sparse representation directly from dense embedding
-        sparse_dict = generate_sparse_vector(dense_embedding)
-
-        # Format the result
-        result = {
-            "indices": list(sparse_dict.keys()),
-            "vector_values": list(sparse_dict.values()),
-            "vocabulary": [
-                f"dim_{i}" for i in sparse_dict.keys()
-            ],  # Using dimension numbers as vocabulary
-            "dictionary": json.dumps(sparse_dict).replace(" ", "").replace('"', ""),
-        }
-
-        results.append(result)
-
-    return results
+        raise RuntimeError(f"Embedding server error {response.status_code}: {response.text}")
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -74,8 +51,10 @@ def index():
                     queries=queries,
                 )
             try:
-                dense_embeddings = embed_query(query_list)
-                sparse_embeddings = create_sparse_vector(dense_embeddings)
+                embeddings = embed_query(query_list)
+                dense_embeddings = embeddings.get("dense", [])
+                sparse_embeddings = embeddings.get("sparse", [])
+                print(sparse_embeddings)
                 combined_embeddings = list(zip(dense_embeddings, sparse_embeddings))
                 return render_template(
                     "index.html",
