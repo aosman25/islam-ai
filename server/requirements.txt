@@ -1,4 +1,0 @@
-langchain
-openai
-pymilvus
-pymilvus[model]
