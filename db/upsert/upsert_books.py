@@ -53,9 +53,9 @@ def upsert_books(
         except FileNotFoundError:
             return []
 
-    def save_failed_book(book_path):
+    def save_failed_book(book_name):
         failed = load_failed_books()
-        failed.append(str(book_path))
+        failed.append(str(book_name))
         with open(FAILED_BOOKS_PATH, "w", encoding="utf-8") as f:
             json.dump(failed, f, indent=2, ensure_ascii=False)
 
@@ -88,7 +88,7 @@ def upsert_books(
 
         except Exception as e:
             logging.error(f"Error while processing {file_path}: {e}")
-            save_failed_book(file_path)
+            save_failed_book(file_path.name)
             continue  # skip to next file
 
     logging.info("All data upserted successfully (excluding failed books).")
@@ -97,7 +97,7 @@ def upsert_books(
 if __name__ == "__main__":
     logging.info("Connecting to Milvus Database...")
     client = MilvusClient(
-        uri=f"http://{os.getenv("MILVUS_IP")}:19530", token=os.getenv("MILVUS_TOKEN")
+        uri=f"http://{os.getenv("MILVUS_IP")}", token=os.getenv("MILVUS_TOKEN")
     )
     logging.info("Successfully Connected to Milvus!")
     
