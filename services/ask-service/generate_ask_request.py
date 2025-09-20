@@ -51,3 +51,5 @@ for filename in os.listdir(source_dir):
             json.dump(ask_request.model_dump(), f, ensure_ascii=False, indent=2)
 
         print(f"✓ Wrote {output_path}")
+
+# "هل يُعدّ الأشاعرة من أهل السنة والجماعة في العقيدة؟"
