@@ -52,4 +52,3 @@ for filename in os.listdir(source_dir):
 
         print(f"✓ Wrote {output_path}")
 
-# "هل يُعدّ الأشاعرة من أهل السنة والجماعة في العقيدة؟"
