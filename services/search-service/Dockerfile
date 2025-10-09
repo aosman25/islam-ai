@@ -28,15 +28,15 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application files with proper ownership
-COPY --chown=appuser:appuser main.py utils.py prompt.txt ./
+COPY --chown=appuser:appuser main.py ./
 
 # Switch to non-root user
 USER appuser
 
-EXPOSE 5000
+EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()" || exit 1
 
 CMD ["python", "main.py"]
