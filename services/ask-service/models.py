@@ -18,4 +18,4 @@ class AskRequest(BaseModel):
     query: str
     sources: List[SourceData]
     temperature: Optional[float] = Field(default=0.7, ge=0.0, le=2.0)
-    max_tokens: Optional[int] = Field(default=2500, gt=0)
+    max_tokens: Optional[int] = Field(default=8000, gt=0, le=65536)
