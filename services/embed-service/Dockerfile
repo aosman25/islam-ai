@@ -1,5 +1,5 @@
-# Use Alpine for minimal attack surface
-FROM python:3.12-alpine
+# Using specific version tag for reproducibility and security
+FROM python:3.13-slim-bookworm
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -7,22 +7,25 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install build dependencies and runtime requirements
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev libffi-dev && \
-    apk add --no-cache ca-certificates && \
-    apk upgrade --no-cache
+# Install system dependencies and security updates
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
-RUN addgroup -g 1000 appuser && \
-    adduser -D -u 1000 -G appuser appuser
+RUN groupadd -g 1000 appuser && \
+    useradd -r -u 1000 -g appuser appuser
 
 WORKDIR /app
 
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
-    apk del .build-deps
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application files with proper ownership
 COPY --chown=appuser:appuser main.py utils.py ./

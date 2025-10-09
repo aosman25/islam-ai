@@ -4,3 +4,4 @@ __pycache__
 books
 archive
 islamic_library.csv
+.claude/*
