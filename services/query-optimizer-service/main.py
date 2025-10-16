@@ -33,7 +33,7 @@ class Config:
     MAX_QUERIES_PER_REQUEST = int(os.getenv("MAX_QUERIES_PER_REQUEST", "10"))
     MAX_QUERY_LENGTH = int(os.getenv("MAX_QUERY_LENGTH", "1000"))
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "30"))
-    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+    GEMINI_MODEL = os.getenv("GEMINI_OPTIMIZE_MODEL", "gemini-2.5-flash-lite")
 
     @classmethod
     def validate(cls):
