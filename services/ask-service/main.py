@@ -9,7 +9,7 @@ import structlog
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
@@ -249,7 +249,6 @@ class AskResponse(BaseModel):
 # Main endpoint
 @app.post(
     "/ask",
-    response_model=AskResponse,
     responses={
         400: {"model": ErrorResponse, "description": "Invalid input"},
         500: {"model": ErrorResponse, "description": "Internal server error"},
@@ -260,8 +259,9 @@ async def ask(request: AskRequest, http_request: Request):
     """
     Generate response from Gemini model based on user input and sources.
 
-    Generates a complete response using the provided query and sources with proper
-    error handling.
+    Supports both streaming and non-streaming responses based on the 'stream' parameter:
+    - If stream=False (default): Returns a JSON response (AskResponse model) with the complete text
+    - If stream=True: Returns a text/plain streaming response with text chunks
     """
     request_id = http_request.headers.get(
         "x-request-id", f"req_{int(time.time() * 1000)}"
@@ -292,86 +292,151 @@ async def ask(request: AskRequest, http_request: Request):
                 detail=f"Error building prompt: {str(e)}",
             )
 
-        # Generate non-streaming response
-        try:
-            response = gemini_client.models.generate_content(
-                model=Config.MODEL,
-                contents=[prompt],
-                config=types.GenerateContentConfig(
-                    temperature=request.temperature,
-                    system_instruction=system_instruction,
-                    max_output_tokens=request.max_tokens,
-                ),
+        # Check if streaming is enabled
+        if request.stream:
+            # Generate streaming response
+            async def stream_generator():
+                try:
+                    stream = gemini_client.models.generate_content_stream(
+                        model=Config.MODEL,
+                        contents=[prompt],
+                        config=types.GenerateContentConfig(
+                            temperature=request.temperature,
+                            system_instruction=system_instruction,
+                            max_output_tokens=request.max_tokens,
+                        ),
+                    )
+
+                    logger.info(
+                        "Starting streaming response",
+                        request_id=request_id,
+                    )
+
+                    for chunk in stream:
+                        # Extract text from chunk
+                        chunk_text = ""
+                        try:
+                            if hasattr(chunk, "text") and chunk.text:
+                                chunk_text = chunk.text
+                            elif hasattr(chunk, "candidates") and chunk.candidates:
+                                for candidate in chunk.candidates:
+                                    if hasattr(candidate, "content") and candidate.content:
+                                        if (
+                                            hasattr(candidate.content, "parts")
+                                            and candidate.content.parts
+                                        ):
+                                            for part in candidate.content.parts:
+                                                if hasattr(part, "text") and part.text:
+                                                    chunk_text += part.text
+                        except Exception as e:
+                            logger.error(
+                                "Error extracting chunk text",
+                                error=str(e),
+                                request_id=request_id,
+                            )
+
+                        if chunk_text:
+                            yield chunk_text
+
+                    logger.info(
+                        "Streaming response completed",
+                        request_id=request_id,
+                    )
+
+                except Exception as e:
+                    logger.error(
+                        "Streaming error",
+                        error=str(e),
+                        request_id=request_id,
+                    )
+                    yield f"Error: {str(e)}"
+
+            return StreamingResponse(
+                stream_generator(),
+                media_type="text/plain",
+                headers={"x-request-id": request_id},
             )
-
-            # Extract text from response
-            response_text = ""
-
-            # Try to get text from response
+        else:
+            # Generate non-streaming response
             try:
-                if hasattr(response, "text") and response.text:
-                    response_text = response.text
-                elif hasattr(response, "candidates") and response.candidates:
-                    # Extract from candidates if response.text is not available
-                    for candidate in response.candidates:
-                        if hasattr(candidate, "content") and candidate.content:
-                            if (
-                                hasattr(candidate.content, "parts")
-                                and candidate.content.parts
-                            ):
-                                for part in candidate.content.parts:
-                                    if hasattr(part, "text") and part.text:
-                                        response_text += part.text
-            except Exception as e:
-                logger.error(
-                    "Error extracting response text",
-                    error=str(e),
-                    error_type=type(e).__name__,
-                    request_id=request_id,
+                response = gemini_client.models.generate_content(
+                    model=Config.MODEL,
+                    contents=[prompt],
+                    config=types.GenerateContentConfig(
+                        temperature=request.temperature,
+                        system_instruction=system_instruction,
+                        max_output_tokens=request.max_tokens,
+                    ),
                 )
 
-            # Log response details for debugging
-            finish_reason = None
-            if hasattr(response, "candidates") and response.candidates:
-                finish_reason = getattr(response.candidates[0], "finish_reason", None)
+                # Extract text from response
+                response_text = ""
 
-            logger.info(
-                "Received response from Gemini",
-                has_text=bool(response_text),
-                response_length=len(response_text) if response_text else 0,
-                finish_reason=str(finish_reason) if finish_reason else None,
-                request_id=request_id,
-            )
+                # Try to get text from response
+                try:
+                    if hasattr(response, "text") and response.text:
+                        response_text = response.text
+                    elif hasattr(response, "candidates") and response.candidates:
+                        # Extract from candidates if response.text is not available
+                        for candidate in response.candidates:
+                            if hasattr(candidate, "content") and candidate.content:
+                                if (
+                                    hasattr(candidate.content, "parts")
+                                    and candidate.content.parts
+                                ):
+                                    for part in candidate.content.parts:
+                                        if hasattr(part, "text") and part.text:
+                                            response_text += part.text
+                except Exception as e:
+                    logger.error(
+                        "Error extracting response text",
+                        error=str(e),
+                        error_type=type(e).__name__,
+                        request_id=request_id,
+                    )
 
-            if not response_text:
-                logger.error(
-                    "Empty response from Gemini",
-                    response_repr=str(response)[:1000],
+                # Log response details for debugging
+                finish_reason = None
+                if hasattr(response, "candidates") and response.candidates:
+                    finish_reason = getattr(response.candidates[0], "finish_reason", None)
+
+                logger.info(
+                    "Received response from Gemini",
+                    has_text=bool(response_text),
+                    response_length=len(response_text) if response_text else 0,
                     finish_reason=str(finish_reason) if finish_reason else None,
                     request_id=request_id,
                 )
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Received empty response from AI model. Finish reason: {finish_reason}",
+
+                if not response_text:
+                    logger.error(
+                        "Empty response from Gemini",
+                        response_repr=str(response)[:1000],
+                        finish_reason=str(finish_reason) if finish_reason else None,
+                        request_id=request_id,
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Received empty response from AI model. Finish reason: {finish_reason}",
+                    )
+
+                logger.info(
+                    "Ask request completed",
+                    response_length=len(response_text),
+                    request_id=request_id,
                 )
 
-            logger.info(
-                "Ask request completed",
-                response_length=len(response_text),
-                request_id=request_id,
-            )
+                return AskResponse(
+                    response=response_text,
+                    request_id=request_id,
+                )
 
-            return AskResponse(
-                response=response_text,
-                request_id=request_id,
-            )
-
-        except Exception as e:
-            logger.error("Generation error", error=str(e), request_id=request_id)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to generate response: {str(e)}",
-            )
+            except Exception as e:
+                logger.error("Generation error", error=str(e), request_id=request_id)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to generate response: {str(e)}",
+                )
 
     except HTTPException:
         raise
