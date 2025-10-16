@@ -1,0 +1,157 @@
+version: '3.8'
+
+# =============================================================================
+# RAG Pipeline Docker Compose Configuration
+# =============================================================================
+# This compose file orchestrates all services in the RAG pipeline
+# All services share the same .env file located in the services folder
+#
+# Usage:
+#   1. Copy .env.example to .env and fill in your values
+#   2. Run: docker-compose up -d
+#   3. Access gateway at http://localhost:8100
+#
+# Services:
+#   - gateway-service (Port 8100) - Main entry point
+#   - query-optimizer-service (Port 5000) - Query optimization
+#   - embed-service (Port 4000) - Embedding generation
+#   - search-service (Port 3000) - Vector search
+#   - ask-service (Port 2000) - Response generation
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # GATEWAY SERVICE - Main Entry Point
+  # ===========================================================================
+  gateway:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "8100:8000"
+    env_file:
+      - .env
+    environment:
+      # Override service URLs for container networking
+      - QUERY_OPTIMIZER_URL=http://query-optimizer:5000
+      - EMBED_SERVICE_URL=http://embed-service:4000
+      - SEARCH_SERVICE_URL=http://search-service:3000
+      - ASK_SERVICE_URL=http://ask-service:2000
+    depends_on:
+      query-optimizer:
+        condition: service_started
+      embed-service:
+        condition: service_started
+      search-service:
+        condition: service_started
+      ask-service:
+        condition: service_started
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # QUERY OPTIMIZER SERVICE
+  # ===========================================================================
+  query-optimizer:
+    build:
+      context: ./query-optimizer-service
+      dockerfile: Dockerfile
+    container_name: query-optimizer-service
+    expose:
+      - "5000"
+    env_file:
+      - .env
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # EMBED SERVICE
+  # ===========================================================================
+  embed-service:
+    build:
+      context: ./embed-service
+      dockerfile: Dockerfile
+    container_name: embed-service
+    expose:
+      - "4000"
+    env_file:
+      - .env
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:4000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # SEARCH SERVICE
+  # ===========================================================================
+  search-service:
+    build:
+      context: ./search-service
+      dockerfile: Dockerfile
+    container_name: search-service
+    expose:
+      - "3000"
+    env_file:
+      - .env
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:3000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # ASK SERVICE
+  # ===========================================================================
+  ask-service:
+    build:
+      context: ./ask-service
+      dockerfile: Dockerfile
+    container_name: ask-service
+    expose:
+      - "2000"
+    env_file:
+      - .env
+    volumes:
+      # Mount system instruction file
+      - ./ask-service/system_instruction.txt:/app/system_instruction.txt:ro
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:2000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  rag-network:
+    driver: bridge
+    name: rag-network
