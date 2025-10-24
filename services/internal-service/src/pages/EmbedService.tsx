@@ -5,10 +5,11 @@ import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { Play, Plus, Trash2 } from 'lucide-react';
+import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
 
 export const EmbedService: React.FC = () => {
   const [request, setRequest] = useState<EmbeddingRequest>({
-    input_text: ['ما هي أركان الإسلام؟'],
+    input_text: [''],
     dense: true,
     sparse: true,
     colbert: false,
@@ -85,8 +86,9 @@ export const EmbedService: React.FC = () => {
                     <textarea
                       value={text}
                       onChange={(e) => updateText(idx, e.target.value)}
-                      placeholder={`Text ${idx + 1}...`}
+                      placeholder={idx === 0 ? "What are the pillars of Islam?" : `Text ${idx + 1}...`}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      style={getTextDirectionStyles(text)}
                       rows={2}
                       maxLength={8000}
                     />

@@ -7,10 +7,11 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { SourcesDisplay } from '../components/SourcesDisplay';
 import { Play, Square } from 'lucide-react';
+import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
 
 export const GatewayService: React.FC = () => {
   const [request, setRequest] = useState<GatewayRequest>({
-    query: 'ما هي أركان الإسلام؟',
+    query: '',
     top_k: 15,
     temperature: 0.2,
     max_tokens: 8000,
@@ -103,7 +104,9 @@ export const GatewayService: React.FC = () => {
             <textarea
               value={request.query}
               onChange={(e) => setRequest({ ...request, query: e.target.value })}
+              placeholder="What are the pillars of Islam?"
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              style={getTextDirectionStyles(request.query)}
               rows={3}
               maxLength={1000}
             />
