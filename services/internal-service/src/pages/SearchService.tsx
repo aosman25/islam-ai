@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import type { SearchRequest, SearchBatchResponse } from '../types/services';
 import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { SourcesDisplay } from '../components/SourcesDisplay';
-import { Play } from 'lucide-react';
+import { Play, ArrowRight } from 'lucide-react';
 import { usePersistedState } from '../hooks/usePersistedState';
 
 export const SearchService: React.FC = () => {
+  const navigate = useNavigate();
   const [partitions, setPartitions] = useState<string[]>([]);
   const [request, setRequest] = usePersistedState<SearchRequest>('search-request', {
     k: 15,
@@ -57,6 +59,26 @@ export const SearchService: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const sendToAskService = () => {
+    if (!response || response.results.length === 0) return;
+
+    // Get the first query from request (if available) or use a default
+    const query = 'Please provide a detailed answer based on these sources';
+
+    // Update ask service request in localStorage
+    const askRequest = {
+      query,
+      sources: response.results,
+      temperature: 0.7,
+      max_tokens: 20000,
+      stream: false,
+    };
+    localStorage.setItem('ask-request', JSON.stringify(askRequest));
+
+    // Navigate to ask service
+    navigate('/ask');
   };
 
   return (
@@ -211,20 +233,29 @@ export const SearchService: React.FC = () => {
       {response && (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="flex gap-1 p-2">
-              {['results', 'raw'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab as typeof activeTab)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === tab
-                      ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
+            <div className="flex items-center justify-between p-2">
+              <div className="flex gap-1">
+                {['results', 'raw'].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab as typeof activeTab)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === tab
+                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={sendToAskService}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors text-sm"
+              >
+                <span>Send to Ask Service</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
