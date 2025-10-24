@@ -6,13 +6,14 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { Play, Plus, Trash2 } from 'lucide-react';
 import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
+import { usePersistedState } from '../hooks/usePersistedState';
 
 export const QueryOptimizerService: React.FC = () => {
-  const [request, setRequest] = useState<QueryRequest>({
+  const [request, setRequest] = usePersistedState<QueryRequest>('query-optimizer-request', {
     queries: [''],
   });
 
-  const [response, setResponse] = useState<QueryResponse | null>(null);
+  const [response, setResponse] = usePersistedState<QueryResponse | null>('query-optimizer-response', null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ message?: string; status?: number; data?: unknown } | null>(null);
 

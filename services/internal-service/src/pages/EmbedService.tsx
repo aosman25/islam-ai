@@ -6,16 +6,17 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { Play, Plus, Trash2 } from 'lucide-react';
 import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
+import { usePersistedState } from '../hooks/usePersistedState';
 
 export const EmbedService: React.FC = () => {
-  const [request, setRequest] = useState<EmbeddingRequest>({
+  const [request, setRequest] = usePersistedState<EmbeddingRequest>('embed-request', {
     input_text: [''],
     dense: true,
     sparse: true,
     colbert: false,
   });
 
-  const [response, setResponse] = useState<EmbeddingResponseModel | null>(null);
+  const [response, setResponse] = usePersistedState<EmbeddingResponseModel | null>('embed-response', null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ message?: string; status?: number; data?: unknown } | null>(null);
 

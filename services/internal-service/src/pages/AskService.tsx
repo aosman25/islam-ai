@@ -7,9 +7,10 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { Play, Square, Plus, Trash2 } from 'lucide-react';
 import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
+import { usePersistedState } from '../hooks/usePersistedState';
 
 export const AskService: React.FC = () => {
-  const [request, setRequest] = useState<AskRequest>({
+  const [request, setRequest] = usePersistedState<AskRequest>('ask-request', {
     query: '',
     sources: [],
     temperature: 0.7,
@@ -17,12 +18,12 @@ export const AskService: React.FC = () => {
     stream: false,
   });
 
-  const [response, setResponse] = useState<AskResponse | null>(null);
-  const [streamingText, setStreamingText] = useState('');
+  const [response, setResponse] = usePersistedState<AskResponse | null>('ask-response', null);
+  const [streamingText, setStreamingText] = usePersistedState<string>('ask-streaming-text', '');
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<{ message?: string; status?: number; data?: unknown } | null>(null);
-  const [activeTab, setActiveTab] = useState<'response' | 'raw'>('response');
+  const [activeTab, setActiveTab] = usePersistedState<'response' | 'raw'>('ask-active-tab', 'response');
 
   const addSource = () => {
     const newSource: SourceData = {
