@@ -1,24 +1,27 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import type { EmbeddingRequest, EmbeddingResponseModel } from '../types/services';
 import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
-import { Play, Plus, Trash2 } from 'lucide-react';
+import { Play, Plus, Trash2, ArrowRight, Copy, Check } from 'lucide-react';
 import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
 import { usePersistedState } from '../hooks/usePersistedState';
 
 export const EmbedService: React.FC = () => {
+  const navigate = useNavigate();
   const [request, setRequest] = usePersistedState<EmbeddingRequest>('embed-request', {
     input_text: [''],
     dense: true,
     sparse: true,
-    colbert: false,
   });
 
   const [response, setResponse] = usePersistedState<EmbeddingResponseModel | null>('embed-response', null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ message?: string; status?: number; data?: unknown } | null>(null);
+  const [copiedDense, setCopiedDense] = useState<number | null>(null);
+  const [copiedSparse, setCopiedSparse] = useState<number | null>(null);
 
   const addText = () => {
     setRequest({ ...request, input_text: [...request.input_text, ''] });
@@ -47,6 +50,84 @@ export const EmbedService: React.FC = () => {
       setError(err as { message?: string; status?: number; data?: unknown });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendToSearchService = () => {
+    if (!response) return;
+
+    // Build embeddings array for search
+    const embeddings = request.input_text.map((_, idx) => ({
+      dense: response.dense ? response.dense[idx] : [],
+      sparse: response.sparse ? response.sparse[idx] : {},
+      dense_params: { n_probe: 10 },
+      sparse_params: { drop_ratio_search: 0.2 }
+    }));
+
+    // Update search service request in localStorage
+    const searchRequest = {
+      k: 15,
+      embeddings,
+      reranker: 'Weighted' as const,
+      reranker_params: [1.0, 1.0],
+      collection_name: 'islamic_library',
+      partition_names: [],
+      output_fields: ['book_id', 'book_name', 'author', 'text', 'knowledge', 'category', 'header_titles', 'page_range', 'order']
+    };
+    localStorage.setItem('search-request', JSON.stringify(searchRequest));
+
+    // Navigate to search service
+    navigate('/search');
+  };
+
+  const sendSingleQueryToSearch = (queryIndex: number) => {
+    if (!response) return;
+
+    // Build embedding for single query
+    const embedding = {
+      dense: response.dense ? response.dense[queryIndex] : [],
+      sparse: response.sparse ? response.sparse[queryIndex] : {},
+      dense_params: { n_probe: 10 },
+      sparse_params: { drop_ratio_search: 0.2 }
+    };
+
+    // Update search service request in localStorage
+    const searchRequest = {
+      k: 15,
+      embeddings: [embedding],
+      reranker: 'Weighted' as const,
+      reranker_params: [1.0, 1.0],
+      collection_name: 'islamic_library',
+      partition_names: [],
+      output_fields: ['book_id', 'book_name', 'author', 'text', 'knowledge', 'category', 'header_titles', 'page_range', 'order']
+    };
+    localStorage.setItem('search-request', JSON.stringify(searchRequest));
+
+    // Navigate to search service
+    navigate('/search');
+  };
+
+  const copyDenseEmbedding = async (queryIndex: number) => {
+    if (!response?.dense?.[queryIndex]) return;
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(response.dense[queryIndex], null, 2));
+      setCopiedDense(queryIndex);
+      setTimeout(() => setCopiedDense(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy dense embedding:', err);
+    }
+  };
+
+  const copySparseEmbedding = async (queryIndex: number) => {
+    if (!response?.sparse?.[queryIndex]) return;
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(response.sparse[queryIndex], null, 2));
+      setCopiedSparse(queryIndex);
+      setTimeout(() => setCopiedSparse(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy sparse embedding:', err);
     }
   };
 
@@ -110,54 +191,9 @@ export const EmbedService: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Embedding Types
-            </label>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="dense"
-                checked={request.dense}
-                onChange={(e) => setRequest({ ...request, dense: e.target.checked })}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-              />
-              <label htmlFor="dense" className="text-sm text-gray-700 dark:text-gray-300">
-                Dense Embeddings (recommended for semantic search)
-              </label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="sparse"
-                checked={request.sparse}
-                onChange={(e) => setRequest({ ...request, sparse: e.target.checked })}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-              />
-              <label htmlFor="sparse" className="text-sm text-gray-700 dark:text-gray-300">
-                Sparse Embeddings (term-based matching)
-              </label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="colbert"
-                checked={request.colbert}
-                onChange={(e) => setRequest({ ...request, colbert: e.target.checked })}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-              />
-              <label htmlFor="colbert" className="text-sm text-gray-700 dark:text-gray-300">
-                ColBERT Embeddings (contextualized late interaction)
-              </label>
-            </div>
-          </div>
-
           <button
             onClick={handleSubmit}
-            disabled={loading || request.input_text.some(t => !t.trim()) || (!request.dense && !request.sparse && !request.colbert)}
+            disabled={loading || request.input_text.some(t => !t.trim())}
             className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {loading ? (
@@ -178,39 +214,99 @@ export const EmbedService: React.FC = () => {
       {error && <ErrorDisplay error={error} />}
 
       {response && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-            Embeddings Result
-          </h3>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                <div className="text-sm text-gray-600 dark:text-gray-400">Processed Count</div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{response.processed_count}</div>
+        <div className="space-y-4">
+          {/* Individual Query Cards */}
+          {request.input_text.map((text, idx) => (
+            <div key={idx} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Query {idx + 1}:
+                </h4>
+                <div className="flex items-center gap-4">
+                  <p className="flex-1 text-sm text-white bg-gray-800 dark:bg-gray-700 p-3 rounded-lg" style={getTextDirectionStyles(text)}>
+                    {text}
+                  </p>
+                  <button
+                    onClick={() => sendSingleQueryToSearch(idx)}
+                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors text-sm whitespace-nowrap"
+                  >
+                    <span>Send to Search</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
-              {response.dense && (
-                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Dense Dimension</div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {response.dense[0]?.length || 0}
+              {/* Embedding Boxes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Dense Embedding */}
+                {response.dense && response.dense[idx] && (
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 overflow-hidden">
+                    <div className="bg-green-100 dark:bg-green-900/40 px-3 py-2 border-b border-green-200 dark:border-green-800 flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-green-700 dark:text-green-300">
+                          Dense Embedding
+                        </div>
+                        <div className="text-xs text-green-600 dark:text-green-400">
+                          Dimension: {response.dense[idx].length}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => copyDenseEmbedding(idx)}
+                        className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs flex items-center gap-1 transition-colors"
+                        title="Copy Dense Embedding"
+                      >
+                        {copiedDense === idx ? (
+                          <Check className="w-3 h-3" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                        <span>{copiedDense === idx ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                    <div className="p-3 h-48 overflow-y-auto">
+                      <pre className="text-xs text-gray-700 dark:text-gray-300 font-mono">
+                        {JSON.stringify(response.dense[idx].slice(0, 50), null, 2)}
+                        {response.dense[idx].length > 50 && '\n... (truncated)'}
+                      </pre>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {response.sparse && (
-                <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Sparse Terms</div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {Object.keys(response.sparse[0] || {}).length}
+                {/* Sparse Embedding */}
+                {response.sparse && response.sparse[idx] && Object.keys(response.sparse[idx]).length > 0 && (
+                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 overflow-hidden">
+                    <div className="bg-purple-100 dark:bg-purple-900/40 px-3 py-2 border-b border-purple-200 dark:border-purple-800 flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+                          Sparse Embedding
+                        </div>
+                        <div className="text-xs text-purple-600 dark:text-purple-400">
+                          Terms: {Object.keys(response.sparse[idx]).length}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => copySparseEmbedding(idx)}
+                        className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs flex items-center gap-1 transition-colors"
+                        title="Copy Sparse Embedding"
+                      >
+                        {copiedSparse === idx ? (
+                          <Check className="w-3 h-3" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                        <span>{copiedSparse === idx ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                    <div className="p-3 h-48 overflow-y-auto">
+                      <pre className="text-xs text-gray-700 dark:text-gray-300 font-mono">
+                        {JSON.stringify(response.sparse[idx], null, 2)}
+                      </pre>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-
-            <JsonViewer data={response} title="Full Response" />
-          </div>
+          ))}
         </div>
       )}
     </div>

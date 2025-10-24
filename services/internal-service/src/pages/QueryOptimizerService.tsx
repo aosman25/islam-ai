@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import type { QueryRequest, QueryResponse } from '../types/services';
 import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
-import { Play, Plus, Trash2 } from 'lucide-react';
+import { Play, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
 import { usePersistedState } from '../hooks/usePersistedState';
 
 export const QueryOptimizerService: React.FC = () => {
+  const navigate = useNavigate();
   const [request, setRequest] = usePersistedState<QueryRequest>('query-optimizer-request', {
     queries: [''],
   });
@@ -47,6 +49,31 @@ export const QueryOptimizerService: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const sendToEmbedService = () => {
+    if (!response || response.results.length === 0) return;
+
+    // Get all optimized queries and flatten them with sub-queries
+    const textsToEmbed: string[] = [];
+    response.results.forEach(result => {
+      textsToEmbed.push(result.optimized_query);
+      if (result.sub_queries && result.sub_queries.length > 0) {
+        textsToEmbed.push(...result.sub_queries);
+      }
+    });
+
+    // Update embed service request in localStorage
+    const embedRequest = {
+      input_text: textsToEmbed,
+      dense: true,
+      sparse: true,
+      colbert: false,
+    };
+    localStorage.setItem('embed-request', JSON.stringify(embedRequest));
+
+    // Navigate to embed service
+    navigate('/embed');
   };
 
   return (
@@ -133,9 +160,18 @@ export const QueryOptimizerService: React.FC = () => {
 
       {response && (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-            Optimization Results ({response.processed_count} queries)
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Optimization Results ({response.processed_count} queries)
+            </h3>
+            <button
+              onClick={sendToEmbedService}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+            >
+              <span>Send to Embed Service</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
 
           <div className="space-y-6">
             {response.results.map((result, idx) => (
