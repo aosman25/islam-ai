@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Literal
 
 
 class GatewayRequest(BaseModel):
@@ -13,11 +13,9 @@ class GatewayRequest(BaseModel):
         default=0.7, ge=0.0, le=2.0, description="Temperature for response generation"
     )
     max_tokens: int = Field(
-        default=20000, gt=0, le=65536, description="Maximum tokens in response"
+        default=8000, gt=0, le=65536, description="Maximum tokens in response"
     )
-    stream: bool = Field(
-        default=False, description="Enable streaming response"
-    )
+    stream: bool = Field(default=False, description="Enable streaming response")
 
 
 class SourceData(BaseModel):
@@ -42,7 +40,43 @@ class GatewayResponse(BaseModel):
     response: str
     sources: List[SourceData]
     optimized_query: str
+    subqueries: Optional[List[str]] = Field(default=[], description="Generated subqueries for the original query")
     request_id: str
+
+
+class StreamMetadataChunk(BaseModel):
+    """
+    First chunk in streaming response containing metadata.
+
+    When stream=true, the response is newline-delimited JSON (NDJSON).
+    This is the first chunk sent, containing sources, optimized query, and subqueries.
+    """
+
+    type: Literal["metadata"] = "metadata"
+    sources: List[SourceData] = Field(description="Retrieved source documents")
+    optimized_query: str = Field(description="Query after optimization")
+    subqueries: Optional[List[str]] = Field(default=[], description="Generated subqueries for the original query")
+    request_id: str = Field(description="Unique request identifier")
+
+
+class StreamContentChunk(BaseModel):
+    """
+    Content chunk in streaming response.
+
+    Multiple chunks of this type are sent during streaming,
+    each containing a delta (piece) of the generated text.
+    """
+
+    type: Literal["content"] = "content"
+    delta: str = Field(description="Incremental text chunk")
+
+
+class StreamDoneChunk(BaseModel):
+    """
+    Final chunk in streaming response indicating completion.
+    """
+
+    type: Literal["done"] = "done"
 
 
 class HealthResponse(BaseModel):
