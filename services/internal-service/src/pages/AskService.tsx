@@ -6,10 +6,11 @@ import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { Play, Square, Plus, Trash2 } from 'lucide-react';
+import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
 
 export const AskService: React.FC = () => {
   const [request, setRequest] = useState<AskRequest>({
-    query: 'What are the pillars of Islam?',
+    query: '',
     sources: [],
     temperature: 0.7,
     max_tokens: 20000,
@@ -112,7 +113,9 @@ export const AskService: React.FC = () => {
             <textarea
               value={request.query}
               onChange={(e) => setRequest({ ...request, query: e.target.value })}
+              placeholder="What are the pillars of Islam?"
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              style={getTextDirectionStyles(request.query)}
               rows={3}
             />
           </div>
@@ -193,12 +196,14 @@ export const AskService: React.FC = () => {
                       value={source.book_name}
                       onChange={(e) => updateSource(idx, 'book_name', e.target.value)}
                       className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      style={getTextDirectionStyles(source.book_name)}
                     />
                     <input
                       placeholder="Author"
                       value={source.author}
                       onChange={(e) => updateSource(idx, 'author', e.target.value)}
                       className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      style={getTextDirectionStyles(source.author)}
                     />
                   </div>
                   <textarea
@@ -206,6 +211,7 @@ export const AskService: React.FC = () => {
                     value={source.text}
                     onChange={(e) => updateSource(idx, 'text', e.target.value)}
                     className="w-full mt-2 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                    style={getTextDirectionStyles(source.text)}
                     rows={3}
                   />
                 </div>

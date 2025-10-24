@@ -159,9 +159,9 @@ export interface ServiceConfig {
 
 // Determine base URLs based on environment
 // When accessed through internal-service proxy (port 3001), use relative /api/* endpoints
-// When in local dev (port 5173), connect directly to services
+// When in local dev (port 5173/5174), connect directly to services
 const isProxyMode = window.location.port === '3001';
-const isLocalDev = window.location.port === '5173' || window.location.port === '5174';
+const isLocalDev = window.location.port === '5173' || window.location.port === '5174' || window.location.port === '';
 
 // Direct service port mappings (for local development and Docker dev mode)
 const SERVICE_PORTS = {

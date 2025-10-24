@@ -5,10 +5,11 @@ import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { Play, Plus, Trash2 } from 'lucide-react';
+import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
 
 export const QueryOptimizerService: React.FC = () => {
   const [request, setRequest] = useState<QueryRequest>({
-    queries: ['ما هي أركان الإسلام؟'],
+    queries: [''],
   });
 
   const [response, setResponse] = useState<QueryResponse | null>(null);
@@ -84,8 +85,9 @@ export const QueryOptimizerService: React.FC = () => {
                     <textarea
                       value={query}
                       onChange={(e) => updateQuery(idx, e.target.value)}
-                      placeholder={`Query ${idx + 1}...`}
+                      placeholder={idx === 0 ? "What are the pillars of Islam?" : `Query ${idx + 1}...`}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      style={getTextDirectionStyles(query)}
                       rows={2}
                       maxLength={1000}
                     />
@@ -141,7 +143,10 @@ export const QueryOptimizerService: React.FC = () => {
                   <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Original Query {idx + 1}:
                   </h4>
-                  <p className="text-sm bg-white dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700">
+                  <p
+                    className={`text-sm bg-white dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 text-white ${getTextDirection(request.queries[idx]) === 'rtl' ? 'rtl' : ''}`}
+                    style={getTextDirectionStyles(request.queries[idx])}
+                  >
                     {request.queries[idx]}
                   </p>
                 </div>
@@ -150,7 +155,10 @@ export const QueryOptimizerService: React.FC = () => {
                   <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">
                     Optimized Query:
                   </h4>
-                  <p className="text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800">
+                  <p
+                    className={`text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800 text-white ${getTextDirection(result.optimized_query) === 'rtl' ? 'rtl' : ''}`}
+                    style={getTextDirectionStyles(result.optimized_query)}
+                  >
                     {result.optimized_query}
                   </p>
                 </div>
@@ -162,7 +170,11 @@ export const QueryOptimizerService: React.FC = () => {
                     </h4>
                     <ul className="space-y-2">
                       {result.sub_queries.map((subQuery, subIdx) => (
-                        <li key={subIdx} className="text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                        <li
+                          key={subIdx}
+                          className={`text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800 text-white ${getTextDirection(subQuery) === 'rtl' ? 'rtl' : ''}`}
+                          style={getTextDirectionStyles(subQuery)}
+                        >
                           {subIdx + 1}. {subQuery}
                         </li>
                       ))}
