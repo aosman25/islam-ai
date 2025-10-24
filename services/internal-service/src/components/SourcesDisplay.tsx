@@ -1,6 +1,5 @@
 import type { SourceData } from '../types/services';
 import { Book, User, Tag, FileText } from 'lucide-react';
-import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
 
 interface SourcesDisplayProps {
   sources: SourceData[];
@@ -33,56 +32,46 @@ export const SourcesDisplay: React.FC<SourcesDisplayProps> = ({ sources }) => {
             </div>
           </div>
 
-          <div className="space-y-2 mb-3">
-            <div className="flex items-center gap-2 text-sm">
-              <Book className="w-4 h-4 text-gray-500" />
-              <span
-                className={`font-semibold text-white ${getTextDirection(source.book_name) === 'rtl' ? 'rtl' : ''}`}
-                style={getTextDirectionStyles(source.book_name)}
-              >
+          <div className="space-y-2 mb-3" style={{ direction: 'rtl' }}>
+            <div className="flex items-center gap-2 text-sm flex-row-reverse justify-end">
+              <span className="font-semibold text-white">
                 {source.book_name}
               </span>
+              <Book className="w-4 h-4 text-gray-500" />
             </div>
 
-            <div className="flex items-center gap-2 text-sm">
-              <User className="w-4 h-4 text-gray-500" />
-              <span
-                className={`text-white ${getTextDirection(source.author) === 'rtl' ? 'rtl' : ''}`}
-                style={getTextDirectionStyles(source.author)}
-              >
+            <div className="flex items-center gap-2 text-sm flex-row-reverse justify-end">
+              <span className="text-white">
                 {source.author}
               </span>
+              <User className="w-4 h-4 text-gray-500" />
             </div>
 
-            <div className="flex items-center gap-2 text-sm">
-              <Tag className="w-4 h-4 text-gray-500" />
-              <span
-                className={`text-white ${getTextDirection(`${source.category} - ${source.knowledge}`) === 'rtl' ? 'rtl' : ''}`}
-                style={getTextDirectionStyles(`${source.category} - ${source.knowledge}`)}
-              >
+            <div className="flex items-center gap-2 text-sm flex-row-reverse justify-end">
+              <span className="text-white">
                 {source.category} - {source.knowledge}
               </span>
+              <Tag className="w-4 h-4 text-gray-500" />
             </div>
 
             {source.page_range && source.page_range.length > 0 && (
-              <div className="flex items-center gap-2 text-sm text-white">
+              <div className="flex items-center gap-2 text-sm text-white flex-row-reverse justify-end">
+                <span>الصفحات: {source.page_range.join('-')}</span>
                 <FileText className="w-4 h-4 text-gray-500" />
-                <span>Pages: {source.page_range.join('-')}</span>
               </div>
             )}
           </div>
 
           {source.header_titles && source.header_titles.length > 0 && (
-            <div className="mb-3">
+            <div className="mb-3" style={{ direction: 'rtl' }}>
               <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-                Headers:
+                المجلدات:
               </div>
               <div className="flex flex-wrap gap-1">
                 {source.header_titles.map((header, idx) => (
                   <span
                     key={idx}
-                    className={`text-xs bg-gray-100 dark:bg-gray-700 text-white px-2 py-1 rounded ${getTextDirection(header) === 'rtl' ? 'rtl' : ''}`}
-                    style={getTextDirectionStyles(header)}
+                    className="text-xs bg-gray-100 dark:bg-gray-700 text-white px-2 py-1 rounded"
                   >
                     {header}
                   </span>
@@ -91,14 +80,11 @@ export const SourcesDisplay: React.FC<SourcesDisplayProps> = ({ sources }) => {
             </div>
           )}
 
-          <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded p-3">
+          <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded p-3" style={{ direction: 'rtl' }}>
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
-              Text Content:
+              النص:
             </div>
-            <p
-              className={`text-sm leading-relaxed whitespace-pre-wrap text-white ${getTextDirection(source.text) === 'rtl' ? 'rtl' : ''}`}
-              style={getTextDirectionStyles(source.text)}
-            >
+            <p className="text-sm leading-relaxed whitespace-pre-wrap text-white">
               {source.text}
             </p>
           </div>

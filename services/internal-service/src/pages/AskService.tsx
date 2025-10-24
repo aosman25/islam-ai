@@ -13,9 +13,9 @@ export const AskService: React.FC = () => {
   const [request, setRequest] = usePersistedState<AskRequest>('ask-request', {
     query: '',
     sources: [],
-    temperature: 0.7,
-    max_tokens: 20000,
-    stream: false,
+    temperature: 0.2,
+    max_tokens: 12000,
+    stream: true,
   });
 
   const [response, setResponse] = usePersistedState<AskResponse | null>('ask-response', null);
@@ -121,7 +121,7 @@ export const AskService: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Temperature (0.0-2.0)
@@ -179,44 +179,50 @@ export const AskService: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-3">
-              {request.sources.map((source, idx) => (
-                <div key={idx} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Source {idx + 1}</span>
-                    <button
-                      onClick={() => removeSource(idx)}
-                      className="text-red-600 hover:text-red-700 dark:text-red-400"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <input
-                      placeholder="Book Name"
-                      value={source.book_name}
-                      onChange={(e) => updateSource(idx, 'book_name', e.target.value)}
-                      className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                      style={getTextDirectionStyles(source.book_name)}
+            <div className="space-y-3 max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-900">
+              {request.sources.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                  No sources added yet. Click "Add Source" to add one.
+                </p>
+              ) : (
+                request.sources.map((source, idx) => (
+                  <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Source {idx + 1}</span>
+                      <button
+                        onClick={() => removeSource(idx)}
+                        className="text-red-600 hover:text-red-700 dark:text-red-400"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <input
+                        placeholder="Book Name"
+                        value={source.book_name}
+                        onChange={(e) => updateSource(idx, 'book_name', e.target.value)}
+                        className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        style={getTextDirectionStyles(source.book_name)}
+                      />
+                      <input
+                        placeholder="Author"
+                        value={source.author}
+                        onChange={(e) => updateSource(idx, 'author', e.target.value)}
+                        className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        style={getTextDirectionStyles(source.author)}
+                      />
+                    </div>
+                    <textarea
+                      placeholder="Source text content..."
+                      value={source.text}
+                      onChange={(e) => updateSource(idx, 'text', e.target.value)}
+                      className="w-full mt-2 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      style={getTextDirectionStyles(source.text)}
+                      rows={3}
                     />
-                    <input
-                      placeholder="Author"
-                      value={source.author}
-                      onChange={(e) => updateSource(idx, 'author', e.target.value)}
-                      className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                      style={getTextDirectionStyles(source.author)}
-                    />
                   </div>
-                  <textarea
-                    placeholder="Source text content..."
-                    value={source.text}
-                    onChange={(e) => updateSource(idx, 'text', e.target.value)}
-                    className="w-full mt-2 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-                    style={getTextDirectionStyles(source.text)}
-                    rows={3}
-                  />
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
