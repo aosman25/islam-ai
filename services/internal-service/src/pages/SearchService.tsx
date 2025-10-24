@@ -24,7 +24,7 @@ export const SearchService: React.FC = () => {
     reranker_params: [1.0, 1.0],
     collection_name: 'islamic_library',
     partition_names: [],
-    output_fields: ['book_id', 'book_name', 'author', 'text', 'knowledge', 'category', 'header_titles', 'page_range', 'order']
+    output_fields: ['id', 'book_id', 'book_name', 'author', 'text', 'knowledge', 'category', 'header_titles', 'page_range', 'order']
   });
 
   const [response, setResponse] = usePersistedState<SearchBatchResponse | null>('search-response', null);

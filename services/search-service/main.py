@@ -250,7 +250,7 @@ async def process_embedding(
         hits = []
         for hs in results:
             for h in hs:
-                hits.append({"distance": h["distance"], **h["entity"]})
+                hits.append({"distance": h["distance"], "id": h["id"], **h["entity"]})
 
         logger.info(
             "Embedding processed",
