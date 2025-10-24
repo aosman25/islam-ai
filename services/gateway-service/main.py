@@ -232,8 +232,19 @@ async def process_query(request: GatewayRequest, http_request: Request):
     Orchestrate the complete RAG pipeline:
     1. Optimize query using query-optimizer-service
     2. Generate embeddings using embed-service
-    3. Search vector database using search-service
+    3. Search vector database using search-service (with configurable reranker)
     4. Generate response using ask-service
+
+    **Request Parameters:**
+    - query: User's search query
+    - top_k: Number of search results to retrieve (default: 15)
+    - temperature: Temperature for response generation (default: 0.2)
+    - max_tokens: Maximum tokens in response (default: 8000)
+    - stream: Enable streaming response (default: false)
+    - reranker: Reranking strategy - "RRF" or "Weighted" (default: "Weighted")
+    - reranker_params: Parameters for reranker
+      - RRF: single int in (0, 16384], e.g., [60]
+      - Weighted: two floats in [0, 1], e.g., [0.5, 0.5] or [1.0, 1.0]
 
     **Non-Streaming Response (stream=false):**
     Returns a JSON object with complete response, sources, optimized_query, and subqueries.
@@ -264,6 +275,8 @@ async def process_query(request: GatewayRequest, http_request: Request):
             "Starting RAG pipeline",
             query=request.query,
             stream=request.stream,
+            reranker=request.reranker,
+            reranker_params=request.reranker_params,
             request_id=request_id,
         )
 
@@ -330,8 +343,8 @@ async def process_query(request: GatewayRequest, http_request: Request):
             json={
                 "k": request.top_k,
                 "embeddings": embeddings,
-                "reranker": "Weighted",
-                "reranker_params": [1, 1],
+                "reranker": request.reranker,
+                "reranker_params": request.reranker_params,
                 "collection_name": "islamic_library",
                 "partition_names": [],
                 "output_fields": [
