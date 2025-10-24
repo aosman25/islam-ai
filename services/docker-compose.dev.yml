@@ -1,0 +1,204 @@
+version: '3.8'
+
+# =============================================================================
+# RAG Pipeline Docker Compose Configuration - LOCAL DEVELOPMENT
+# =============================================================================
+# This compose file is for local development with volume mounts for live reload
+# All services share the same .env file located in the services folder
+#
+# Usage:
+#   1. Copy .env.example to .env and fill in your values
+#   2. Run: docker-compose -f docker-compose.dev.yml up
+#   3. Access gateway at http://localhost:8100
+#   4. Edit code locally and changes will reflect in containers
+#
+# Services (all externally accessible in dev mode):
+#   - gateway-service (Port 8100) - Main entry point
+#   - query-optimizer-service (Port 5050) - Query optimization
+#   - embed-service (Port 4040) - Embedding generation
+#   - search-service (Port 3030) - Vector search
+#   - ask-service (Port 2020) - Response generation
+#
+# Development Features:
+#   - Volume mounts for live code reloading
+#   - Source code mounted from local directories
+#   - No need to rebuild containers after code changes
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # GATEWAY SERVICE - Main Entry Point
+  # ===========================================================================
+  gateway:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service-dev
+    ports:
+      - "8100:8000"
+    env_file:
+      - .env
+    environment:
+      # Override service URLs for container networking
+      - QUERY_OPTIMIZER_URL=http://query-optimizer:5000
+      - EMBED_SERVICE_URL=http://embed-service:4000
+      - SEARCH_SERVICE_URL=http://search-service:3000
+      - ASK_SERVICE_URL=http://ask-service:2000
+      # Enable development mode for hot reloading
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount source code for live reloading
+      - ./gateway-service/main.py:/app/main.py
+      - ./gateway-service/models.py:/app/models.py
+      # Add any additional Python files here
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      query-optimizer:
+        condition: service_started
+      embed-service:
+        condition: service_started
+      search-service:
+        condition: service_started
+      ask-service:
+        condition: service_started
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # QUERY OPTIMIZER SERVICE
+  # ===========================================================================
+  query-optimizer:
+    build:
+      context: ./query-optimizer-service
+      dockerfile: Dockerfile
+    container_name: query-optimizer-service-dev
+    ports:
+      - "5050:5000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount source code for live reloading
+      - ./query-optimizer-service/main.py:/app/main.py
+      - ./query-optimizer-service/models.py:/app/models.py
+      # Add any additional Python files here
+    command: uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # EMBED SERVICE
+  # ===========================================================================
+  embed-service:
+    build:
+      context: ./embed-service
+      dockerfile: Dockerfile
+    container_name: embed-service-dev
+    ports:
+      - "4040:4000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount source code for live reloading
+      - ./embed-service/main.py:/app/main.py
+      - ./embed-service/models.py:/app/models.py
+      # Add any additional Python files here
+    command: uvicorn main:app --host 0.0.0.0 --port 4000 --reload
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # SEARCH SERVICE
+  # ===========================================================================
+  search-service:
+    build:
+      context: ./search-service
+      dockerfile: Dockerfile
+    container_name: search-service-dev
+    ports:
+      - "3030:3000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount source code for live reloading
+      - ./search-service/main.py:/app/main.py
+      - ./search-service/models.py:/app/models.py
+      # Add any additional Python files here
+    command: uvicorn main:app --host 0.0.0.0 --port 3000 --reload
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===========================================================================
+  # ASK SERVICE
+  # ===========================================================================
+  ask-service:
+    build:
+      context: ./ask-service
+      dockerfile: Dockerfile
+    container_name: ask-service-dev
+    ports:
+      - "2020:2000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount source code for live reloading
+      - ./ask-service/main.py:/app/main.py
+      - ./ask-service/models.py:/app/models.py
+      - ./ask-service/utils.py:/app/utils.py
+      - ./ask-service/generate_ask_request.py:/app/generate_ask_request.py
+      # Mount system instruction file (read-only)
+      - ./ask-service/system_instruction.txt:/app/system_instruction.txt:ro
+      - ./ask-service/prompt.txt:/app/prompt.txt:ro
+    command: uvicorn main:app --host 0.0.0.0 --port 2000 --reload
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  rag-network:
+    driver: bridge
+    name: rag-network-dev
