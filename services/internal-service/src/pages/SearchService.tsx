@@ -6,10 +6,11 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { SourcesDisplay } from '../components/SourcesDisplay';
 import { Play } from 'lucide-react';
+import { usePersistedState } from '../hooks/usePersistedState';
 
 export const SearchService: React.FC = () => {
   const [partitions, setPartitions] = useState<string[]>([]);
-  const [request, setRequest] = useState<SearchRequest>({
+  const [request, setRequest] = usePersistedState<SearchRequest>('search-request', {
     k: 15,
     embeddings: [{
       dense: [],
@@ -24,10 +25,10 @@ export const SearchService: React.FC = () => {
     output_fields: ['book_id', 'book_name', 'author', 'text', 'knowledge', 'category', 'header_titles', 'page_range', 'order']
   });
 
-  const [response, setResponse] = useState<SearchBatchResponse | null>(null);
+  const [response, setResponse] = usePersistedState<SearchBatchResponse | null>('search-response', null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<{ message?: string; status?: number; data?: unknown } | null>(null);
-  const [activeTab, setActiveTab] = useState<'results' | 'raw'>('results');
+  const [activeTab, setActiveTab] = usePersistedState<'results' | 'raw'>('search-active-tab', 'results');
 
   useEffect(() => {
     // Load available partitions

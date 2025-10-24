@@ -8,9 +8,10 @@ import { ErrorDisplay } from '../components/ErrorDisplay';
 import { SourcesDisplay } from '../components/SourcesDisplay';
 import { Play, Square } from 'lucide-react';
 import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
+import { usePersistedState } from '../hooks/usePersistedState';
 
 export const GatewayService: React.FC = () => {
-  const [request, setRequest] = useState<GatewayRequest>({
+  const [request, setRequest] = usePersistedState<GatewayRequest>('gateway-request', {
     query: '',
     top_k: 15,
     temperature: 0.2,
@@ -20,18 +21,18 @@ export const GatewayService: React.FC = () => {
     reranker_params: [1.0, 1.0],
   });
 
-  const [response, setResponse] = useState<GatewayResponse | null>(null);
-  const [streamingText, setStreamingText] = useState('');
-  const [streamMetadata, setStreamMetadata] = useState<{
+  const [response, setResponse] = usePersistedState<GatewayResponse | null>('gateway-response', null);
+  const [streamingText, setStreamingText] = usePersistedState<string>('gateway-streaming-text', '');
+  const [streamMetadata, setStreamMetadata] = usePersistedState<{
     sources: SourceData[];
     optimized_query: string;
     subqueries: string[];
     request_id: string;
-  } | null>(null);
+  } | null>('gateway-stream-metadata', null);
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<{ message?: string; status?: number; data?: unknown } | null>(null);
-  const [activeTab, setActiveTab] = useState<'response' | 'sources' | 'metadata' | 'raw'>('response');
+  const [activeTab, setActiveTab] = usePersistedState<'response' | 'sources' | 'metadata' | 'raw'>('gateway-active-tab', 'response');
 
   const handleSubmit = async () => {
     setError(null);
