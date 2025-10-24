@@ -13,7 +13,7 @@ export const SearchService: React.FC = () => {
   const navigate = useNavigate();
   const [partitions, setPartitions] = useState<string[]>([]);
   const [request, setRequest] = usePersistedState<SearchRequest>('search-request', {
-    k: 100,
+    k: 50,
     embeddings: [{
       dense: [],
       sparse: {},

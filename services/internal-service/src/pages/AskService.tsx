@@ -280,7 +280,15 @@ export const AskService: React.FC = () => {
           <div className="p-6">
             {activeTab === 'response' && (
               <div>
-                {streaming && <div className="mb-2 text-sm text-blue-600 dark:text-blue-400">Streaming...</div>}
+                {streaming && !streamingText && (
+                  <div className="mb-4 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                    <LoadingSpinner size="sm" />
+                    <span>Generating response from {request.sources.length} sources...</span>
+                  </div>
+                )}
+                {streaming && streamingText && (
+                  <div className="mb-2 text-sm text-blue-600 dark:text-blue-400">Streaming...</div>
+                )}
                 <MarkdownRenderer content={response?.response || streamingText} />
               </div>
             )}

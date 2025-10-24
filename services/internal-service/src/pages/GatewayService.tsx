@@ -13,7 +13,7 @@ import { usePersistedState } from '../hooks/usePersistedState';
 export const GatewayService: React.FC = () => {
   const [request, setRequest] = usePersistedState<GatewayRequest>('gateway-request', {
     query: '',
-    top_k: 100,
+    top_k: 50,
     temperature: 0.2,
     max_tokens: 12000,
     stream: true,
@@ -310,7 +310,15 @@ export const GatewayService: React.FC = () => {
           <div className="p-6">
             {activeTab === 'response' && (
               <div>
-                {streaming && <div className="mb-2 text-sm text-blue-600 dark:text-blue-400">Streaming...</div>}
+                {streaming && !streamingText && streamMetadata && (
+                  <div className="mb-4 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                    <LoadingSpinner size="sm" />
+                    <span>Generating response from {streamMetadata.sources.length} sources...</span>
+                  </div>
+                )}
+                {streaming && streamingText && (
+                  <div className="mb-2 text-sm text-blue-600 dark:text-blue-400">Streaming...</div>
+                )}
                 <MarkdownRenderer content={response?.response || streamingText} />
               </div>
             )}

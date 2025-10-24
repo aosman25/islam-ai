@@ -66,7 +66,7 @@ export const EmbedService: React.FC = () => {
 
     // Update search service request in localStorage
     const searchRequest = {
-      k: 100,
+      k: 50,
       embeddings,
       reranker: 'RRF' as const,
       reranker_params: [60],
@@ -96,7 +96,7 @@ export const EmbedService: React.FC = () => {
 
     // Update search service request in localStorage
     const searchRequest = {
-      k: 100,
+      k: 50,
       embeddings: [embedding],
       reranker: 'RRF' as const,
       reranker_params: [60],
