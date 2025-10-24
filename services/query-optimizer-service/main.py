@@ -5,14 +5,13 @@ import os
 import sys
 import time
 from contextlib import asynccontextmanager
-from typing import Any, Dict, List, Optional
+from typing import List
 
 import structlog
 from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from google import genai
-from pydantic import BaseModel, Field, field_validator
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -21,6 +20,13 @@ from tenacity import (
 )
 from dotenv import load_dotenv
 from utils import generate_prompt
+from models import (
+    OptimizedQueryResponse,
+    QueryRequest,
+    QueryResponse,
+    HealthResponse,
+    ErrorResponse,
+)
 
 # Import .env file
 load_dotenv()
@@ -66,53 +72,6 @@ def setup_logging():
         stream=sys.stdout,
         level=getattr(logging, Config.LOG_LEVEL),
     )
-
-
-# Models
-class OptimizedQueryResponse(BaseModel):
-    optimized_query: str = Field(..., min_length=1, max_length=1000)
-    sub_queries: Optional[List[str]] = Field(None, max_items=5)
-
-
-class QueryRequest(BaseModel):
-    queries: List[str] = Field(
-        ..., min_items=1, max_items=Config.MAX_QUERIES_PER_REQUEST
-    )
-
-    @field_validator("queries")
-    @classmethod
-    def validate_queries(cls, v):
-        # Filter out empty queries and validate length
-        valid_queries = []
-        for query in v:
-            if query.strip():
-                if len(query) > Config.MAX_QUERY_LENGTH:
-                    raise ValueError(
-                        f"Query exceeds maximum length of {Config.MAX_QUERY_LENGTH} characters"
-                    )
-                valid_queries.append(query.strip())
-
-        if not valid_queries:
-            raise ValueError("At least one non-empty query is required")
-        return valid_queries
-
-
-class QueryResponse(BaseModel):
-    results: List[OptimizedQueryResponse]
-    processed_count: int
-    request_id: str
-
-
-class HealthResponse(BaseModel):
-    status: str
-    timestamp: str
-    version: str = "1.0.0"
-
-
-class ErrorResponse(BaseModel):
-    error: str
-    request_id: str
-    timestamp: str
 
 
 # Global variables

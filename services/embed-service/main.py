@@ -10,7 +10,7 @@ import structlog
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -19,6 +19,7 @@ from tenacity import (
 )
 from dotenv import load_dotenv
 from utils import convert_to_milvus_sparse_format
+from models import EmbeddingRequest, EmbeddingResponseModel, HealthResponse, ErrorResponse
 
 # Import .env file
 load_dotenv()
@@ -65,53 +66,6 @@ def setup_logging():
         stream=sys.stdout,
         level=getattr(logging, Config.LOG_LEVEL),
     )
-
-
-# Models
-class EmbeddingRequest(BaseModel):
-    input_text: List[str] = Field(
-        ..., min_items=1, max_items=Config.MAX_TEXTS_PER_REQUEST
-    )
-    dense: bool = True
-    sparse: bool = False
-    colbert: bool = False
-
-    @field_validator("input_text")
-    @classmethod
-    def validate_input_text(cls, v):
-        # Filter out empty texts and validate length
-        valid_texts = []
-        for text in v:
-            if text.strip():
-                if len(text) > Config.MAX_TEXT_LENGTH:
-                    raise ValueError(
-                        f"Text exceeds maximum length of {Config.MAX_TEXT_LENGTH} characters"
-                    )
-                valid_texts.append(text.strip())
-
-        if not valid_texts:
-            raise ValueError("At least one non-empty text is required")
-        return valid_texts
-
-
-class EmbeddingResponseModel(BaseModel):
-    dense: Optional[List[List[float]]] = None
-    sparse: Optional[List[dict]] = None
-    colbert: Optional[List[List[float]]] = None
-    processed_count: int
-    request_id: str
-
-
-class HealthResponse(BaseModel):
-    status: str
-    timestamp: str
-    version: str = "1.0.0"
-
-
-class ErrorResponse(BaseModel):
-    error: str
-    request_id: str
-    timestamp: str
 
 
 # Global variables

@@ -89,7 +89,8 @@ services:
       # Mount source code for live reloading
       - ./query-optimizer-service/main.py:/app/main.py
       - ./query-optimizer-service/models.py:/app/models.py
-      # Add any additional Python files here
+      - ./query-optimizer-service/utils.py:/app/utils.py
+      - ./query-optimizer-service/prompt.txt:/app/prompt.txt:ro
     command: uvicorn main:app --host 0.0.0.0 --port 5000 --reload
     networks:
       - rag-network
@@ -119,7 +120,7 @@ services:
       # Mount source code for live reloading
       - ./embed-service/main.py:/app/main.py
       - ./embed-service/models.py:/app/models.py
-      # Add any additional Python files here
+      - ./embed-service/utils.py:/app/utils.py
     command: uvicorn main:app --host 0.0.0.0 --port 4000 --reload
     networks:
       - rag-network
@@ -149,7 +150,6 @@ services:
       # Mount source code for live reloading
       - ./search-service/main.py:/app/main.py
       - ./search-service/models.py:/app/models.py
-      # Add any additional Python files here
     command: uvicorn main:app --host 0.0.0.0 --port 3000 --reload
     networks:
       - rag-network
