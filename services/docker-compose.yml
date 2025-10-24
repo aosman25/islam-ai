@@ -10,13 +10,18 @@ version: '3.8'
 #   1. Copy .env.example to .env and fill in your values
 #   2. Run: docker-compose up -d
 #   3. Access gateway at http://localhost:8100
+#   4. Access internal testing UI at http://localhost:3001
 #
 # Services:
-#   - gateway-service (Port 8100) - Main entry point
-#   - query-optimizer-service (Port 5000) - Query optimization
-#   - embed-service (Port 4000) - Embedding generation
-#   - search-service (Port 3000) - Vector search
-#   - ask-service (Port 2000) - Response generation
+#   - gateway-service (Port 8100) - Main entry point [EXPOSED]
+#   - internal-service (Port 3001) - Internal testing UI [EXPOSED]
+#   - query-optimizer-service (Port 5000) - Internal only
+#   - embed-service (Port 4000) - Internal only
+#   - search-service (Port 3000) - Internal only
+#   - ask-service (Port 2000) - Internal only
+#
+# Security: Only gateway and internal-service are exposed to host.
+# Internal-service communicates with other services via Docker network.
 # =============================================================================
 
 services:
@@ -147,6 +152,39 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  # ===========================================================================
+  # INTERNAL SERVICE - Testing UI
+  # ===========================================================================
+  internal-service:
+    build:
+      context: ./internal-service
+      dockerfile: Dockerfile
+    container_name: internal-service
+    ports:
+      - "3001:3001"
+    environment:
+      - DOCKER_ENV=true
+    depends_on:
+      gateway:
+        condition: service_healthy
+      query-optimizer:
+        condition: service_started
+      embed-service:
+        condition: service_started
+      search-service:
+        condition: service_started
+      ask-service:
+        condition: service_started
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
 # =============================================================================
 # NETWORKS

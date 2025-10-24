@@ -1,0 +1,183 @@
+import { useState } from 'react';
+import { apiService } from '../services/api';
+import type { QueryRequest, QueryResponse } from '../types/services';
+import { JsonViewer } from '../components/JsonViewer';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+import { ErrorDisplay } from '../components/ErrorDisplay';
+import { Play, Plus, Trash2 } from 'lucide-react';
+
+export const QueryOptimizerService: React.FC = () => {
+  const [request, setRequest] = useState<QueryRequest>({
+    queries: ['ما هي أركان الإسلام؟'],
+  });
+
+  const [response, setResponse] = useState<QueryResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<{ message?: string; status?: number; data?: unknown } | null>(null);
+
+  const addQuery = () => {
+    if (request.queries.length < 10) {
+      setRequest({ ...request, queries: [...request.queries, ''] });
+    }
+  };
+
+  const removeQuery = (index: number) => {
+    const newQueries = request.queries.filter((_, idx) => idx !== index);
+    setRequest({ ...request, queries: newQueries });
+  };
+
+  const updateQuery = (index: number, value: string) => {
+    const newQueries = [...request.queries];
+    newQueries[index] = value;
+    setRequest({ ...request, queries: newQueries });
+  };
+
+  const handleSubmit = async () => {
+    setError(null);
+    setResponse(null);
+    setLoading(true);
+
+    try {
+      const result = await apiService.optimizeQueries(request);
+      setResponse(result);
+    } catch (err: unknown) {
+      setError(err as { message?: string; status?: number; data?: unknown });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Query Optimizer Service
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          Optimize queries and generate sub-queries using Google Gemini for better search coverage.
+        </p>
+      </div>
+
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Request Configuration</h3>
+
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Queries (1-10 queries, max 1000 chars each)
+              </label>
+              <button
+                onClick={addQuery}
+                disabled={request.queries.length >= 10}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Plus className="w-4 h-4" />
+                Add Query
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {request.queries.map((query, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <div className="flex-1">
+                    <textarea
+                      value={query}
+                      onChange={(e) => updateQuery(idx, e.target.value)}
+                      placeholder={`Query ${idx + 1}...`}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      rows={2}
+                      maxLength={1000}
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {query.length}/1000 characters
+                    </p>
+                  </div>
+                  {request.queries.length > 1 && (
+                    <button
+                      onClick={() => removeQuery(idx)}
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 p-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={handleSubmit}
+            disabled={loading || request.queries.some(q => !q.trim())}
+            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <>
+                <LoadingSpinner size="sm" />
+                <span>Optimizing Queries...</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4" />
+                <span>Optimize Queries</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {error && <ErrorDisplay error={error} />}
+
+      {response && (
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+            Optimization Results ({response.processed_count} queries)
+          </h3>
+
+          <div className="space-y-6">
+            {response.results.map((result, idx) => (
+              <div key={idx} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="mb-3">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Original Query {idx + 1}:
+                  </h4>
+                  <p className="text-sm bg-white dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700">
+                    {request.queries[idx]}
+                  </p>
+                </div>
+
+                <div className="mb-3">
+                  <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">
+                    Optimized Query:
+                  </h4>
+                  <p className="text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800">
+                    {result.optimized_query}
+                  </p>
+                </div>
+
+                {result.sub_queries && result.sub_queries.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                      Sub-queries ({result.sub_queries.length}):
+                    </h4>
+                    <ul className="space-y-2">
+                      {result.sub_queries.map((subQuery, subIdx) => (
+                        <li key={subIdx} className="text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                          {subIdx + 1}. {subQuery}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6">
+            <JsonViewer data={response} title="Raw Response" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

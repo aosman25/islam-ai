@@ -1,0 +1,25 @@
+# Development Dockerfile for hot reloading
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy configuration files
+COPY vite.config.ts tsconfig*.json ./
+COPY tailwind.config.js postcss.config.js ./
+COPY index.html ./
+
+# Expose Vite dev server port
+EXPOSE 5173
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:5173', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
+
+# Start dev server with host exposed for Docker
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
