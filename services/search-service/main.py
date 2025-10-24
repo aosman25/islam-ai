@@ -83,8 +83,15 @@ class SearchRequest(BaseModel):
     embeddings: List[EmbeddingObject] = Field(
         ..., min_items=1, max_items=Config.MAX_EMBEDDINGS_PER_REQUEST
     )
-    reranker: Literal["RRF", "Weighted"] = "Weighted"
-    reranker_params: List[Union[int, float]] = [1, 1]
+    reranker: Literal["RRF", "Weighted"] = Field(
+        default="Weighted",
+        description="Reranking strategy: 'RRF' (Reciprocal Rank Fusion) or 'Weighted'"
+    )
+    reranker_params: List[Union[int, float]] = Field(
+        default=[1.0, 1.0],
+        description="Reranker parameters. RRF: single int in (0, 16384]. Weighted: two floats in [0, 1]",
+        examples=[[60], [0.5, 0.5]]
+    )
     collection_name: str = "islamic_library"
     partition_names: List[str] = []
     output_fields: List[str] = [
@@ -106,10 +113,10 @@ class SearchRequest(BaseModel):
             if not (
                 len(self.reranker_params) == 1
                 and isinstance(self.reranker_params[0], int)
-                and 0 < self.reranker_params[0] < 16384
+                and 0 < self.reranker_params[0] <= 16384
             ):
                 raise ValueError(
-                    "RRF requires a single integer parameter in the range (0, 16384)"
+                    "RRF requires a single integer parameter in the range (0, 16384]"
                 )
         elif self.reranker == "Weighted":
             if not (
@@ -125,12 +132,8 @@ class SearchRequest(BaseModel):
         else:
             raise ValueError("The reranker must be either 'RRF' or 'Weighted'")
 
-        available_partitions = set(["_default", "_iqeedah"])
-        for p in self.partition_names:
-            if p not in available_partitions:
-                raise ValueError(
-                    f"The partition names must be within list: {', '.join(list(available_partitions))}"
-                )
+        # Partition validation is now done dynamically in the search endpoint
+        # to allow fetching available partitions from Milvus at runtime
 
         available_fields = set(
             [
@@ -179,6 +182,13 @@ class HealthResponse(BaseModel):
     status: str
     timestamp: str
     version: str = "1.0.0"
+
+
+class PartitionsResponse(BaseModel):
+    collection_name: str
+    partitions: List[str]
+    count: int
+    timestamp: str
 
 
 class ErrorResponse(BaseModel):
@@ -233,6 +243,18 @@ def get_milvus_client():
         )
         logger.info("Milvus client initialized successfully")
     return milvus_client
+
+
+async def get_available_partitions(collection_name: str = "islamic_library") -> List[str]:
+    """Fetch available partitions from Milvus for the given collection"""
+    try:
+        client = get_milvus_client()
+        partitions = await asyncio.to_thread(client.list_partitions, collection_name)
+        return partitions
+    except Exception as e:
+        logger.error("Failed to fetch partitions", error=str(e), collection=collection_name)
+        # Return default partitions as fallback
+        return ["_default"]
 
 
 # FastAPI app
@@ -402,6 +424,37 @@ async def readiness_check():
         )
 
 
+@app.get("/partitions", response_model=PartitionsResponse)
+async def get_partitions(collection_name: str = "islamic_library"):
+    """
+    Get available partitions for a collection.
+
+    This endpoint fetches the list of partitions from Milvus for the specified collection.
+    Use this to discover valid partition names for search requests.
+    """
+    try:
+        partitions = await get_available_partitions(collection_name)
+
+        logger.info(
+            "Partitions fetched successfully",
+            collection=collection_name,
+            partition_count=len(partitions)
+        )
+
+        return PartitionsResponse(
+            collection_name=collection_name,
+            partitions=partitions,
+            count=len(partitions),
+            timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+        )
+    except Exception as e:
+        logger.error("Failed to fetch partitions", error=str(e), collection=collection_name)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch partitions: {str(e)}"
+        )
+
+
 # Main endpoint
 @app.post(
     "/search",
@@ -426,6 +479,16 @@ async def search(request: SearchRequest, http_request: Request):
     try:
         # Get or initialize Milvus client
         get_milvus_client()
+
+        # Validate partition names dynamically
+        if request.partition_names:
+            available_partitions = await get_available_partitions(request.collection_name)
+            invalid_partitions = [p for p in request.partition_names if p not in available_partitions]
+            if invalid_partitions:
+                raise ValueError(
+                    f"Invalid partition names: {', '.join(invalid_partitions)}. "
+                    f"Available partitions: {', '.join(available_partitions)}"
+                )
 
         logger.info(
             "Processing search request",
