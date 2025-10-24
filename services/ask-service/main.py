@@ -312,7 +312,9 @@ async def ask(request: AskRequest, http_request: Request):
                         request_id=request_id,
                     )
 
+                    chunk_count = 0
                     for chunk in stream:
+                        chunk_count += 1
                         # Extract text from chunk
                         chunk_text = ""
                         try:
@@ -336,10 +338,18 @@ async def ask(request: AskRequest, http_request: Request):
                             )
 
                         if chunk_text:
+                            logger.debug(
+                                "Yielding chunk",
+                                chunk_num=chunk_count,
+                                chunk_length=len(chunk_text),
+                                request_id=request_id,
+                            )
+                            # Yield text immediately for streaming
                             yield chunk_text
 
                     logger.info(
                         "Streaming response completed",
+                        total_chunks=chunk_count,
                         request_id=request_id,
                     )
 
@@ -353,8 +363,12 @@ async def ask(request: AskRequest, http_request: Request):
 
             return StreamingResponse(
                 stream_generator(),
-                media_type="text/plain",
-                headers={"x-request-id": request_id},
+                media_type="text/plain; charset=utf-8",
+                headers={
+                    "x-request-id": request_id,
+                    "Cache-Control": "no-cache",
+                    "X-Accel-Buffering": "no",  # Disable nginx buffering
+                },
             )
         else:
             # Generate non-streaming response
