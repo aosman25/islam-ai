@@ -13,15 +13,15 @@ export const SearchService: React.FC = () => {
   const navigate = useNavigate();
   const [partitions, setPartitions] = useState<string[]>([]);
   const [request, setRequest] = usePersistedState<SearchRequest>('search-request', {
-    k: 15,
+    k: 100,
     embeddings: [{
       dense: [],
       sparse: {},
       dense_params: { n_probe: 10 },
       sparse_params: { drop_ratio_search: 0.2 }
     }],
-    reranker: 'Weighted',
-    reranker_params: [1.0, 1.0],
+    reranker: 'RRF',
+    reranker_params: [60],
     collection_name: 'islamic_library',
     partition_names: [],
     output_fields: ['id', 'book_id', 'book_name', 'author', 'text', 'knowledge', 'category', 'header_titles', 'page_range', 'order']
@@ -64,16 +64,17 @@ export const SearchService: React.FC = () => {
   const sendToAskService = () => {
     if (!response || response.results.length === 0) return;
 
-    // Get the first query from request (if available) or use a default
-    const query = 'Please provide a detailed answer based on these sources';
+    // Retrieve the original query text from localStorage (stored by EmbedService)
+    const queryText = localStorage.getItem('search-query-text');
+    const query = queryText || 'Please provide a detailed answer based on these sources';
 
     // Update ask service request in localStorage
     const askRequest = {
       query,
       sources: response.results,
-      temperature: 0.7,
-      max_tokens: 20000,
-      stream: false,
+      temperature: 0.2,
+      max_tokens: 12000,
+      stream: true,
     };
     localStorage.setItem('ask-request', JSON.stringify(askRequest));
 
@@ -157,14 +158,21 @@ export const SearchService: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Reranker
               </label>
               <select
                 value={request.reranker}
-                onChange={(e) => setRequest({ ...request, reranker: e.target.value as 'RRF' | 'Weighted' })}
+                onChange={(e) => {
+                  const newReranker = e.target.value as 'RRF' | 'Weighted';
+                  setRequest({
+                    ...request,
+                    reranker: newReranker,
+                    reranker_params: newReranker === 'RRF' ? [60] : [1.0, 1.0]
+                  });
+                }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               >
                 <option value="Weighted">Weighted</option>
@@ -184,6 +192,64 @@ export const SearchService: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* Dynamic Reranker Params */}
+          {request.reranker === 'Weighted' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Dense Weight (0.0-1.0)
+                </label>
+                <input
+                  type="number"
+                  value={request.reranker_params[0] || 1.0}
+                  onChange={(e) => {
+                    const newParams = [...request.reranker_params];
+                    newParams[0] = parseFloat(e.target.value);
+                    setRequest({ ...request, reranker_params: newParams });
+                  }}
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Sparse Weight (0.0-1.0)
+                </label>
+                <input
+                  type="number"
+                  value={request.reranker_params[1] || 1.0}
+                  onChange={(e) => {
+                    const newParams = [...request.reranker_params];
+                    newParams[1] = parseFloat(e.target.value);
+                    setRequest({ ...request, reranker_params: newParams });
+                  }}
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                RRF K Value (1-16384)
+              </label>
+              <input
+                type="number"
+                value={request.reranker_params[0] || 60}
+                onChange={(e) => {
+                  setRequest({ ...request, reranker_params: [parseInt(e.target.value)] });
+                }}
+                min={1}
+                max={16384}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

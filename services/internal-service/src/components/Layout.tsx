@@ -26,25 +26,25 @@ const navItems = [
 ];
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
-        <div className="px-4 py-4">
-          <div className="flex items-center gap-4">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20">
+        <div className="px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-900 dark:text-white flex-shrink-0"
             >
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">
                 Islamic AI Services Internal Tool
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
                 Testing interface for all microservices
               </p>
             </div>
@@ -52,18 +52,27 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex relative">
+        {/* Mobile Overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
         <aside
           className={`${
-            sidebarOpen ? 'w-64' : 'w-0'
-          } transition-all duration-300 overflow-hidden bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 min-h-[calc(100vh-73px)]`}
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          } fixed lg:sticky top-[57px] sm:top-[73px] left-0 w-64 h-[calc(100vh-57px)] sm:h-[calc(100vh-73px)] lg:h-[calc(100vh-73px)] transition-transform duration-300 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-40 lg:z-0 overflow-y-auto`}
         >
           <nav className="p-4 space-y-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
+                onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
                   `flex items-start gap-3 px-3 py-3 rounded-lg transition-colors ${
                     isActive
@@ -85,7 +94,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-3 sm:p-6 overflow-auto w-full lg:w-auto">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

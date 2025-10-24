@@ -13,12 +13,12 @@ import { usePersistedState } from '../hooks/usePersistedState';
 export const GatewayService: React.FC = () => {
   const [request, setRequest] = usePersistedState<GatewayRequest>('gateway-request', {
     query: '',
-    top_k: 15,
+    top_k: 100,
     temperature: 0.2,
-    max_tokens: 8000,
-    stream: false,
-    reranker: 'Weighted',
-    reranker_params: [1.0, 1.0],
+    max_tokens: 12000,
+    stream: true,
+    reranker: 'RRF',
+    reranker_params: [60],
   });
 
   const [response, setResponse] = usePersistedState<GatewayResponse | null>('gateway-response', null);
@@ -116,7 +116,7 @@ export const GatewayService: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Top K (1-100)
@@ -166,7 +166,14 @@ export const GatewayService: React.FC = () => {
               </label>
               <select
                 value={request.reranker}
-                onChange={(e) => setRequest({ ...request, reranker: e.target.value as 'RRF' | 'Weighted' })}
+                onChange={(e) => {
+                  const newReranker = e.target.value as 'RRF' | 'Weighted';
+                  setRequest({
+                    ...request,
+                    reranker: newReranker,
+                    reranker_params: newReranker === 'RRF' ? [60] : [1.0, 1.0]
+                  });
+                }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               >
                 <option value="Weighted">Weighted</option>
@@ -175,21 +182,63 @@ export const GatewayService: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Reranker Params {request.reranker === 'Weighted' ? '(Dense Weight, Sparse Weight)' : '(K Value)'}
-            </label>
-            <input
-              type="text"
-              value={Array.isArray(request.reranker_params) ? request.reranker_params.join(', ') : request.reranker_params}
-              onChange={(e) => {
-                const values = e.target.value.split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
-                setRequest({ ...request, reranker_params: values });
-              }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              placeholder={request.reranker === 'Weighted' ? '1.0, 1.0' : '60'}
-            />
-          </div>
+          {/* Dynamic Reranker Params */}
+          {request.reranker === 'Weighted' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Dense Weight (0.0-1.0)
+                </label>
+                <input
+                  type="number"
+                  value={request.reranker_params[0] || 1.0}
+                  onChange={(e) => {
+                    const newParams = [...request.reranker_params];
+                    newParams[0] = parseFloat(e.target.value);
+                    setRequest({ ...request, reranker_params: newParams });
+                  }}
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Sparse Weight (0.0-1.0)
+                </label>
+                <input
+                  type="number"
+                  value={request.reranker_params[1] || 1.0}
+                  onChange={(e) => {
+                    const newParams = [...request.reranker_params];
+                    newParams[1] = parseFloat(e.target.value);
+                    setRequest({ ...request, reranker_params: newParams });
+                  }}
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                RRF K Value (1-16384)
+              </label>
+              <input
+                type="number"
+                value={request.reranker_params[0] || 60}
+                onChange={(e) => {
+                  setRequest({ ...request, reranker_params: [parseInt(e.target.value)] });
+                }}
+                min={1}
+                max={16384}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <input
@@ -276,27 +325,36 @@ export const GatewayService: React.FC = () => {
                   <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Optimized Query
                   </h4>
-                  <p className="text-sm bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <p
+                    className="text-sm text-white bg-gray-50 dark:bg-gray-800 p-3 rounded-lg"
+                    style={getTextDirectionStyles(response?.optimized_query || streamMetadata?.optimized_query || '')}
+                  >
                     {response?.optimized_query || streamMetadata?.optimized_query}
                   </p>
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Sub-queries
-                  </h4>
-                  <ul className="space-y-2">
-                    {(response?.subqueries || streamMetadata?.subqueries || []).map((subquery, idx) => (
-                      <li key={idx} className="text-sm bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                        {idx + 1}. {subquery}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {(response?.subqueries || streamMetadata?.subqueries || []).length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Sub-queries
+                    </h4>
+                    <ul className="space-y-2">
+                      {(response?.subqueries || streamMetadata?.subqueries || []).map((subquery, idx) => (
+                        <li
+                          key={idx}
+                          className="text-sm text-white bg-gray-50 dark:bg-gray-800 p-3 rounded-lg"
+                          style={getTextDirectionStyles(subquery)}
+                        >
+                          {idx + 1}. {subquery}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Request ID
                   </h4>
-                  <p className="text-sm font-mono bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <p className="text-sm font-mono text-white bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
                     {response?.request_id || streamMetadata?.request_id}
                   </p>
                 </div>

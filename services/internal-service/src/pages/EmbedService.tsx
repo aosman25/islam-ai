@@ -66,15 +66,18 @@ export const EmbedService: React.FC = () => {
 
     // Update search service request in localStorage
     const searchRequest = {
-      k: 15,
+      k: 100,
       embeddings,
-      reranker: 'Weighted' as const,
-      reranker_params: [1.0, 1.0],
+      reranker: 'RRF' as const,
+      reranker_params: [60],
       collection_name: 'islamic_library',
       partition_names: [],
       output_fields: ['id', 'book_id', 'book_name', 'author', 'text', 'knowledge', 'category', 'header_titles', 'page_range', 'order']
     };
     localStorage.setItem('search-request', JSON.stringify(searchRequest));
+
+    // Store the first query text for the Ask service (when sending all queries)
+    localStorage.setItem('search-query-text', request.input_text[0] || '');
 
     // Navigate to search service
     navigate('/search');
@@ -93,15 +96,18 @@ export const EmbedService: React.FC = () => {
 
     // Update search service request in localStorage
     const searchRequest = {
-      k: 15,
+      k: 100,
       embeddings: [embedding],
-      reranker: 'Weighted' as const,
-      reranker_params: [1.0, 1.0],
+      reranker: 'RRF' as const,
+      reranker_params: [60],
       collection_name: 'islamic_library',
       partition_names: [],
       output_fields: ['id', 'book_id', 'book_name', 'author', 'text', 'knowledge', 'category', 'header_titles', 'page_range', 'order']
     };
     localStorage.setItem('search-request', JSON.stringify(searchRequest));
+
+    // Store the original query text for the Ask service
+    localStorage.setItem('search-query-text', request.input_text[queryIndex]);
 
     // Navigate to search service
     navigate('/search');
