@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 import type { EmbeddingRequest, EmbeddingResponseModel } from '../types/services';
-import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { Play, Plus, Trash2, ArrowRight, Copy, Check } from 'lucide-react';
-import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
+import { getTextDirectionStyles } from '../utils/textDirection';
 import { usePersistedState } from '../hooks/usePersistedState';
 
 export const EmbedService: React.FC = () => {
@@ -51,36 +50,6 @@ export const EmbedService: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const sendToSearchService = () => {
-    if (!response) return;
-
-    // Build embeddings array for search
-    const embeddings = request.input_text.map((_, idx) => ({
-      dense: response.dense ? response.dense[idx] : [],
-      sparse: response.sparse ? response.sparse[idx] : {},
-      dense_params: { n_probe: 10 },
-      sparse_params: { drop_ratio_search: 0.2 }
-    }));
-
-    // Update search service request in localStorage
-    const searchRequest = {
-      k: 50,
-      embeddings,
-      reranker: 'RRF' as const,
-      reranker_params: [60],
-      collection_name: 'islamic_library',
-      partition_names: [],
-      output_fields: ['id', 'book_id', 'book_name', 'author', 'text', 'knowledge', 'category', 'header_titles', 'page_range', 'order']
-    };
-    localStorage.setItem('search-request', JSON.stringify(searchRequest));
-
-    // Store the first query text for the Ask service (when sending all queries)
-    localStorage.setItem('search-query-text', request.input_text[0] || '');
-
-    // Navigate to search service
-    navigate('/search');
   };
 
   const sendSingleQueryToSearch = (queryIndex: number) => {

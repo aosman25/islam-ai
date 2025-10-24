@@ -7,7 +7,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { SourcesDisplay } from '../components/SourcesDisplay';
 import { Play, Square } from 'lucide-react';
-import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
+import { getTextDirectionStyles } from '../utils/textDirection';
 import { usePersistedState } from '../hooks/usePersistedState';
 
 export const GatewayService: React.FC = () => {
@@ -191,9 +191,10 @@ export const GatewayService: React.FC = () => {
                 </label>
                 <input
                   type="number"
-                  value={request.reranker_params[0] || 1.0}
+                  value={Array.isArray(request.reranker_params) ? (request.reranker_params[0] ?? 1.0) : 1.0}
                   onChange={(e) => {
-                    const newParams = [...request.reranker_params];
+                    const currentParams = Array.isArray(request.reranker_params) ? request.reranker_params : [1.0, 1.0];
+                    const newParams = [...currentParams];
                     newParams[0] = parseFloat(e.target.value);
                     setRequest({ ...request, reranker_params: newParams });
                   }}
@@ -209,9 +210,10 @@ export const GatewayService: React.FC = () => {
                 </label>
                 <input
                   type="number"
-                  value={request.reranker_params[1] || 1.0}
+                  value={Array.isArray(request.reranker_params) ? (request.reranker_params[1] ?? 1.0) : 1.0}
                   onChange={(e) => {
-                    const newParams = [...request.reranker_params];
+                    const currentParams = Array.isArray(request.reranker_params) ? request.reranker_params : [1.0, 1.0];
+                    const newParams = [...currentParams];
                     newParams[1] = parseFloat(e.target.value);
                     setRequest({ ...request, reranker_params: newParams });
                   }}
@@ -229,7 +231,7 @@ export const GatewayService: React.FC = () => {
               </label>
               <input
                 type="number"
-                value={request.reranker_params[0] || 60}
+                value={Array.isArray(request.reranker_params) ? (request.reranker_params[0] ?? 60) : 60}
                 onChange={(e) => {
                   setRequest({ ...request, reranker_params: [parseInt(e.target.value)] });
                 }}

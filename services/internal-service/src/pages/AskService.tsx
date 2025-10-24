@@ -6,7 +6,7 @@ import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { Play, Square, Plus, Trash2 } from 'lucide-react';
-import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
+import { getTextDirectionStyles } from '../utils/textDirection';
 import { usePersistedState } from '../hooks/usePersistedState';
 
 export const AskService: React.FC = () => {
