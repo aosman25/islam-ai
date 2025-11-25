@@ -50,6 +50,8 @@ services:
       - ASK_SERVICE_URL=http://ask-service:2000
       # Enable development mode for hot reloading
       - PYTHONUNBUFFERED=1
+      # Force polling for file changes (required for Windows Docker mounts)
+      - WATCHFILES_FORCE_POLLING=true
     volumes:
       # Mount source code for live reloading
       - ./gateway-service/main.py:/app/main.py
@@ -89,6 +91,8 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
+      # Force polling for file changes (required for Windows Docker mounts)
+      - WATCHFILES_FORCE_POLLING=true
     volumes:
       # Mount source code for live reloading
       - ./query-optimizer-service/main.py:/app/main.py
@@ -120,6 +124,8 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
+      # Force polling for file changes (required for Windows Docker mounts)
+      - WATCHFILES_FORCE_POLLING=true
     volumes:
       # Mount source code for live reloading
       - ./embed-service/main.py:/app/main.py
@@ -150,6 +156,8 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
+      # Force polling for file changes (required for Windows Docker mounts)
+      - WATCHFILES_FORCE_POLLING=true
     volumes:
       # Mount source code for live reloading
       - ./search-service/main.py:/app/main.py
@@ -179,6 +187,8 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
+      # Force polling for file changes (required for Windows Docker mounts)
+      - WATCHFILES_FORCE_POLLING=true
     volumes:
       # Mount source code for live reloading
       - ./ask-service/main.py:/app/main.py
