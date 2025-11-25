@@ -31,4 +31,5 @@ tzdata==2025.2
 ujson==5.11.0
 urllib3==2.5.0
 uvicorn==0.36.0
+watchfiles==1.0.4
 websockets==15.0.1
