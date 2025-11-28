@@ -20,7 +20,7 @@ class AskRequest(BaseModel):
     query: str
     sources: List[SourceData]
     temperature: Optional[float] = Field(default=0.7, ge=0.0, le=2.0)
-    max_tokens: Optional[int] = Field(default=20000, gt=0, le=65536)
+    max_tokens: Optional[int] = Field(default=65536, gt=0, le=65536)
     stream: Optional[bool] = Field(
         default=False, description="Enable streaming response"
     )

@@ -15,7 +15,8 @@ from google.genai import types
 from pydantic import BaseModel
 
 from models import AskRequest
-from utils import build_prompt
+from utils import build_prompt, detect_language
+import fasttext
 
 # Import .env file
 load_dotenv()
@@ -130,6 +131,9 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# Load language detection model
+lang_model = fasttext.load_model("lid.176.bin")
+
 # Middleware
 app.add_middleware(
     CORSMiddleware,
@@ -243,6 +247,7 @@ async def readiness_check():
 # Response model
 class AskResponse(BaseModel):
     response: str
+    query_lang: str
     request_id: str
 
 
@@ -282,9 +287,19 @@ async def ask(request: AskRequest, http_request: Request):
             request_id=request_id,
         )
 
+        # Detect language of the query
+        try:
+            query_lang = detect_language(lang_model, request.query.strip())
+        except Exception as e:
+            logger.error("Error detecting language of the query", error=str(e), request_id=request_id)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Error  detecting language of the query: {str(e)}",
+            )
+        
         # Build prompt from request
         try:
-            prompt = build_prompt(request)
+            prompt = build_prompt(request, query_lang)
         except Exception as e:
             logger.error("Error building prompt", error=str(e), request_id=request_id)
             raise HTTPException(
@@ -442,6 +457,7 @@ async def ask(request: AskRequest, http_request: Request):
 
                 return AskResponse(
                     response=response_text,
+                    query_lang=query_lang,
                     request_id=request_id,
                 )
 

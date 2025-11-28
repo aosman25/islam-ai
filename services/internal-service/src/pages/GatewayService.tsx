@@ -15,7 +15,7 @@ export const GatewayService: React.FC = () => {
     query: '',
     top_k: 50,
     temperature: 0.2,
-    max_tokens: 12000,
+    max_tokens: 65536,
     stream: true,
     reranker: 'RRF',
     reranker_params: [60],
