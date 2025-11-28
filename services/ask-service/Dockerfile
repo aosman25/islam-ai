@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application files with proper ownership
-COPY --chown=appuser:appuser main.py models.py utils.py system_instruction.txt prompt.txt ./
+COPY --chown=appuser:appuser main.py models.py utils.py system_instruction.txt prompt.txt lid.176.bin ./
 
 # Switch to non-root user
 USER appuser

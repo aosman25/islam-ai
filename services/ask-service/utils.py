@@ -1,6 +1,7 @@
 from typing import List
 from models import AskRequest, SourceData
 import os
+from fasttext.FastText import _FastText
 
 def load_prompt_template(path: str = "prompt.txt") -> str:
     """
@@ -28,10 +29,20 @@ def format_sources(sources: List[SourceData]) -> str:
         """ for i, s in enumerate(sources)
     ])
 
-def build_prompt(ask_request: AskRequest, prompt_path: str = "prompt.txt") -> str:
+def detect_language(model: _FastText, text: str):
+    """
+    Detect the language of the text
+    """
+    pred = model.predict(text)
+    label = pred[0][0]               # "__label__hi"
+    lang = label.replace("__label__", "")
+    return lang
+
+def build_prompt(ask_request: AskRequest, query_lang: str, prompt_path: str = "prompt.txt") -> str:
     """
     Generate the full prompt by filling the template with query and formatted sources.
     """
     template = load_prompt_template(prompt_path)
     formatted_sources = format_sources(ask_request.sources)
-    return template.format(query=ask_request.query.strip(), formatted_sources=formatted_sources)
+    return template.format(query=ask_request.query.strip(), query_lang=query_lang, formatted_sources=formatted_sources)
+
