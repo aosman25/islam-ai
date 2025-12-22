@@ -1,0 +1,9 @@
+dotenv==0.9.9
+fuzzywuzzy==0.18.0
+Levenshtein==0.27.1
+python-Levenshtein==0.27.1
+RapidFuzz==3.13.0
+fastapi==0.127.0
+pydantic==2.12.5
+uvicorn==0.38.0
+python-multipart==0.0.20
