@@ -4,13 +4,11 @@ import sys
 import time
 from contextlib import asynccontextmanager
 from typing import List, Optional
-
 import httpx
 import structlog
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, status, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from fastapi.responses import JSONResponse, StreamingResponse
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -20,6 +18,11 @@ from tenacity import (
 from dotenv import load_dotenv
 from utils import convert_to_milvus_sparse_format
 from models import EmbeddingRequest, EmbeddingResponseModel, HealthResponse, ErrorResponse
+import zipfile
+from io import BytesIO
+import json
+from urllib.parse import quote
+
 
 # Import .env file
 load_dotenv()
@@ -375,6 +378,73 @@ async def get_embedding(request: EmbeddingRequest, http_request: Request):
             detail="Failed to process embedding request",
         )
 
+@app.post("/embed-book")
+async def embed_book(book_zip: UploadFile = File(...), batch_size: int = 50):
+    if not book_zip.filename.endswith(".zip"):
+        raise HTTPException(status_code=400, detail="ZIP file required")
+
+    zip_bytes = await book_zip.read()
+
+    book_match = None
+    book_metadata = None
+    original_files = {}
+
+    with zipfile.ZipFile(BytesIO(zip_bytes), "r") as z:
+        for name in z.namelist():
+            content = z.read(name)
+            original_files[name] = content
+
+            if name.endswith(".match.json"):
+                book_match = json.loads(
+                    content.decode("utf-8", errors="ignore")
+                )
+
+            elif name.endswith(".json") and not name.endswith(".chunks.json"):
+                book_metadata = json.loads(
+                    content.decode("utf-8", errors="ignore")
+                )
+
+    book_name = book_metadata["book_name"]
+
+    if not book_match:
+        raise HTTPException(status_code=400, detail="Missing required files")
+
+    chunk_lines = []
+
+    for i in range(0, len(book_match), batch_size):
+        chunk_texts = [book_match[j]["text"] for j in range(i, i + batch_size) if j < len(book_match)]
+        raw_response = await call_deepinfra_api(chunk_texts, True, True, False)
+        dense_embeddings = raw_response.get("embeddings", [])
+        sparse_embeddings = convert_to_milvus_sparse_format(raw_response.get("sparse", []))
+
+        for j, dense, sparse in zip(range(i, i + batch_size), dense_embeddings, sparse_embeddings):
+            chunk_lines.append(json.dumps({**book_match[j], "dense_vector": dense, "sparse_vector": sparse}, ensure_ascii=False))
+    
+
+    # -------- ZIP OUTPUT --------
+
+    output_zip = BytesIO()
+    with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as z:
+        for filename, content in original_files.items():
+            z.writestr(filename, content)
+
+        embed_filename = f"{book_name}.jsonl"
+        z.writestr(
+            embed_filename,
+            "\n".join(chunk_lines),
+        )
+
+    output_zip.seek(0)
+
+    safe_zip_name = quote(f"{book_name}.zip")
+
+    return StreamingResponse(
+        output_zip,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{safe_zip_name}"
+        },
+    )
 
 if __name__ == "__main__":
     setup_logging()
