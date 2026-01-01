@@ -4,3 +4,4 @@ uvicorn==0.38.0
 python-multipart==0.0.20
 semantic-chunkers==0.1.1
 dotenv==0.9.9
+structlog==24.1.0
