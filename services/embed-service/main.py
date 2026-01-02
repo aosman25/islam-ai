@@ -379,72 +379,256 @@ async def get_embedding(request: EmbeddingRequest, http_request: Request):
         )
 
 @app.post("/embed-book")
-async def embed_book(book_zip: UploadFile = File(...), batch_size: int = 50):
-    if not book_zip.filename.endswith(".zip"):
-        raise HTTPException(status_code=400, detail="ZIP file required")
+async def embed_book(
+    book_zip: UploadFile = File(...),
+    http_request: Request = None,
+    batch_size: int = 50
+):
+    request_id = http_request.headers.get("x-request-id", f"req_{int(time.time() * 1000)}") if http_request else "unknown"
 
-    zip_bytes = await book_zip.read()
-
-    book_match = None
-    book_metadata = None
-    original_files = {}
-
-    with zipfile.ZipFile(BytesIO(zip_bytes), "r") as z:
-        for name in z.namelist():
-            content = z.read(name)
-            original_files[name] = content
-
-            if name.endswith(".match.json"):
-                book_match = json.loads(
-                    content.decode("utf-8", errors="ignore")
-                )
-
-            elif name.endswith(".json") and not name.endswith(".chunks.json"):
-                book_metadata = json.loads(
-                    content.decode("utf-8", errors="ignore")
-                )
-
-    book_name = book_metadata["book_name"]
-
-    if not book_match:
-        raise HTTPException(status_code=400, detail="Missing required files")
-
-    chunk_lines = []
-
-    for i in range(0, len(book_match), batch_size):
-        chunk_texts = [book_match[j]["text"] for j in range(i, i + batch_size) if j < len(book_match)]
-        raw_response = await call_deepinfra_api(chunk_texts, True, True, False)
-        dense_embeddings = raw_response.get("embeddings", [])
-        sparse_embeddings = convert_to_milvus_sparse_format(raw_response.get("sparse", []))
-
-        for j, dense, sparse in zip(range(i, i + batch_size), dense_embeddings, sparse_embeddings):
-            chunk_lines.append(json.dumps({**book_match[j], "dense_vector": dense, "sparse_vector": sparse}, ensure_ascii=False))
-    
-
-    # -------- ZIP OUTPUT --------
-
-    output_zip = BytesIO()
-    with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as z:
-        for filename, content in original_files.items():
-            z.writestr(filename, content)
-
-        embed_filename = f"{book_name}.jsonl"
-        z.writestr(
-            embed_filename,
-            "\n".join(chunk_lines),
+    try:
+        logger.info(
+            "Processing embed-book request",
+            filename=book_zip.filename,
+            batch_size=batch_size,
+            request_id=request_id,
         )
 
-    output_zip.seek(0)
+        if not book_zip.filename.endswith(".zip"):
+            logger.warning(
+                "Invalid file type",
+                filename=book_zip.filename,
+                request_id=request_id,
+            )
+            raise HTTPException(status_code=400, detail="ZIP file required")
 
-    safe_zip_name = quote(f"{book_name}.zip")
+        logger.info("Reading ZIP file", request_id=request_id)
+        zip_bytes = await book_zip.read()
 
-    return StreamingResponse(
-        output_zip,
-        media_type="application/zip",
-        headers={
-            "Content-Disposition": f"attachment; filename*=UTF-8''{safe_zip_name}"
-        },
-    )
+        book_match = None
+        book_metadata = None
+        original_files = {}
+
+        logger.info("Extracting files from ZIP", request_id=request_id)
+        with zipfile.ZipFile(BytesIO(zip_bytes), "r") as z:
+            for name in z.namelist():
+                content = z.read(name)
+                original_files[name] = content
+
+                if name.endswith(".match.json"):
+                    book_match = json.loads(
+                        content.decode("utf-8", errors="ignore")
+                    )
+
+                elif name.endswith(".json") and not name.endswith(".chunks.json"):
+                    book_metadata = json.loads(
+                        content.decode("utf-8", errors="ignore")
+                    )
+
+        if not book_metadata:
+            logger.error(
+                "Missing book metadata in ZIP",
+                request_id=request_id,
+            )
+            raise HTTPException(status_code=400, detail="Missing book metadata")
+
+        book_name = book_metadata["book_name"]
+
+        if not book_match:
+            logger.error(
+                "Missing match file in ZIP",
+                book_name=book_name,
+                request_id=request_id,
+            )
+            raise HTTPException(status_code=400, detail="Missing required files")
+
+        logger.info(
+            "Files extracted successfully",
+            book_name=book_name,
+            file_count=len(original_files),
+            chunks_count=len(book_match),
+            request_id=request_id,
+        )
+
+        logger.info(
+            "Starting embedding generation",
+            total_chunks=len(book_match),
+            batch_size=batch_size,
+            total_batches=(len(book_match) + batch_size - 1) // batch_size,
+            request_id=request_id,
+        )
+
+        chunk_lines = []
+        batches_processed = 0
+        failed_batches = []
+
+        for i in range(0, len(book_match), batch_size):
+            chunk_texts = [book_match[j]["text"] for j in range(i, i + batch_size) if j < len(book_match)]
+
+            logger.info(
+                "Processing batch",
+                batch_number=batches_processed + 1,
+                batch_start=i,
+                batch_size=len(chunk_texts),
+                request_id=request_id,
+            )
+
+            try:
+                # Call DeepInfra API with built-in retry logic
+                raw_response = await call_deepinfra_api(chunk_texts, True, True, False)
+                dense_embeddings = raw_response.get("embeddings", [])
+                sparse_embeddings = convert_to_milvus_sparse_format(raw_response.get("sparse", []))
+
+                # Validate response
+                if len(dense_embeddings) != len(chunk_texts) or len(sparse_embeddings) != len(chunk_texts):
+                    logger.error(
+                        "Embedding count mismatch",
+                        batch_number=batches_processed + 1,
+                        expected=len(chunk_texts),
+                        dense_count=len(dense_embeddings),
+                        sparse_count=len(sparse_embeddings),
+                        request_id=request_id,
+                    )
+                    failed_batches.append({
+                        "batch_number": batches_processed + 1,
+                        "batch_start": i,
+                        "error": "Embedding count mismatch"
+                    })
+                    batches_processed += 1
+                    continue
+
+                for j, dense, sparse in zip(range(i, i + batch_size), dense_embeddings, sparse_embeddings):
+                    if j < len(book_match):
+                        chunk_lines.append(json.dumps({**book_match[j], "dense_vector": dense, "sparse_vector": sparse}, ensure_ascii=False))
+
+                batches_processed += 1
+                logger.info(
+                    "Batch completed successfully",
+                    batch_number=batches_processed,
+                    chunks_processed=len(chunk_lines),
+                    request_id=request_id,
+                )
+
+            except httpx.TimeoutException as e:
+                logger.error(
+                    "Batch processing timeout",
+                    batch_number=batches_processed + 1,
+                    batch_start=i,
+                    error=str(e),
+                    request_id=request_id,
+                )
+                failed_batches.append({
+                    "batch_number": batches_processed + 1,
+                    "batch_start": i,
+                    "error": "Timeout"
+                })
+                batches_processed += 1
+
+            except httpx.HTTPStatusError as e:
+                logger.error(
+                    "Batch processing HTTP error",
+                    batch_number=batches_processed + 1,
+                    batch_start=i,
+                    status_code=e.response.status_code,
+                    error=str(e),
+                    request_id=request_id,
+                )
+                failed_batches.append({
+                    "batch_number": batches_processed + 1,
+                    "batch_start": i,
+                    "error": f"HTTP {e.response.status_code}"
+                })
+                batches_processed += 1
+
+            except Exception as e:
+                logger.error(
+                    "Batch processing failed",
+                    batch_number=batches_processed + 1,
+                    batch_start=i,
+                    error=str(e),
+                    error_type=type(e).__name__,
+                    request_id=request_id,
+                )
+                failed_batches.append({
+                    "batch_number": batches_processed + 1,
+                    "batch_start": i,
+                    "error": str(e)
+                })
+                batches_processed += 1
+
+        # Check if any batches failed
+        if failed_batches:
+            logger.error(
+                "Embedding generation completed with failures",
+                total_batches=batches_processed,
+                failed_batches_count=len(failed_batches),
+                successful_chunks=len(chunk_lines),
+                expected_chunks=len(book_match),
+                failed_batches=failed_batches,
+                request_id=request_id,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to process {len(failed_batches)} batch(es) out of {batches_processed}. Check logs for details.",
+            )
+
+        logger.info(
+            "All embeddings generated successfully",
+            total_chunks=len(chunk_lines),
+            batches_processed=batches_processed,
+            request_id=request_id,
+        )
+
+        # -------- ZIP OUTPUT --------
+
+        logger.info("Building output ZIP", request_id=request_id)
+        output_zip = BytesIO()
+        with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as z:
+            for filename, content in original_files.items():
+                z.writestr(filename, content)
+
+            embed_filename = f"{book_name}.jsonl"
+            z.writestr(
+                embed_filename,
+                "\n".join(chunk_lines),
+            )
+
+        output_zip.seek(0)
+        zip_size = len(output_zip.getvalue())
+
+        logger.info(
+            "Embed-book request completed successfully",
+            book_name=book_name,
+            total_chunks=len(chunk_lines),
+            batches_processed=batches_processed,
+            zip_size_bytes=zip_size,
+            request_id=request_id,
+        )
+
+        safe_zip_name = quote(f"{book_name}.zip")
+
+        return StreamingResponse(
+            output_zip,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f"attachment; filename*=UTF-8''{safe_zip_name}"
+            },
+        )
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        logger.error(
+            "Embed-book request failed",
+            error=str(e),
+            error_type=type(e).__name__,
+            request_id=request_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to process embed-book request",
+        )
 
 if __name__ == "__main__":
     setup_logging()
