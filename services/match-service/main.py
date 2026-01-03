@@ -169,6 +169,7 @@ async def readiness_check():
 @app.post("/match")
 async def match_books(
     book_zip: UploadFile = File(...),
+    threshold: float = 65,
     request: Request = None,
     fast_match: bool = True,
 ):
@@ -188,6 +189,15 @@ async def match_books(
             request_id=request_id,
         )
         raise HTTPException(status_code=400, detail="ZIP file required")
+    
+    if threshold < 0 or threshold > 100:
+        logger.warning(
+            "Invalid threshold value",
+            filename=book_zip.filename,
+            request_id=request_id,
+        )
+        raise HTTPException(status_code=400, detail="Threshold Value must be between 0 and 100")
+
 
     logger.info("Reading ZIP file", request_id=request_id)
     zip_bytes = await book_zip.read()
@@ -212,13 +222,22 @@ async def match_books(
                 )
 
     if not book_chunks or not book_metadata:
+        missing_files = []
+        if not book_chunks:
+            missing_files.append("*.chunks.json")
+        if not book_metadata:
+            missing_files.append("*.json (metadata)")
+
+        error_detail = f"Missing required files in ZIP: {', '.join(missing_files)}"
+
         logger.error(
             "Missing required files in ZIP",
             has_chunks=bool(book_chunks),
             has_metadata=bool(book_metadata),
+            missing_files=missing_files,
             request_id=request_id,
         )
-        raise HTTPException(status_code=400, detail="Missing required files")
+        raise HTTPException(status_code=400, detail=error_detail)
 
     logger.info(
         "Files extracted successfully",
@@ -226,6 +245,17 @@ async def match_books(
         chunks_count=len(book_chunks) if book_chunks else 0,
         request_id=request_id,
     )
+
+    if not isinstance(book_chunks, list) or len(book_chunks) == 0:
+        logger.error(
+            "Invalid or empty chunks array",
+            chunks_type=type(book_chunks).__name__,
+            request_id=request_id,
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid chunks file: chunks array is empty or malformed"
+        )
 
     book_name = book_metadata.get("book_name", "book")
 
@@ -236,8 +266,31 @@ async def match_books(
     )
 
     logger.info("Loading raw book pages", request_id=request_id)
-    page_texts = load_raw_book(book_metadata)
-    page_texts.append((page_texts[-1][0], page_texts[-1][1], "END"))
+
+    if "headers" not in book_metadata or "pages" not in book_metadata:
+        logger.error(
+            "Invalid book metadata structure",
+            has_headers="headers" in book_metadata,
+            has_pages="pages" in book_metadata,
+            request_id=request_id,
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid book metadata: missing 'headers' or 'pages' fields"
+        )
+
+    page_texts, pages_total_length = load_raw_book(book_metadata)
+
+    if not page_texts or len(page_texts) == 0:
+        logger.error(
+            "No pages found in book metadata",
+            request_id=request_id,
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid book metadata: no pages found in the book structure"
+        )
+
 
     logger.info(
         "Starting matching process",
@@ -246,26 +299,63 @@ async def match_books(
         request_id=request_id,
     )
 
+    chunk_lengths = []
+    chunks_total_length = 0
+
+    for i in range(len(book_chunks)):
+        chunk_lengths.append(len(clean_arabic_text(book_chunks[i]["text"])))
+        chunks_total_length += chunk_lengths[-1]
+
+    if chunks_total_length != pages_total_length:
+        raise  HTTPException(
+            status_code=400,
+            detail=f"Lengths must be equal. Pages Length: {pages_total_length} Chunks Length: {chunks_total_length}"
+        )
+
     chunk_pointer, page_pointer = 0, 0
     start_page = page_texts[0][0]
     curr_headers = []
+    matching_logs = []
 
     while page_pointer < len(page_texts) and chunk_pointer < len(book_chunks):
-        chunk_text = book_chunks[chunk_pointer]["text"]
-        page_num, header_title, page_text = page_texts[page_pointer]
+        c_length = chunk_lengths[chunk_pointer]
+        page_num, header_title, p_length = page_texts[page_pointer]
 
         if header_title not in curr_headers:
             curr_headers.append(header_title)
 
-        if sliding_fuzzy_match(page_text, chunk_text, fast_match=fast_match):
+
+        # Log this iteration
+        iteration_log = {
+            "iteration": len(matching_logs),
+            "chunk_pointer": chunk_pointer,
+            "page_pointer": page_pointer,
+            "page_number": page_num,
+        }
+        
+        matching_logs.append(iteration_log)
+        if p_length < c_length:
+            page_texts[page_pointer][2] = 0
+            chunk_lengths[chunk_pointer] -= p_length
             page_pointer += 1
-        else:
+        elif p_length > c_length:
             book_chunks[chunk_pointer]["page_range"] = [start_page, page_num]
             book_chunks[chunk_pointer]["header_titles"] = curr_headers
             curr_headers = []
             start_page = page_num
+            chunk_lengths[chunk_pointer] = 0
+            page_texts[page_pointer][2] -= c_length
             chunk_pointer += 1
+        else:
+            book_chunks[chunk_pointer]["page_range"] = [start_page, page_num]
+            book_chunks[chunk_pointer]["header_titles"] = curr_headers
+            curr_headers = []
+            chunk_lengths[chunk_pointer] = 0
+            page_texts[page_pointer][2] = 0
             page_pointer += 1
+            chunk_pointer += 1
+            if page_pointer < len(page_texts):
+                start_page = page_texts[page_pointer][0]
 
     logger.info(
         "Matching loop completed",
@@ -274,10 +364,7 @@ async def match_books(
         request_id=request_id,
     )
 
-    if page_pointer >= len(page_texts) and (
-        chunk_pointer == len(book_chunks)
-        or chunk_pointer == len(book_chunks) - 1
-    ):
+    if len(page_texts) - 1 <= page_pointer <= len(page_texts) and len(book_chunks) - 1 <= chunk_pointer <= len(book_chunks):
         for i in range(chunk_pointer, len(book_chunks)):
             if "page_range" not in book_chunks[i]:
                 _, end_page = book_chunks[i - 1]["page_range"]
@@ -290,18 +377,32 @@ async def match_books(
             matched_chunks=len(book_chunks),
             request_id=request_id,
         )
+    
     else:
-        logger.error(
-            "Failed to match all chunks",
-            book_name=book_name,
-            total_chunks=len(book_chunks),
-            matched_chunks=chunk_pointer,
-            page_pointer=page_pointer,
-            request_id=request_id,
-        )
+        matched_count = chunk_pointer
+        total_count = len(book_chunks)
+        unmatched_count = total_count - matched_count
+        current_page = page_texts[page_pointer][0] if page_pointer < len(page_texts) else "N/A"
+        total_pages = len(page_texts)
+
+        error_detail = {
+            "debug_info": {
+                "book_name": book_name,
+                "total_chunks": total_count,
+                "matched_chunks": matched_count,
+                "unmatched_chunks": unmatched_count,
+                "page_pointer": page_pointer,
+                "chunk_pointer": chunk_pointer,
+                "current_page": current_page,
+                "total_pages": total_pages,
+                "total_iterations": len(matching_logs)
+            },
+            "matching_logs": matching_logs
+        }
+
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to match: {book_name} ({len(book_chunks)} chunks)",
+            detail=error_detail,
         )
 
     # -------- ZIP OUTPUT --------
