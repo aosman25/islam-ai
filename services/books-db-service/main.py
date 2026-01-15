@@ -18,7 +18,8 @@ from models import (
     CategoryResponse, CategoryListResponse,
     AuthorResponse, AuthorWithBooksResponse, AuthorListResponse,
     BookResponse, BookListResponse, BookSummaryResponse,
-    ExportRequest, ExportResponse
+    ExportRequest, ExportResponse,
+    ProcessResponse, ProcessedBookResult
 )
 
 # Default pagination settings
@@ -591,6 +592,184 @@ async def download_multiple_books(request: ExportRequest):
         )
     except Exception as e:
         logger.error("Download failed", error=str(e), book_ids=request.book_ids)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============== Process Endpoints ==============
+
+@app.post("/process/books/{book_id}", response_model=ProcessResponse)
+async def process_single_book(book_id: int):
+    """Process a single book: export if needed, scrape HTML, create text/metadata files."""
+    book = db_service.get_book(book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    try:
+        text_url, metadata_url = export_service.process_book(
+            book_id=book_id,
+            book_name=book.get("book_name"),
+            author_name=book.get("author_name"),
+            category_name=book.get("category_name")
+        )
+
+        return ProcessResponse(
+            book_ids=[book_id],
+            results=[ProcessedBookResult(
+                book_id=book_id,
+                text_url=text_url,
+                metadata_url=metadata_url
+            )],
+            message="Book processed successfully",
+            timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+        )
+    except Exception as e:
+        logger.error("Process failed", error=str(e), book_id=book_id)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/process/books", response_model=ProcessResponse)
+async def process_multiple_books(request: ExportRequest):
+    """Process multiple books: export if needed, scrape HTML, create text/metadata files."""
+    # Verify all books exist
+    books_data = {}
+    for book_id in request.book_ids:
+        book = db_service.get_book(book_id)
+        if not book:
+            raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
+        books_data[book_id] = book
+
+    results = []
+    for book_id in request.book_ids:
+        try:
+            book = books_data[book_id]
+            text_url, metadata_url = export_service.process_book(
+                book_id=book_id,
+                book_name=book.get("book_name"),
+                author_name=book.get("author_name"),
+                category_name=book.get("category_name")
+            )
+            results.append(ProcessedBookResult(
+                book_id=book_id,
+                text_url=text_url,
+                metadata_url=metadata_url
+            ))
+        except Exception as e:
+            logger.error("Process failed for book", error=str(e), book_id=book_id)
+            raise HTTPException(status_code=500, detail=f"Failed to process book {book_id}: {str(e)}")
+
+    return ProcessResponse(
+        book_ids=request.book_ids,
+        results=results,
+        message=f"Processed {len(results)} book(s) successfully",
+        timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+    )
+
+
+# ============== Text/Metadata Download Endpoints ==============
+
+@app.get("/download/texts/{book_id}")
+async def download_single_text(book_id: int):
+    """Download processed text file for a single book."""
+    if not db_service.get_book(book_id):
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    if not export_service.get_processed_text_url(book_id):
+        raise HTTPException(
+            status_code=404,
+            detail="Text not processed yet. Use /process/books/{book_id} first."
+        )
+
+    try:
+        zip_buffer, filename = export_service.download_texts_as_zip([book_id])
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        logger.error("Download text failed", error=str(e), book_id=book_id)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/download/texts")
+async def download_multiple_texts(request: ExportRequest):
+    """Download processed text files for multiple books."""
+    # Verify all books exist and are processed
+    missing_texts = []
+    for book_id in request.book_ids:
+        if not db_service.get_book(book_id):
+            raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
+        if not export_service.get_processed_text_url(book_id):
+            missing_texts.append(book_id)
+
+    if missing_texts:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Texts not processed yet for books: {missing_texts}. Use /process/books first."
+        )
+
+    try:
+        zip_buffer, filename = export_service.download_texts_as_zip(request.book_ids)
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        logger.error("Download texts failed", error=str(e), book_ids=request.book_ids)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/download/metadata/{book_id}")
+async def download_single_metadata(book_id: int):
+    """Download processed metadata file for a single book."""
+    if not db_service.get_book(book_id):
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    if not export_service.get_processed_metadata_url(book_id):
+        raise HTTPException(
+            status_code=404,
+            detail="Metadata not processed yet. Use /process/books/{book_id} first."
+        )
+
+    try:
+        zip_buffer, filename = export_service.download_metadata_as_zip([book_id])
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        logger.error("Download metadata failed", error=str(e), book_id=book_id)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/download/metadata")
+async def download_multiple_metadata(request: ExportRequest):
+    """Download processed metadata files for multiple books."""
+    # Verify all books exist and are processed
+    missing_metadata = []
+    for book_id in request.book_ids:
+        if not db_service.get_book(book_id):
+            raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
+        if not export_service.get_processed_metadata_url(book_id):
+            missing_metadata.append(book_id)
+
+    if missing_metadata:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Metadata not processed yet for books: {missing_metadata}. Use /process/books first."
+        )
+
+    try:
+        zip_buffer, filename = export_service.download_metadata_as_zip(request.book_ids)
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        logger.error("Download metadata failed", error=str(e), book_ids=request.book_ids)
         raise HTTPException(status_code=500, detail=str(e))
 
 

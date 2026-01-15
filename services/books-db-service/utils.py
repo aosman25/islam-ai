@@ -520,3 +520,197 @@ class ExportService:
             all_uploaded_files.extend(uploaded)
 
         return all_uploaded_files, f"Successfully exported {len(book_ids)} book(s)"
+
+    # ============== Processed Text/Metadata Operations ==============
+
+    def get_processed_text_url(self, book_id: int) -> Optional[str]:
+        """Check if processed text exists and return its URL."""
+        if not self.s3_client:
+            return None
+
+        s3_key = f"text/{book_id}.md"
+        try:
+            self.s3_client.head_object(Bucket=self.s3_bucket, Key=s3_key)
+            endpoint_host = self.s3_endpoint.replace("https://", "").replace("http://", "")
+            return f"https://{self.s3_bucket}.{endpoint_host}/{s3_key}"
+        except Exception:
+            return None
+
+    def get_processed_metadata_url(self, book_id: int) -> Optional[str]:
+        """Check if processed metadata exists and return its URL."""
+        if not self.s3_client:
+            return None
+
+        s3_key = f"metadata/{book_id}.json"
+        try:
+            self.s3_client.head_object(Bucket=self.s3_bucket, Key=s3_key)
+            endpoint_host = self.s3_endpoint.replace("https://", "").replace("http://", "")
+            return f"https://{self.s3_bucket}.{endpoint_host}/{s3_key}"
+        except Exception:
+            return None
+
+    def book_is_processed(self, book_id: int) -> bool:
+        """Check if a book has been processed (both text and metadata exist)."""
+        return (
+            self.get_processed_text_url(book_id) is not None and
+            self.get_processed_metadata_url(book_id) is not None
+        )
+
+    def _download_raw_html_files(self, book_id: int) -> List[str]:
+        """Download raw HTML files from S3 and return their contents."""
+        if not self.s3_client:
+            raise ValueError("S3 client not configured")
+
+        s3_prefix = f"raw/{book_id}/"
+        html_contents = []
+
+        response = self.s3_client.list_objects_v2(
+            Bucket=self.s3_bucket,
+            Prefix=s3_prefix
+        )
+
+        if "Contents" not in response:
+            raise ValueError(f"No raw files found for book {book_id}")
+
+        # Sort by key to maintain file order (001.htm, 002.htm, etc.)
+        objects = sorted(response["Contents"], key=lambda x: x["Key"])
+
+        for obj in objects:
+            key = obj["Key"]
+            if key.lower().endswith((".htm", ".html")):
+                file_obj = self.s3_client.get_object(Bucket=self.s3_bucket, Key=key)
+                content = file_obj["Body"].read().decode("utf-8", errors="ignore")
+                html_contents.append(content)
+
+        logger.info("Downloaded raw HTML files", book_id=book_id, file_count=len(html_contents))
+        return html_contents
+
+    def _upload_processed_files(self, book_id: int, text_content: str, metadata: Dict[str, Any]) -> Tuple[str, str]:
+        """Upload processed text and metadata to S3."""
+        if not self.s3_client:
+            raise ValueError("S3 client not configured")
+
+        import json
+
+        # Upload text file
+        text_key = f"text/{book_id}.md"
+        self.s3_client.put_object(
+            Bucket=self.s3_bucket,
+            Key=text_key,
+            Body=text_content.encode("utf-8"),
+            ContentType="text/markdown; charset=utf-8"
+        )
+
+        # Upload metadata file
+        metadata_key = f"metadata/{book_id}.json"
+        self.s3_client.put_object(
+            Bucket=self.s3_bucket,
+            Key=metadata_key,
+            Body=json.dumps(metadata, ensure_ascii=False, indent=2).encode("utf-8"),
+            ContentType="application/json; charset=utf-8"
+        )
+
+        endpoint_host = self.s3_endpoint.replace("https://", "").replace("http://", "")
+        text_url = f"https://{self.s3_bucket}.{endpoint_host}/{text_key}"
+        metadata_url = f"https://{self.s3_bucket}.{endpoint_host}/{metadata_key}"
+
+        logger.info("Uploaded processed files", book_id=book_id, text_key=text_key, metadata_key=metadata_key)
+        return text_url, metadata_url
+
+    def process_book(
+        self,
+        book_id: int,
+        book_name: str,
+        author_name: Optional[str],
+        category_name: Optional[str]
+    ) -> Tuple[str, str]:
+        """
+        Process a book: export if needed, scrape HTML, upload text/metadata.
+
+        Returns:
+            Tuple of (text_url, metadata_url)
+        """
+        from scrape import process_book_html
+
+        # Check if already processed
+        text_url = self.get_processed_text_url(book_id)
+        metadata_url = self.get_processed_metadata_url(book_id)
+        if text_url and metadata_url:
+            logger.info("Book already processed", book_id=book_id)
+            return text_url, metadata_url
+
+        # Export if not already exported
+        if not self.book_exists_in_s3(book_id):
+            logger.info("Book not exported, exporting first", book_id=book_id)
+            self.export_books([book_id])
+
+        # Download raw HTML files
+        html_contents = self._download_raw_html_files(book_id)
+
+        # Process HTML to get text and metadata
+        text_content, metadata = process_book_html(
+            html_contents=html_contents,
+            book_id=book_id,
+            book_name=book_name,
+            author_name=author_name,
+            category_name=category_name
+        )
+
+        # Upload processed files
+        text_url, metadata_url = self._upload_processed_files(book_id, text_content, metadata)
+
+        return text_url, metadata_url
+
+    def download_texts_as_zip(self, book_ids: List[int]) -> Tuple[io.BytesIO, str]:
+        """Download processed text files from S3 and return as a zip file."""
+        if not self.s3_client:
+            raise ValueError("S3 client not configured")
+
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for book_id in book_ids:
+                s3_key = f"text/{book_id}.md"
+                try:
+                    file_obj = self.s3_client.get_object(Bucket=self.s3_bucket, Key=s3_key)
+                    content = file_obj["Body"].read()
+                    zip_file.writestr(f"{book_id}.md", content)
+                except Exception as e:
+                    logger.warning("Text file not found", book_id=book_id, error=str(e))
+                    continue
+
+        zip_buffer.seek(0)
+
+        if len(book_ids) == 1:
+            filename = f"text_{book_ids[0]}.zip"
+        else:
+            filename = f"texts_{'-'.join(map(str, book_ids[:5]))}.zip"
+
+        return zip_buffer, filename
+
+    def download_metadata_as_zip(self, book_ids: List[int]) -> Tuple[io.BytesIO, str]:
+        """Download processed metadata files from S3 and return as a zip file."""
+        if not self.s3_client:
+            raise ValueError("S3 client not configured")
+
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for book_id in book_ids:
+                s3_key = f"metadata/{book_id}.json"
+                try:
+                    file_obj = self.s3_client.get_object(Bucket=self.s3_bucket, Key=s3_key)
+                    content = file_obj["Body"].read()
+                    zip_file.writestr(f"{book_id}.json", content)
+                except Exception as e:
+                    logger.warning("Metadata file not found", book_id=book_id, error=str(e))
+                    continue
+
+        zip_buffer.seek(0)
+
+        if len(book_ids) == 1:
+            filename = f"metadata_{book_ids[0]}.zip"
+        else:
+            filename = f"metadata_{'-'.join(map(str, book_ids[:5]))}.zip"
+
+        return zip_buffer, filename

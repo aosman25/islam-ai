@@ -128,3 +128,18 @@ class ExportResponse(BaseModel):
     uploaded_files: List[str]
     message: str
     timestamp: str
+
+
+# ============== Process Models ==============
+
+class ProcessedBookResult(BaseModel):
+    book_id: int
+    text_url: str
+    metadata_url: str
+
+
+class ProcessResponse(BaseModel):
+    book_ids: List[int]
+    results: List[ProcessedBookResult]
+    message: str
+    timestamp: str

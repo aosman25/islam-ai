@@ -19,7 +19,7 @@ version: '3.8'
 #   - embed-service (Port 4000) - Embedding generation
 #   - search-service (Port 3000) - Vector search
 #   - ask-service (Port 2000) - Response generation
-#   - scrape-service (Port 7000) - Book scraping and processing
+#   - books-db-service (Port 4001) - Book metadata and processing
 #   - split-service (Port 6500) - Semantic text chunking
 #   - match-service (Port 5500) - Chunk to page range matching
 #   - internal-service (Port 5173) - Internal testing UI
@@ -207,37 +207,6 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # ===========================================================================
-  # SCRAPE SERVICE - Book scraping and processing
-  # ===========================================================================
-  scrape-service:
-    build:
-      context: ./scrape-service
-      dockerfile: Dockerfile
-    container_name: scrape-service-dev
-    ports:
-      - "7000:3000"
-    env_file:
-      - .env
-    environment:
-      - PYTHONUNBUFFERED=1
-      # Force polling for file changes (required for Windows Docker mounts)
-      - WATCHFILES_FORCE_POLLING=true
-    volumes:
-      # Mount source code for live reloading
-      - ./scrape-service/main.py:/app/main.py
-      - ./scrape-service/utils.py:/app/utils.py
-    command: uvicorn main:app --host 0.0.0.0 --port 3000 --reload
-    networks:
-      - rag-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()"]
       interval: 30s
       timeout: 10s
       retries: 3
