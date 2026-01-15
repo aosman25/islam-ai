@@ -306,6 +306,44 @@ services:
       start_period: 10s
 
   # ===========================================================================
+  # BOOKS DB SERVICE - Book metadata and export
+  # ===========================================================================
+  books-db-service:
+    build:
+      context: ./books-db-service
+      dockerfile: Dockerfile
+    container_name: books-db-service-dev
+    ports:
+      - "4001:4000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      # Mount source code for live reloading
+      - ./books-db-service/main.py:/app/main.py
+      - ./books-db-service/models.py:/app/models.py
+      - ./books-db-service/utils.py:/app/utils.py
+      - ./books-db-service/shamela_metadata.db:/app/shamela_metadata.db
+      - ./books-db-service/export_books.sh:/app/export_books.sh
+      - ./books-db-service/ShamelaExporter.java:/app/ShamelaExporter.java
+      # Mount shamela4 directory (12GB - too large to copy into image)
+      - ./books-db-service/shamela4:/app/shamela4:ro
+      # Export directory (writable)
+      - ./books-db-service/export:/app/export
+    command: uvicorn main:app --host 0.0.0.0 --port 4000 --reload
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
   # INTERNAL SERVICE - Testing UI (Development Mode)
   # ===========================================================================
   internal-service:

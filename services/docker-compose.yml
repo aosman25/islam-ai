@@ -223,6 +223,31 @@ services:
       start_period: 10s
 
   # ===========================================================================
+  # BOOKS DB SERVICE - Book metadata and export
+  # ===========================================================================
+  books-db-service:
+    build:
+      context: ./books-db-service
+      dockerfile: Dockerfile
+    container_name: books-db-service
+    ports:
+      - "4001:4000"
+    env_file:
+      - .env
+    volumes:
+      # Mount shamela4 directory (12GB - too large to copy into image)
+      - ./books-db-service/shamela4:/app/shamela4:ro
+    networks:
+      - rag-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
   # INTERNAL SERVICE - Testing UI
   # ===========================================================================
   internal-service:
