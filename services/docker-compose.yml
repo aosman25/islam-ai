@@ -19,7 +19,7 @@ version: '3.8'
 #   - embed-service (Port 4000) - Internal only
 #   - search-service (Port 3000) - Internal only
 #   - ask-service (Port 2000) - Internal only
-#   - scrape-service (Port 3000) - Internal only
+#   - books-db-service (Port 4001) - Book metadata and processing
 #   - split-service (Port 3000) - Internal only
 #   - match-service (Port 3000) - Internal only
 #
@@ -151,28 +151,6 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # ===========================================================================
-  # SCRAPE SERVICE - Book scraping and processing
-  # ===========================================================================
-  scrape-service:
-    build:
-      context: ./scrape-service
-      dockerfile: Dockerfile
-    container_name: scrape-service
-    expose:
-      - "3000"
-    env_file:
-      - .env
-    networks:
-      - rag-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()"]
       interval: 30s
       timeout: 10s
       retries: 3
