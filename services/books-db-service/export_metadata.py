@@ -5,19 +5,100 @@ Export shamela4 metadata tables to a SQLite database file.
 Exports the following tables:
 - category: Book categories
 - author: Author information
-- book: Book metadata
+- book: Book metadata (including table_of_contents as JSON)
 - author_book: Author to book relationships
 - coauthor_book: Co-author to book relationships
 """
 
+import json
 import sqlite3
-import os
 from pathlib import Path
 
 
 def get_source_db_path() -> Path:
     """Get the path to the shamela4 master.db file."""
     return Path(__file__).parent / "shamela4" / "database" / "master.db"
+
+
+def get_titles_db_path() -> Path:
+    """Get the path to the extracted titles database."""
+    return Path(__file__).parent / "extracted_titles.db"
+
+
+def get_book_db_path(book_id: int) -> Path:
+    """Get the path to a specific book's database file."""
+    subdir = f"{book_id % 1000:03d}"
+    return Path(__file__).parent / "shamela4" / "database" / "book" / subdir / f"{book_id}.db"
+
+
+def load_title_texts(book_id: int, titles_conn: sqlite3.Connection) -> dict[int, str]:
+    """
+    Load title texts for a book from the extracted titles database.
+
+    Returns a dict mapping title_id to title text.
+    """
+    cursor = titles_conn.cursor()
+    cursor.execute(
+        "SELECT title_id, title FROM title_text WHERE book_id = ?",
+        (book_id,)
+    )
+    return {row[0]: row[1] for row in cursor.fetchall()}
+
+
+def get_book_toc(book_id: int, titles_conn: sqlite3.Connection | None = None) -> list[dict] | None:
+    """
+    Extract the table of contents from a book's database.
+
+    The TOC is stored in the 'title' table with columns:
+    - id: Unique identifier for each TOC entry
+    - page: The page number where this section starts
+    - parent: Hierarchical reference (0 = top-level, >0 = subsection)
+
+    If titles_conn is provided, also includes the title text from the extracted titles database.
+
+    Returns a list of dicts with id, page, parent, and optionally title fields,
+    or None if book DB doesn't exist.
+    """
+    book_db = get_book_db_path(book_id)
+
+    if not book_db.exists():
+        return None
+
+    try:
+        conn = sqlite3.connect(book_db)
+        cursor = conn.cursor()
+
+        # Check if title table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='title'")
+        if not cursor.fetchone():
+            conn.close()
+            return None
+
+        # Extract TOC entries ordered by id
+        cursor.execute("SELECT id, page, parent FROM title ORDER BY id")
+        rows = cursor.fetchall()
+        conn.close()
+
+        if not rows:
+            return None
+
+        # Load title texts if connection provided
+        title_texts = {}
+        if titles_conn:
+            title_texts = load_title_texts(book_id, titles_conn)
+
+        # Convert to list of dicts, including title text if available
+        toc = []
+        for row in rows:
+            entry = {"id": row[0], "page": row[1], "parent": row[2]}
+            if row[0] in title_texts:
+                entry["title"] = title_texts[row[0]]
+            toc.append(entry)
+
+        return toc
+
+    except sqlite3.Error:
+        return None
 
 
 def create_output_schema(conn: sqlite3.Connection) -> None:
@@ -71,6 +152,7 @@ def create_output_schema(conn: sqlite3.Connection) -> None:
             alpha INTEGER,
             group_order INTEGER,
             book_up INTEGER,
+            table_of_contents TEXT,
             FOREIGN KEY (book_category) REFERENCES category(category_id),
             FOREIGN KEY (main_author) REFERENCES author(author_id)
         )
@@ -165,6 +247,49 @@ def export_table(
     return len(rows)
 
 
+def export_book_tocs(dest_conn: sqlite3.Connection) -> None:
+    """
+    Export table of contents for all books in the destination database.
+
+    Reads the TOC from each book's individual database and updates
+    the book table with the table_of_contents JSON. Also includes
+    title text from the extracted titles database if available.
+    """
+    cursor = dest_conn.cursor()
+
+    # Get all book IDs
+    cursor.execute("SELECT book_id FROM book")
+    book_ids = [row[0] for row in cursor.fetchall()]
+
+    # Open titles database if it exists
+    titles_db = get_titles_db_path()
+    titles_conn = None
+    if titles_db.exists():
+        titles_conn = sqlite3.connect(titles_db)
+        print(f"  Using title texts from: {titles_db}")
+    else:
+        print(f"  Warning: Title texts database not found at {titles_db}")
+        print(f"  Run TitleExtractor.java first to extract title texts from Lucene index")
+
+    try:
+        toc_count = 0
+        for book_id in book_ids:
+            toc = get_book_toc(book_id, titles_conn)
+            if toc:
+                toc_json = json.dumps(toc, ensure_ascii=False)
+                cursor.execute(
+                    "UPDATE book SET table_of_contents = ? WHERE book_id = ?",
+                    (toc_json, book_id)
+                )
+                toc_count += 1
+
+        dest_conn.commit()
+        print(f"  Added table of contents for {toc_count:,} books")
+    finally:
+        if titles_conn:
+            titles_conn.close()
+
+
 def export_metadata(output_path: str | Path | None = None) -> Path:
     """
     Export all metadata tables from shamela4 to a new SQLite database.
@@ -222,6 +347,10 @@ def export_metadata(output_path: str | Path | None = None) -> Path:
         for table_name, columns in tables.items():
             count = export_table(source_conn, dest_conn, table_name, columns)
             print(f"Exported {count:,} rows from {table_name}")
+
+        # Export table of contents for each book
+        print("\nExporting table of contents for each book...")
+        export_book_tocs(dest_conn)
 
         # Create indexes
         print("\nCreating indexes...")
