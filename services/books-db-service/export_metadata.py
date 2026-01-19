@@ -51,12 +51,16 @@ def get_book_toc(book_id: int, titles_conn: sqlite3.Connection | None = None) ->
 
     The TOC is stored in the 'title' table with columns:
     - id: Unique identifier for each TOC entry
-    - page: The page number where this section starts
+    - page: The page row ID where this section starts (references page.id)
     - parent: Hierarchical reference (0 = top-level, >0 = subsection)
+
+    Joins with the 'page' table to get:
+    - part: The volume/part number
+    - physical_page: The actual page number within that part
 
     If titles_conn is provided, also includes the title text from the extracted titles database.
 
-    Returns a list of dicts with id, page, parent, and optionally title fields,
+    Returns a list of dicts with id, page, parent, part, physical_page, and optionally title fields,
     or None if book DB doesn't exist.
     """
     book_db = get_book_db_path(book_id)
@@ -74,8 +78,13 @@ def get_book_toc(book_id: int, titles_conn: sqlite3.Connection | None = None) ->
             conn.close()
             return None
 
-        # Extract TOC entries ordered by id
-        cursor.execute("SELECT id, page, parent FROM title ORDER BY id")
+        # Extract TOC entries with page info by joining with page table
+        cursor.execute("""
+            SELECT t.id, t.page, t.parent, p.part, p.page as physical_page
+            FROM title t
+            LEFT JOIN page p ON t.page = p.id
+            ORDER BY t.id
+        """)
         rows = cursor.fetchall()
         conn.close()
 
@@ -90,7 +99,13 @@ def get_book_toc(book_id: int, titles_conn: sqlite3.Connection | None = None) ->
         # Convert to list of dicts, including title text if available
         toc = []
         for row in rows:
-            entry = {"id": row[0], "page": row[1], "parent": row[2]}
+            entry = {
+                "id": row[0],
+                "page": row[1],
+                "parent": row[2],
+                "part": row[3],
+                "physical_page": row[4]
+            }
             if row[0] in title_texts:
                 entry["title"] = title_texts[row[0]]
             toc.append(entry)

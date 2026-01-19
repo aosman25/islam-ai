@@ -622,7 +622,8 @@ class ExportService:
         book_id: int,
         book_name: str,
         author_name: Optional[str],
-        category_name: Optional[str]
+        category_name: Optional[str],
+        table_of_contents: Optional[str] = None
     ) -> Tuple[str, str]:
         """
         Process a book: export if needed, scrape HTML, upload text/metadata.
@@ -653,7 +654,8 @@ class ExportService:
             book_id=book_id,
             book_name=book_name,
             author_name=author_name,
-            category_name=category_name
+            category_name=category_name,
+            table_of_contents=table_of_contents
         )
 
         # Upload processed files

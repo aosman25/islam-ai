@@ -609,7 +609,8 @@ async def process_single_book(book_id: int):
             book_id=book_id,
             book_name=book.get("book_name"),
             author_name=book.get("author_name"),
-            category_name=book.get("category_name")
+            category_name=book.get("category_name"),
+            table_of_contents=book.get("table_of_contents")
         )
 
         return ProcessResponse(
@@ -646,7 +647,8 @@ async def process_multiple_books(request: ExportRequest):
                 book_id=book_id,
                 book_name=book.get("book_name"),
                 author_name=book.get("author_name"),
-                category_name=book.get("category_name")
+                category_name=book.get("category_name"),
+                table_of_contents=book.get("table_of_contents")
             )
             results.append(ProcessedBookResult(
                 book_id=book_id,

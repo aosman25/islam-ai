@@ -1,5 +1,6 @@
 """HTML scraping and text processing utilities for book exports."""
 
+import json
 import re
 from collections import defaultdict
 from typing import Dict, List, Any, Optional, Tuple
@@ -114,7 +115,8 @@ def process_book_html(
     book_id: int,
     book_name: str,
     author_name: Optional[str],
-    category_name: Optional[str]
+    category_name: Optional[str],
+    table_of_contents: Optional[str] = None
 ) -> Tuple[str, Dict[str, Any]]:
     """
     Process HTML files from an exported book and create cleaned markdown text and metadata.
@@ -125,6 +127,7 @@ def process_book_html(
         book_name: The book name
         author_name: Author name from database
         category_name: Category name from database
+        table_of_contents: JSON string of table of contents from database
 
     Returns:
         Tuple of (markdown_text, metadata_dict)
@@ -135,6 +138,7 @@ def process_book_html(
     headers = []
     headers_set = set()
     pages = defaultdict(lambda: defaultdict(list))
+    page_id = 0
 
     # Extract optional metadata from first valid HTML
     for html in html_contents:
@@ -152,6 +156,9 @@ def process_book_html(
 
         page_divs = main_div.find_all("div", class_="PageText")
         for page in page_divs:
+            if page.find("div", class_="PageHead") and page.find("div", class_="PageHead").find("span", class_="PartName"):
+                page_id += 1 
+
             current_text = extract_text_from_page(page)
             if not current_text or not current_text.strip():
                 continue
@@ -162,6 +169,7 @@ def process_book_html(
 
             if page_head:
                 part_name_span = page_head.find("span", class_="PartName")
+                
                 if part_name_span:
                     page_title = part_name_span.get_text(strip=True)
 
@@ -181,7 +189,9 @@ def process_book_html(
             pages[page_title][page_number].append({
                 "header_title": page_title,
                 "page_num": page_number,
+                "page_id": page_id,
                 "cleaned_text": current_text,
+                "display_elem": str(page),
             })
 
             if (
@@ -198,12 +208,21 @@ def process_book_html(
     # Normalize whitespace
     full_text = re.sub(r"\n{3,}", "\n\n", full_text).strip()
 
+    # Parse table_of_contents if it's a JSON string
+    toc_data = None
+    if table_of_contents:
+        try:
+            toc_data = json.loads(table_of_contents)
+        except (json.JSONDecodeError, TypeError):
+            toc_data = None
+
     # Build metadata (without "knowledge" field, using category from db)
     metadata = {
         "book_id": book_id,
         "book_name": book_name,
         "author": author_name,
         "category": category_name,
+        "table_of_contents": toc_data,
         "headers": headers,
         **optional_metadata,
         "pages": pages,
