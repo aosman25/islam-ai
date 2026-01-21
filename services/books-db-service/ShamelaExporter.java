@@ -283,9 +283,40 @@ padding:1px;
     }
 
     /**
-     * Get page texts from Lucene index
+     * Get page aliases from book database.
+     * Returns a map from this book's page ID to [aliased_book_id, aliased_page_id].
      */
-    public Map<Integer, String[]> getPageTexts(int bookId) throws Exception {
+    public Map<Integer, int[]> getBookAliases(int bookId) throws SQLException {
+        Map<Integer, int[]> aliases = new HashMap<>();
+
+        String subdir = String.format("%03d", bookId % 1000);
+        Path bookDb = databaseDir.resolve("book").resolve(subdir).resolve(bookId + ".db");
+
+        if (!Files.exists(bookDb)) {
+            return aliases;
+        }
+
+        try (Connection conn = DriverManager.getConnection("jdbc:sqlite:" + bookDb)) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(
+                "SELECT this_id, book_id, page_id FROM alias"
+            );
+
+            while (rs.next()) {
+                int thisId = rs.getInt("this_id");
+                int aliasBookId = rs.getInt("book_id");
+                int aliasPageId = rs.getInt("page_id");
+                aliases.put(thisId, new int[]{aliasBookId, aliasPageId});
+            }
+        }
+
+        return aliases;
+    }
+
+    /**
+     * Get page texts from Lucene index for a specific book prefix
+     */
+    private Map<Integer, String[]> getPageTextsForBook(int bookId) throws Exception {
         Map<Integer, String[]> texts = new HashMap<>();
 
         String prefix = bookId + "-";
@@ -307,6 +338,54 @@ padding:1px;
                     // Skip invalid page IDs
                 }
             }
+        }
+
+        return texts;
+    }
+
+    /**
+     * Get page texts from Lucene index, including aliased pages
+     */
+    public Map<Integer, String[]> getPageTexts(int bookId) throws Exception {
+        Map<Integer, String[]> texts = new HashMap<>();
+
+        // Get direct page texts for this book
+        texts.putAll(getPageTextsForBook(bookId));
+
+        // Get aliases and fetch content from aliased books
+        try {
+            Map<Integer, int[]> aliases = getBookAliases(bookId);
+            if (!aliases.isEmpty()) {
+                // Group aliases by source book to minimize Lucene queries
+                Map<Integer, List<int[]>> aliasesByBook = new HashMap<>();
+                for (Map.Entry<Integer, int[]> entry : aliases.entrySet()) {
+                    int thisPageId = entry.getKey();
+                    int aliasBookId = entry.getValue()[0];
+                    int aliasPageId = entry.getValue()[1];
+                    aliasesByBook.computeIfAbsent(aliasBookId, k -> new ArrayList<>())
+                        .add(new int[]{thisPageId, aliasPageId});
+                }
+
+                // Fetch content from each aliased book
+                for (Map.Entry<Integer, List<int[]>> bookEntry : aliasesByBook.entrySet()) {
+                    int aliasBookId = bookEntry.getKey();
+                    Map<Integer, String[]> aliasTexts = getPageTextsForBook(aliasBookId);
+
+                    // Map aliased content back to this book's page IDs
+                    for (int[] mapping : bookEntry.getValue()) {
+                        int thisPageId = mapping[0];
+                        int aliasPageId = mapping[1];
+                        String[] content = aliasTexts.get(aliasPageId);
+                        if (content != null) {
+                            texts.put(thisPageId, content);
+                        }
+                    }
+                }
+
+                System.out.println("  Loaded " + aliases.size() + " aliased pages from " + aliasesByBook.size() + " book(s)");
+            }
+        } catch (SQLException e) {
+            System.err.println("  Warning: Could not load aliases: " + e.getMessage());
         }
 
         return texts;
