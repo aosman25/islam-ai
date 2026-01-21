@@ -130,16 +130,18 @@ class ExportResponse(BaseModel):
     timestamp: str
 
 
-# ============== Process Models ==============
+# ============== Export Result Models ==============
 
-class ProcessedBookResult(BaseModel):
+class ExportedBookResult(BaseModel):
+    """Result for a single exported book with raw files and metadata."""
     book_id: int
-    text_url: str
-    metadata_url: str
+    raw_files_count: int
+    metadata_url: Optional[str] = None
 
 
-class ProcessResponse(BaseModel):
+class ExportWithMetadataResponse(BaseModel):
+    """Response for export endpoint that includes both raw files and metadata."""
     book_ids: List[int]
-    results: List[ProcessedBookResult]
+    results: List[ExportedBookResult]
     message: str
     timestamp: str

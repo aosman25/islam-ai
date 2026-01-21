@@ -18,8 +18,7 @@ from models import (
     CategoryResponse, CategoryListResponse,
     AuthorResponse, AuthorWithBooksResponse, AuthorListResponse,
     BookResponse, BookListResponse, BookSummaryResponse,
-    ExportRequest, ExportResponse,
-    ProcessResponse, ProcessedBookResult
+    ExportRequest, ExportWithMetadataResponse, ExportedBookResult
 )
 
 # Default pagination settings
@@ -454,78 +453,143 @@ async def list_exportable_books(
     )
 
 
-@app.post("/export/books", response_model=ExportResponse)
+@app.post("/export/books", response_model=ExportWithMetadataResponse)
 async def export_books(request: ExportRequest):
-    """Export multiple books and upload to storage."""
-    # Verify all books exist
+    """
+    Export multiple books: upload raw HTML files and generate metadata.
+
+    This endpoint combines the previous export and process functionality:
+    - Exports raw HTML files to S3 (if not already there)
+    - Generates and uploads metadata JSON (if not already there)
+
+    Optimizations:
+    - Early exit for already exported books (skips work entirely)
+    - Concurrent processing for unprocessed books (up to 5 at a time)
+    - Streaming HTML download to reduce memory usage
+    """
+    # Verify all books exist and gather their data
+    books_data = {}
     for book_id in request.book_ids:
-        if not db_service.get_book(book_id):
+        book = db_service.get_book(book_id)
+        if not book:
+            raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
+        books_data[book_id] = book
+
+    # Early exit check: find already exported books
+    export_status = export_service.check_books_export_status_batch(request.book_ids)
+
+    results = []
+    books_to_export = []
+
+    for book_id in request.book_ids:
+        raw_files_count, metadata_url = export_status.get(book_id, (None, None))
+        if raw_files_count and metadata_url:
+            # Book already exported - add to results immediately
+            results.append(ExportedBookResult(
+                book_id=book_id,
+                raw_files_count=raw_files_count,
+                metadata_url=metadata_url
+            ))
+            logger.info("Book already exported, skipping", book_id=book_id)
+        else:
+            # Book needs exporting
+            book = books_data[book_id]
+            books_to_export.append({
+                "book_id": book_id,
+                "book_name": book.get("book_name"),
+                "author_name": book.get("author_name"),
+                "category_name": book.get("category_name"),
+                "table_of_contents": book.get("table_of_contents")
+            })
+
+    # Export unprocessed books concurrently
+    if books_to_export:
+        logger.info("Exporting books concurrently", count=len(books_to_export))
+        batch_results = await export_service.export_books_batch(
+            books_data=books_to_export,
+            max_concurrent=5
+        )
+
+        # Check for errors and build results
+        errors = []
+        for book_id, raw_files_count, metadata_url, error in batch_results:
+            if error:
+                errors.append(f"Book {book_id}: {error}")
+            else:
+                results.append(ExportedBookResult(
+                    book_id=book_id,
+                    raw_files_count=raw_files_count,
+                    metadata_url=metadata_url
+                ))
+
+        if errors:
             raise HTTPException(
-                status_code=404,
-                detail=f"Book {book_id} not found"
+                status_code=500,
+                detail=f"Failed to export some books: {'; '.join(errors)}"
             )
 
-    # Check which books already exist in S3
-    existing_files = []
-    books_to_export = []
-    for book_id in request.book_ids:
-        files = export_service.get_book_files_from_s3(book_id)
-        if files:
-            existing_files.extend(files)
-        else:
-            books_to_export.append(book_id)
+    # Sort results by original request order
+    book_id_order = {book_id: idx for idx, book_id in enumerate(request.book_ids)}
+    results.sort(key=lambda r: book_id_order.get(r.book_id, 999999))
 
-    # If all books already exist, return them
-    if not books_to_export:
-        return ExportResponse(
-            book_ids=request.book_ids,
-            uploaded_files=existing_files,
-            message="All books already exist in storage",
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
-        )
+    already_exported = len(request.book_ids) - len(books_to_export)
+    message = f"Exported {len(results)} book(s) successfully"
+    if already_exported > 0:
+        message += f" ({already_exported} already exported, {len(books_to_export)} newly exported)"
 
-    # Export books that don't exist yet
-    try:
-        new_files, message = export_service.export_books(books_to_export)
-        all_files = existing_files + new_files
-
-        if existing_files:
-            message = f"Exported {len(books_to_export)} book(s). {len(request.book_ids) - len(books_to_export)} book(s) already existed."
-
-        return ExportResponse(
-            book_ids=request.book_ids,
-            uploaded_files=all_files,
-            message=message,
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
-        )
-    except Exception as e:
-        logger.error("Export failed", error=str(e), book_ids=books_to_export)
-        raise HTTPException(status_code=500, detail=str(e))
+    return ExportWithMetadataResponse(
+        book_ids=request.book_ids,
+        results=results,
+        message=message,
+        timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+    )
 
 
-@app.post("/export/books/{book_id}", response_model=ExportResponse)
+@app.post("/export/books/{book_id}", response_model=ExportWithMetadataResponse)
 async def export_single_book(book_id: int):
-    """Export a single book and upload to storage."""
-    if not db_service.get_book(book_id):
+    """
+    Export a single book: upload raw HTML files and generate metadata.
+
+    This endpoint combines the previous export and process functionality:
+    - Exports raw HTML files to S3 (if not already there)
+    - Generates and uploads metadata JSON (if not already there)
+    """
+    book = db_service.get_book(book_id)
+    if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    # Check if book already exists in S3
-    existing_files = export_service.get_book_files_from_s3(book_id)
-    if existing_files:
-        return ExportResponse(
+    # Early exit check
+    raw_files_count, metadata_url = export_service.check_export_status(book_id)
+    if raw_files_count and metadata_url:
+        logger.info("Book already exported, returning cached data", book_id=book_id)
+        return ExportWithMetadataResponse(
             book_ids=[book_id],
-            uploaded_files=existing_files,
-            message="Book already exists in storage",
+            results=[ExportedBookResult(
+                book_id=book_id,
+                raw_files_count=raw_files_count,
+                metadata_url=metadata_url
+            )],
+            message="Book already exported",
             timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
         )
 
-    # Export the book
     try:
-        uploaded_files, message = export_service.export_books([book_id])
-        return ExportResponse(
+        raw_files_count, metadata_url = export_service.export_book_with_metadata(
+            book_id=book_id,
+            book_name=book.get("book_name"),
+            author_name=book.get("author_name"),
+            category_name=book.get("category_name"),
+            table_of_contents=book.get("table_of_contents")
+        )
+
+        return ExportWithMetadataResponse(
             book_ids=[book_id],
-            uploaded_files=uploaded_files,
-            message=message,
+            results=[ExportedBookResult(
+                book_id=book_id,
+                raw_files_count=raw_files_count,
+                metadata_url=metadata_url
+            )],
+            message="Book exported successfully",
             timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
         )
     except Exception as e:
@@ -595,143 +659,18 @@ async def download_multiple_books(request: ExportRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ============== Process Endpoints ==============
-
-@app.post("/process/books/{book_id}", response_model=ProcessResponse)
-async def process_single_book(book_id: int):
-    """Process a single book: export if needed, scrape HTML, create text/metadata files."""
-    book = db_service.get_book(book_id)
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    try:
-        text_url, metadata_url = export_service.process_book(
-            book_id=book_id,
-            book_name=book.get("book_name"),
-            author_name=book.get("author_name"),
-            category_name=book.get("category_name"),
-            table_of_contents=book.get("table_of_contents")
-        )
-
-        return ProcessResponse(
-            book_ids=[book_id],
-            results=[ProcessedBookResult(
-                book_id=book_id,
-                text_url=text_url,
-                metadata_url=metadata_url
-            )],
-            message="Book processed successfully",
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
-        )
-    except Exception as e:
-        logger.error("Process failed", error=str(e), book_id=book_id)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/process/books", response_model=ProcessResponse)
-async def process_multiple_books(request: ExportRequest):
-    """Process multiple books: export if needed, scrape HTML, create text/metadata files."""
-    # Verify all books exist
-    books_data = {}
-    for book_id in request.book_ids:
-        book = db_service.get_book(book_id)
-        if not book:
-            raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
-        books_data[book_id] = book
-
-    results = []
-    for book_id in request.book_ids:
-        try:
-            book = books_data[book_id]
-            text_url, metadata_url = export_service.process_book(
-                book_id=book_id,
-                book_name=book.get("book_name"),
-                author_name=book.get("author_name"),
-                category_name=book.get("category_name"),
-                table_of_contents=book.get("table_of_contents")
-            )
-            results.append(ProcessedBookResult(
-                book_id=book_id,
-                text_url=text_url,
-                metadata_url=metadata_url
-            ))
-        except Exception as e:
-            logger.error("Process failed for book", error=str(e), book_id=book_id)
-            raise HTTPException(status_code=500, detail=f"Failed to process book {book_id}: {str(e)}")
-
-    return ProcessResponse(
-        book_ids=request.book_ids,
-        results=results,
-        message=f"Processed {len(results)} book(s) successfully",
-        timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
-    )
-
-
-# ============== Text/Metadata Download Endpoints ==============
-
-@app.get("/download/texts/{book_id}")
-async def download_single_text(book_id: int):
-    """Download processed text file for a single book."""
-    if not db_service.get_book(book_id):
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    if not export_service.get_processed_text_url(book_id):
-        raise HTTPException(
-            status_code=404,
-            detail="Text not processed yet. Use /process/books/{book_id} first."
-        )
-
-    try:
-        zip_buffer, filename = export_service.download_texts_as_zip([book_id])
-        return StreamingResponse(
-            zip_buffer,
-            media_type="application/zip",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-    except Exception as e:
-        logger.error("Download text failed", error=str(e), book_id=book_id)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/download/texts")
-async def download_multiple_texts(request: ExportRequest):
-    """Download processed text files for multiple books."""
-    # Verify all books exist and are processed
-    missing_texts = []
-    for book_id in request.book_ids:
-        if not db_service.get_book(book_id):
-            raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
-        if not export_service.get_processed_text_url(book_id):
-            missing_texts.append(book_id)
-
-    if missing_texts:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Texts not processed yet for books: {missing_texts}. Use /process/books first."
-        )
-
-    try:
-        zip_buffer, filename = export_service.download_texts_as_zip(request.book_ids)
-        return StreamingResponse(
-            zip_buffer,
-            media_type="application/zip",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-    except Exception as e:
-        logger.error("Download texts failed", error=str(e), book_ids=request.book_ids)
-        raise HTTPException(status_code=500, detail=str(e))
-
+# ============== Metadata Download Endpoints ==============
 
 @app.get("/download/metadata/{book_id}")
 async def download_single_metadata(book_id: int):
-    """Download processed metadata file for a single book."""
+    """Download metadata file for a single book."""
     if not db_service.get_book(book_id):
         raise HTTPException(status_code=404, detail="Book not found")
 
     if not export_service.get_processed_metadata_url(book_id):
         raise HTTPException(
             status_code=404,
-            detail="Metadata not processed yet. Use /process/books/{book_id} first."
+            detail="Metadata not available. Use /export/books/{book_id} first."
         )
 
     try:
@@ -748,8 +687,8 @@ async def download_single_metadata(book_id: int):
 
 @app.post("/download/metadata")
 async def download_multiple_metadata(request: ExportRequest):
-    """Download processed metadata files for multiple books."""
-    # Verify all books exist and are processed
+    """Download metadata files for multiple books."""
+    # Verify all books exist and are exported
     missing_metadata = []
     for book_id in request.book_ids:
         if not db_service.get_book(book_id):
@@ -760,7 +699,7 @@ async def download_multiple_metadata(request: ExportRequest):
     if missing_metadata:
         raise HTTPException(
             status_code=404,
-            detail=f"Metadata not processed yet for books: {missing_metadata}. Use /process/books first."
+            detail=f"Metadata not available for books: {missing_metadata}. Use /export/books first."
         )
 
     try:

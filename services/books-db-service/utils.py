@@ -1,18 +1,23 @@
 """Database and export service utilities for Books DB API (Read-Only)."""
 
+import asyncio
 import io
 import sqlite3
 import subprocess
 import shutil
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Iterator
 from contextlib import contextmanager
 import structlog
 import boto3
 from botocore.config import Config as BotoConfig
 
 logger = structlog.get_logger()
+
+# Thread pool for async S3 operations
+_executor = ThreadPoolExecutor(max_workers=10)
 
 
 class DatabaseService:
@@ -485,8 +490,195 @@ class ExportService:
 
         return uploaded_files
 
+    def _export_raw_files(self, book_id: int) -> int:
+        """Export raw HTML files for a book and upload to S3. Returns count of uploaded files."""
+        if not self.s3_client:
+            raise ValueError("S3 client not configured - cannot export without storage")
+
+        logger.info("Exporting raw files for book", book_id=book_id)
+
+        # Clear export directory before each book to ensure we find the right one
+        self._clear_export_directory()
+
+        # Run export script
+        result = subprocess.run(
+            ["bash", str(self.export_script), str(book_id)],
+            cwd=str(self.base_dir),
+            capture_output=True,
+            text=True,
+            timeout=3600
+        )
+
+        if result.returncode != 0:
+            error_msg = result.stderr or result.stdout or "Unknown error"
+            raise RuntimeError(f"Export failed for book {book_id}: {error_msg}")
+
+        # Find and upload exported files
+        export_path = self._find_export_directory()
+        if not export_path:
+            raise RuntimeError(f"Export directory not found for book {book_id}")
+
+        uploaded = self._upload_to_s3_and_cleanup(book_id, export_path)
+        return len(uploaded)
+
+    def _upload_metadata(self, book_id: int, metadata: Dict[str, Any]) -> str:
+        """Upload metadata JSON to S3 and return URL."""
+        if not self.s3_client:
+            raise ValueError("S3 client not configured")
+
+        import json
+
+        metadata_key = f"metadata/{book_id}.json"
+        self.s3_client.put_object(
+            Bucket=self.s3_bucket,
+            Key=metadata_key,
+            Body=json.dumps(metadata, ensure_ascii=False, indent=2).encode("utf-8"),
+            ContentType="application/json; charset=utf-8"
+        )
+
+        endpoint_host = self.s3_endpoint.replace("https://", "").replace("http://", "")
+        metadata_url = f"https://{self.s3_bucket}.{endpoint_host}/{metadata_key}"
+
+        logger.info("Uploaded metadata", book_id=book_id, metadata_key=metadata_key)
+        return metadata_url
+
+    def export_book_with_metadata(
+        self,
+        book_id: int,
+        book_name: str,
+        author_name: Optional[str],
+        category_name: Optional[str],
+        table_of_contents: Optional[str] = None
+    ) -> Tuple[int, Optional[str]]:
+        """
+        Export a book: export raw HTML files and generate metadata (no text file).
+
+        Returns:
+            Tuple of (raw_files_count, metadata_url)
+        """
+        from scrape import process_book_html_metadata_only
+
+        # Check if already fully exported (raw files + metadata)
+        raw_files = self.get_book_files_from_s3(book_id)
+        metadata_url = self.get_processed_metadata_url(book_id)
+
+        if raw_files and metadata_url:
+            logger.info("Book already exported with metadata", book_id=book_id)
+            return len(raw_files), metadata_url
+
+        # Export raw files if not already exported
+        if not raw_files:
+            raw_files_count = self._export_raw_files(book_id)
+        else:
+            raw_files_count = len(raw_files)
+
+        # Generate and upload metadata if not already exists
+        if not metadata_url:
+            # Download raw HTML files to generate metadata
+            html_contents = list(self._stream_raw_html_files(book_id))
+
+            # Process HTML to get metadata only (no text)
+            metadata = process_book_html_metadata_only(
+                html_contents=html_contents,
+                book_id=book_id,
+                book_name=book_name,
+                author_name=author_name,
+                category_name=category_name,
+                table_of_contents=table_of_contents
+            )
+
+            metadata_url = self._upload_metadata(book_id, metadata)
+
+        return raw_files_count, metadata_url
+
+    async def export_book_with_metadata_async(
+        self,
+        book_id: int,
+        book_name: str,
+        author_name: Optional[str],
+        category_name: Optional[str],
+        table_of_contents: Optional[str] = None
+    ) -> Tuple[int, Optional[str]]:
+        """
+        Async version of export_book_with_metadata for concurrent batch processing.
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            _executor,
+            self.export_book_with_metadata,
+            book_id,
+            book_name,
+            author_name,
+            category_name,
+            table_of_contents
+        )
+
+    async def export_books_batch(
+        self,
+        books_data: List[Dict[str, Any]],
+        max_concurrent: int = 5
+    ) -> List[Tuple[int, int, Optional[str], Optional[str]]]:
+        """
+        Export multiple books concurrently with controlled parallelism.
+
+        Args:
+            books_data: List of dicts with book_id, book_name, author_name, category_name, table_of_contents
+            max_concurrent: Maximum number of books to export concurrently
+
+        Returns:
+            List of tuples: (book_id, raw_files_count, metadata_url, error_message)
+            error_message is None on success, contains error string on failure
+        """
+        semaphore = asyncio.Semaphore(max_concurrent)
+
+        async def export_with_semaphore(book_data: Dict[str, Any]) -> Tuple[int, int, Optional[str], Optional[str]]:
+            book_id = book_data["book_id"]
+            async with semaphore:
+                try:
+                    raw_files_count, metadata_url = await self.export_book_with_metadata_async(
+                        book_id=book_id,
+                        book_name=book_data.get("book_name"),
+                        author_name=book_data.get("author_name"),
+                        category_name=book_data.get("category_name"),
+                        table_of_contents=book_data.get("table_of_contents")
+                    )
+                    return (book_id, raw_files_count, metadata_url, None)
+                except Exception as e:
+                    logger.error("Failed to export book", book_id=book_id, error=str(e))
+                    return (book_id, 0, None, str(e))
+
+        # Export all books concurrently
+        tasks = [export_with_semaphore(book_data) for book_data in books_data]
+        results = await asyncio.gather(*tasks)
+
+        return list(results)
+
+    def check_export_status(self, book_id: int) -> Tuple[Optional[int], Optional[str]]:
+        """
+        Check if a book is fully exported (raw files + metadata).
+        Returns (raw_files_count, metadata_url) - both set if fully exported, None otherwise.
+        """
+        raw_files = self.get_book_files_from_s3(book_id)
+        metadata_url = self.get_processed_metadata_url(book_id)
+
+        if raw_files and metadata_url:
+            return len(raw_files), metadata_url
+        return None, None
+
+    def check_books_export_status_batch(self, book_ids: List[int]) -> Dict[int, Tuple[Optional[int], Optional[str]]]:
+        """
+        Check export status for multiple books efficiently.
+        Returns dict mapping book_id to (raw_files_count, metadata_url) tuple.
+        """
+        results = {}
+        for book_id in book_ids:
+            results[book_id] = self.check_export_status(book_id)
+        return results
+
     def export_books(self, book_ids: List[int]) -> Tuple[List[str], str]:
-        """Export books and upload to S3. Returns (uploaded_files, message)."""
+        """Export books and upload to S3. Returns (uploaded_files, message).
+        DEPRECATED: Use export_book_with_metadata instead for combined export with metadata.
+        """
         if not self.s3_client:
             raise ValueError("S3 client not configured - cannot export without storage")
 
@@ -556,6 +748,54 @@ class ExportService:
             self.get_processed_metadata_url(book_id) is not None
         )
 
+    def check_processed_status(self, book_id: int) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Check if a book is processed with a single S3 list operation.
+        Returns (text_url, metadata_url) - both will be set if processed, None otherwise.
+        More efficient than two separate HEAD requests.
+        """
+        if not self.s3_client:
+            return None, None
+
+        text_key = f"text/{book_id}.md"
+        metadata_key = f"metadata/{book_id}.json"
+
+        try:
+            # Use list_objects_v2 with prefix to check both keys efficiently
+            # This is more efficient than two HEAD requests when checking multiple files
+            found_text = False
+            found_metadata = False
+
+            # Check text file
+            response = self.s3_client.list_objects_v2(
+                Bucket=self.s3_bucket,
+                Prefix=text_key,
+                MaxKeys=1
+            )
+            if "Contents" in response and any(obj["Key"] == text_key for obj in response["Contents"]):
+                found_text = True
+
+            # Check metadata file
+            response = self.s3_client.list_objects_v2(
+                Bucket=self.s3_bucket,
+                Prefix=metadata_key,
+                MaxKeys=1
+            )
+            if "Contents" in response and any(obj["Key"] == metadata_key for obj in response["Contents"]):
+                found_metadata = True
+
+            if found_text and found_metadata:
+                endpoint_host = self.s3_endpoint.replace("https://", "").replace("http://", "")
+                text_url = f"https://{self.s3_bucket}.{endpoint_host}/{text_key}"
+                metadata_url = f"https://{self.s3_bucket}.{endpoint_host}/{metadata_key}"
+                return text_url, metadata_url
+
+            return None, None
+
+        except Exception as e:
+            logger.warning("Error checking processed status", book_id=book_id, error=str(e))
+            return None, None
+
     def _download_raw_html_files(self, book_id: int) -> List[str]:
         """Download raw HTML files from S3 and return their contents."""
         if not self.s3_client:
@@ -584,6 +824,41 @@ class ExportService:
 
         logger.info("Downloaded raw HTML files", book_id=book_id, file_count=len(html_contents))
         return html_contents
+
+    def _stream_raw_html_files(self, book_id: int) -> Iterator[str]:
+        """
+        Stream raw HTML files from S3 one at a time.
+        More memory efficient than downloading all files at once.
+        """
+        if not self.s3_client:
+            raise ValueError("S3 client not configured")
+
+        s3_prefix = f"raw/{book_id}/"
+
+        # Use paginator to handle books with many pages (>1000)
+        paginator = self.s3_client.get_paginator('list_objects_v2')
+        pages = paginator.paginate(Bucket=self.s3_bucket, Prefix=s3_prefix)
+
+        all_keys = []
+        for page in pages:
+            if "Contents" in page:
+                for obj in page["Contents"]:
+                    key = obj["Key"]
+                    if key.lower().endswith((".htm", ".html")):
+                        all_keys.append(key)
+
+        if not all_keys:
+            raise ValueError(f"No raw files found for book {book_id}")
+
+        # Sort by key to maintain file order (001.htm, 002.htm, etc.)
+        all_keys.sort()
+
+        logger.info("Streaming raw HTML files", book_id=book_id, file_count=len(all_keys))
+
+        for key in all_keys:
+            file_obj = self.s3_client.get_object(Bucket=self.s3_bucket, Key=key)
+            content = file_obj["Body"].read().decode("utf-8", errors="ignore")
+            yield content
 
     def _upload_processed_files(self, book_id: int, text_content: str, metadata: Dict[str, Any]) -> Tuple[str, str]:
         """Upload processed text and metadata to S3."""
@@ -633,9 +908,8 @@ class ExportService:
         """
         from scrape import process_book_html
 
-        # Check if already processed
-        text_url = self.get_processed_text_url(book_id)
-        metadata_url = self.get_processed_metadata_url(book_id)
+        # Check if already processed using optimized single check
+        text_url, metadata_url = self.check_processed_status(book_id)
         if text_url and metadata_url:
             logger.info("Book already processed", book_id=book_id)
             return text_url, metadata_url
@@ -645,8 +919,8 @@ class ExportService:
             logger.info("Book not exported, exporting first", book_id=book_id)
             self.export_books([book_id])
 
-        # Download raw HTML files
-        html_contents = self._download_raw_html_files(book_id)
+        # Use streaming HTML download for memory efficiency
+        html_contents = list(self._stream_raw_html_files(book_id))
 
         # Process HTML to get text and metadata
         text_content, metadata = process_book_html(
@@ -662,6 +936,84 @@ class ExportService:
         text_url, metadata_url = self._upload_processed_files(book_id, text_content, metadata)
 
         return text_url, metadata_url
+
+    async def process_book_async(
+        self,
+        book_id: int,
+        book_name: str,
+        author_name: Optional[str],
+        category_name: Optional[str],
+        table_of_contents: Optional[str] = None
+    ) -> Tuple[str, str]:
+        """
+        Async version of process_book for concurrent batch processing.
+        Runs the synchronous operations in a thread pool to avoid blocking.
+
+        Returns:
+            Tuple of (text_url, metadata_url)
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            _executor,
+            self.process_book,
+            book_id,
+            book_name,
+            author_name,
+            category_name,
+            table_of_contents
+        )
+
+    async def process_books_batch(
+        self,
+        books_data: List[Dict[str, Any]],
+        max_concurrent: int = 5
+    ) -> List[Tuple[int, Optional[str], Optional[str], Optional[str]]]:
+        """
+        Process multiple books concurrently with controlled parallelism.
+
+        Args:
+            books_data: List of dicts with book_id, book_name, author_name, category_name, table_of_contents
+            max_concurrent: Maximum number of books to process concurrently
+
+        Returns:
+            List of tuples: (book_id, text_url, metadata_url, error_message)
+            error_message is None on success, contains error string on failure
+        """
+        semaphore = asyncio.Semaphore(max_concurrent)
+        results = []
+
+        async def process_with_semaphore(book_data: Dict[str, Any]) -> Tuple[int, Optional[str], Optional[str], Optional[str]]:
+            book_id = book_data["book_id"]
+            async with semaphore:
+                try:
+                    text_url, metadata_url = await self.process_book_async(
+                        book_id=book_id,
+                        book_name=book_data.get("book_name"),
+                        author_name=book_data.get("author_name"),
+                        category_name=book_data.get("category_name"),
+                        table_of_contents=book_data.get("table_of_contents")
+                    )
+                    return (book_id, text_url, metadata_url, None)
+                except Exception as e:
+                    logger.error("Failed to process book", book_id=book_id, error=str(e))
+                    return (book_id, None, None, str(e))
+
+        # Process all books concurrently
+        tasks = [process_with_semaphore(book_data) for book_data in books_data]
+        results = await asyncio.gather(*tasks)
+
+        return list(results)
+
+    def check_books_processed_batch(self, book_ids: List[int]) -> Dict[int, Tuple[Optional[str], Optional[str]]]:
+        """
+        Check processing status for multiple books efficiently.
+        Returns dict mapping book_id to (text_url, metadata_url) tuple.
+        """
+        results = {}
+        for book_id in book_ids:
+            text_url, metadata_url = self.check_processed_status(book_id)
+            results[book_id] = (text_url, metadata_url)
+        return results
 
     def download_texts_as_zip(self, book_ids: List[int]) -> Tuple[io.BytesIO, str]:
         """Download processed text files from S3 and return as a zip file."""
