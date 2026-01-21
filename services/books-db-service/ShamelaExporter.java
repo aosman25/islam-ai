@@ -702,6 +702,27 @@ padding:1px;
         Map<Integer, String[]> pageTexts = getPageTexts(bookId);
         System.out.println("  Found " + pageTexts.size() + " pages with content");
 
+        // Validate all pages have content
+        List<Integer> missingPages = new ArrayList<>();
+        for (Map<String, Object> page : pages) {
+            int pageId = (Integer) page.get("id");
+            String[] texts = pageTexts.get(pageId);
+            boolean hasBody = texts != null && texts[0] != null && !texts[0].isEmpty();
+            boolean hasFoot = texts != null && texts[1] != null && !texts[1].isEmpty();
+            if (!hasBody && !hasFoot) {
+                missingPages.add(pageId);
+            }
+        }
+
+        if (!missingPages.isEmpty()) {
+            // Show first few missing pages for debugging
+            String missingInfo = missingPages.size() <= 10
+                ? missingPages.toString()
+                : missingPages.subList(0, 10) + "... and " + (missingPages.size() - 10) + " more";
+            throw new RuntimeException("Book " + bookId + " has " + missingPages.size() +
+                " pages with no content available. Missing page IDs: " + missingInfo);
+        }
+
         // Create output directory for this book
         String safeBookName = safeName(bookName);
         Path bookDir = exportDir.resolve(safeBookName);
@@ -873,6 +894,7 @@ padding:1px;
     public void exportBooks(List<Integer> bookIds) throws Exception {
         int total = bookIds.size();
         int success = 0;
+        List<String> errors = new ArrayList<>();
 
         for (int i = 0; i < bookIds.size(); i++) {
             int bookId = bookIds.get(i);
@@ -882,14 +904,24 @@ padding:1px;
                 Path result = exportBook(bookId);
                 if (result != null) {
                     success++;
+                } else {
+                    errors.add("Book " + bookId + ": Export returned null (book not found or no pages)");
                 }
             } catch (Exception e) {
+                String errorMsg = "Book " + bookId + ": " + e.getMessage();
                 System.err.println("  Error: " + e.getMessage());
+                errors.add(errorMsg);
             }
         }
 
         System.out.println("\nExport complete! " + success + "/" + total + " books exported.");
         System.out.println("Output directory: " + exportDir);
+
+        // Fail if any books failed to export
+        if (!errors.isEmpty()) {
+            throw new RuntimeException("Export failed for " + errors.size() + " book(s):\n" +
+                String.join("\n", errors));
+        }
     }
 
     public static void main(String[] args) {
