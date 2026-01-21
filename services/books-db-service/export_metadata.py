@@ -51,16 +51,16 @@ def get_book_toc(book_id: int, titles_conn: sqlite3.Connection | None = None) ->
 
     The TOC is stored in the 'title' table with columns:
     - id: Unique identifier for each TOC entry
-    - page: The page row ID where this section starts (references page.id)
+    - page_id: The page row ID where this section starts (references page.id)
     - parent: Hierarchical reference (0 = top-level, >0 = subsection)
 
     Joins with the 'page' table to get:
     - part: The volume/part number
-    - physical_page: The actual page number within that part
+    - page_num: The actual page number within that part
 
     If titles_conn is provided, also includes the title text from the extracted titles database.
 
-    Returns a list of dicts with id, page, parent, part, physical_page, and optionally title fields,
+    Returns a list of dicts with id, page_id, parent, part, page_num, and optionally title fields,
     or None if book DB doesn't exist.
     """
     book_db = get_book_db_path(book_id)
@@ -101,10 +101,9 @@ def get_book_toc(book_id: int, titles_conn: sqlite3.Connection | None = None) ->
         for row in rows:
             entry = {
                 "id": row[0],
-                "page": row[1],
+                "page_id": row[1],
                 "parent": row[2],
-                "part": row[3],
-                "physical_page": row[4]
+                "page_num": row[4]
             }
             if row[0] in title_texts:
                 entry["title"] = title_texts[row[0]]
