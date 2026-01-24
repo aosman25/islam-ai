@@ -81,7 +81,7 @@ def process_book_html(
     optional_metadata = {}
     headers = []
     headers_set = set()
-    pages = defaultdict(lambda: defaultdict(list))
+    pages = defaultdict(list)
     page_id = 0
 
     # Extract optional metadata from first valid HTML
@@ -112,7 +112,7 @@ def process_book_html(
 
             if page_head:
                 part_name_span = page_head.find("span", class_="PartName")
-                
+
                 if part_name_span:
                     page_title = part_name_span.get_text(strip=True)
                     # Strip book_name first, then extract part identifier
@@ -139,8 +139,7 @@ def process_book_html(
             if page_title not in headers_set:
                 headers_set.add(page_title)
                 headers.append(page_title)
-
-            pages[page_title][page_number].append({
+            pages[page_title].append({
                 "part_title": page_title,
                 "page_num": page_number,
                 "page_id": page_id,
