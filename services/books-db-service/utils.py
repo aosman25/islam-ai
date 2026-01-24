@@ -454,6 +454,53 @@ class ExportService:
         except Exception as e:
             logger.warning("Failed to cleanup local export", path=str(export_path), error=str(e))
 
+    def _read_export_to_memory(self, local_dir: Path) -> Dict[str, bytes]:
+        """Read exported book files from local directory into memory.
+
+        Returns:
+            Dict mapping filename to file content bytes
+        """
+        files = {}
+        for file_path in sorted(local_dir.iterdir()):
+            if file_path.is_file():
+                files[file_path.name] = file_path.read_bytes()
+        return files
+
+    def _upload_raw_files_from_memory(self, book_id: int, files: Dict[str, bytes]) -> List[str]:
+        """Upload raw book files from memory to S3/B2.
+
+        Args:
+            book_id: The book ID
+            files: Dict mapping filename to file content bytes
+
+        Returns:
+            List of uploaded file URLs
+        """
+        if not self.s3_client:
+            raise ValueError("S3 client not configured")
+
+        uploaded_files = []
+        s3_prefix = f"raw/{book_id}"
+
+        for filename, content in files.items():
+            s3_key = f"{s3_prefix}/{filename}"
+            content_type = "text/html" if filename.lower().endswith((".htm", ".html")) else "application/octet-stream"
+
+            self.s3_client.put_object(
+                Bucket=self.s3_bucket,
+                Key=s3_key,
+                Body=content,
+                ContentType=content_type
+            )
+
+            # Build public URL
+            endpoint_host = self.s3_endpoint.replace("https://", "").replace("http://", "")
+            url = f"https://{self.s3_bucket}.{endpoint_host}/{s3_key}"
+            uploaded_files.append(url)
+
+        logger.info("Uploaded raw files to S3", book_id=book_id, file_count=len(uploaded_files))
+        return uploaded_files
+
     def _upload_to_s3_and_cleanup(self, book_id: int, local_dir: Path) -> List[str]:
         """Upload exported book files to S3/B2 and cleanup local files."""
         if not self.s3_client:
@@ -490,8 +537,52 @@ class ExportService:
 
         return uploaded_files
 
+    def _export_to_memory(self, book_id: int) -> Dict[str, bytes]:
+        """Export raw HTML files for a book directly to memory using stdout mode.
+
+        This uses the Java exporter's --stdout mode to output JSON directly,
+        completely bypassing disk I/O for maximum efficiency.
+
+        Returns:
+            Dict mapping filename to file content bytes
+        """
+        import json
+
+        logger.info("Exporting raw files for book directly to memory", book_id=book_id)
+
+        # Run export script with --stdout mode to get JSON output directly
+        result = subprocess.run(
+            ["bash", str(self.export_script), "--stdout", str(book_id)],
+            cwd=str(self.base_dir),
+            capture_output=True,
+            text=True,
+            timeout=3600
+        )
+
+        if result.returncode != 0:
+            error_msg = result.stderr or "Unknown error"
+            raise RuntimeError(f"Export failed for book {book_id}: {error_msg}")
+
+        # Parse JSON output from stdout
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Failed to parse export output for book {book_id}: {e}")
+
+        # Convert string content to bytes
+        files = {
+            filename: content.encode("utf-8")
+            for filename, content in data.get("files", {}).items()
+        }
+
+        logger.info("Exported book directly to memory", book_id=book_id, file_count=len(files))
+        return files
+
     def _export_raw_files(self, book_id: int) -> int:
-        """Export raw HTML files for a book and upload to S3. Returns count of uploaded files."""
+        """Export raw HTML files for a book and upload to S3. Returns count of uploaded files.
+
+        DEPRECATED: Use _export_to_memory + _upload_raw_files_from_memory for the optimized flow.
+        """
         if not self.s3_client:
             raise ValueError("S3 client not configured - cannot export without storage")
 
@@ -553,6 +644,12 @@ class ExportService:
         """
         Export a book: export raw HTML files and generate metadata (no text file).
 
+        The optimized flow:
+        1. Export raw files to memory (not S3)
+        2. Process metadata from in-memory HTML
+        3. Upload both raw files and metadata to S3
+        This avoids the round-trip of uploading then downloading from S3.
+
         Returns:
             Tuple of (raw_files_count, metadata_url)
         """
@@ -566,17 +663,9 @@ class ExportService:
             logger.info("Book already exported with metadata", book_id=book_id)
             return len(raw_files), metadata_url
 
-        # Export raw files if not already exported
-        if not raw_files:
-            raw_files_count = self._export_raw_files(book_id)
-        else:
-            raw_files_count = len(raw_files)
-
-        # Generate and upload metadata if not already exists
-        if not metadata_url:
-            # Download raw HTML files to generate metadata
+        # If raw files exist but metadata doesn't, download from S3 to process
+        if raw_files and not metadata_url:
             html_contents = list(self._stream_raw_html_files(book_id))
-
             metadata = process_book_html(
                 html_contents=html_contents,
                 book_id=book_id,
@@ -585,10 +674,38 @@ class ExportService:
                 category_name=category_name,
                 table_of_contents=table_of_contents
             )
-
             metadata_url = self._upload_metadata(book_id, metadata)
+            return len(raw_files), metadata_url
 
-        return raw_files_count, metadata_url
+        # Optimized flow: export to memory, process, then upload everything
+        if not self.s3_client:
+            raise ValueError("S3 client not configured - cannot export without storage")
+
+        # Export raw files to memory
+        files_in_memory = self._export_to_memory(book_id)
+
+        # Convert bytes to strings for HTML processing
+        html_contents = [
+            content.decode("utf-8", errors="ignore")
+            for filename, content in sorted(files_in_memory.items())
+            if filename.lower().endswith((".htm", ".html"))
+        ]
+
+        # Process metadata from in-memory HTML
+        metadata = process_book_html(
+            html_contents=html_contents,
+            book_id=book_id,
+            book_name=book_name,
+            author_name=author_name,
+            category_name=category_name,
+            table_of_contents=table_of_contents
+        )
+
+        # Upload raw files and metadata to S3
+        uploaded_urls = self._upload_raw_files_from_memory(book_id, files_in_memory)
+        metadata_url = self._upload_metadata(book_id, metadata)
+
+        return len(uploaded_urls), metadata_url
 
     async def export_book_with_metadata_async(
         self,

@@ -752,6 +752,110 @@ padding:1px;
     }
 
     /**
+     * Export a single part of a book to memory (returns HTML content)
+     */
+    private String exportPartToMemory(Map<String, Object> bookInfo, String bookName, String partName,
+                           List<Map<String, Object>> pages,
+                           Map<Integer, String[]> pageTexts,
+                           String betaka) {
+
+        // Check if partName is numeric
+        boolean isNumeric = partName != null && partName.matches("\\d+");
+        int partNumber = isNumeric ? Integer.parseInt(partName) : 0;
+
+        // Build HTML content
+        StringBuilder html = new StringBuilder();
+        html.append(HTML_HEADER);
+
+        // Format title
+        String title = bookName;
+        if (partName != null && !partName.isEmpty()) {
+            if (isNumeric) {
+                title += " - جـ " + toArabicNumerals(partNumber);
+            } else {
+                title += " - " + partName;
+            }
+        }
+        html.append(title);
+        html.append(HTML_TITLE_END);
+
+        // Add betaka page if provided
+        if (betaka != null) {
+            html.append(buildBetakaPage(bookInfo, betaka));
+        }
+
+        // Determine the part name to use in headers
+        String headerPartName;
+        if (partName == null || partName.isEmpty()) {
+            headerPartName = bookName;
+        } else if (isNumeric) {
+            headerPartName = bookName + " - جـ " + toArabicNumerals(partNumber);
+        } else {
+            headerPartName = bookName + " - " + partName;
+        }
+
+        // Add pages
+        for (Map<String, Object> page : pages) {
+            int pageId = (Integer) page.get("id");
+            Object pageNum = page.get("page");
+
+            String[] texts = pageTexts.get(pageId);
+            String body = (texts != null) ? texts[0] : null;
+            String foot = (texts != null) ? texts[1] : null;
+
+            html.append("<div class='PageText'>");
+
+            // Page header
+            html.append("<div class='PageHead'>");
+            html.append("<span class='PartName'>").append(headerPartName).append("</span>");
+            if (pageNum != null) {
+                String arabicPageNum = toArabicNumerals(((Number) pageNum).intValue());
+                html.append("<span class='PageNumber'>(ص: ").append(arabicPageNum).append(")</span>");
+            }
+            html.append("<hr/></div>");
+
+            // Body content
+            boolean hasBody = body != null && !body.isEmpty();
+            boolean hasFoot = foot != null && !foot.isEmpty();
+
+            if (hasBody) {
+                String formattedBody = formatText(body);
+                html.append(formattedBody);
+
+                boolean hasInlineFootnotes = formattedBody.contains("<div class='footnote'>");
+
+                if (hasFoot) {
+                    String formattedFoot = formatText(foot);
+                    if (formattedFoot.startsWith("<sup><font color=#be0000>(")) {
+                        formattedFoot = formattedFoot.replaceFirst(
+                            "^<sup>(<font color=#be0000>\\(\\d+\\)</font>)</sup>",
+                            "$1");
+                    }
+                    html.append("<hr width='95' align='right'><div class='footnote'>")
+                        .append(formattedFoot).append("</div>");
+                } else if (hasInlineFootnotes) {
+                    html.append("<p></div>");
+                }
+            } else if (hasFoot) {
+                String formattedFoot = formatText(foot);
+                html.append(formattedFoot);
+                if (formattedFoot.contains("<div class='footnote'>")) {
+                    html.append("<p></div>");
+                }
+            } else {
+                html.append("[No content available]");
+            }
+
+            html.append("</div>\n");
+        }
+
+        html.append(HTML_FOOTER);
+
+        // Return with CRLF line endings
+        return html.toString().replace("\n", "\r\n");
+    }
+
+    /**
      * Export a single part of a book
      */
     private void exportPart(Map<String, Object> bookInfo, String bookName, String partName,
@@ -873,6 +977,138 @@ padding:1px;
     }
 
     /**
+     * Export a single book to memory (returns Map of filename -> content)
+     */
+    public Map<String, String> exportBookToMemory(int bookId) throws Exception {
+        Map<String, Object> bookInfo = getBook(bookId);
+        if (bookInfo == null) {
+            throw new RuntimeException("Book " + bookId + " not found in database");
+        }
+
+        String bookName = (String) bookInfo.get("book_name");
+        System.err.println("Exporting: " + bookName + " (ID: " + bookId + ")");
+
+        // Get betaka
+        String betaka = getBetaka(bookId);
+
+        // Get page structure
+        List<Map<String, Object>> pages = getBookPages(bookId);
+        if (pages.isEmpty()) {
+            throw new RuntimeException("No pages found in book database for book " + bookId);
+        }
+
+        System.err.println("  Loading " + pages.size() + " pages from index...");
+
+        // Get page texts from Lucene
+        Map<Integer, String[]> pageTexts = getPageTexts(bookId);
+        System.err.println("  Found " + pageTexts.size() + " pages with content");
+
+        // Validate all pages have content
+        List<Integer> missingPages = new ArrayList<>();
+        for (Map<String, Object> page : pages) {
+            int pageId = (Integer) page.get("id");
+            String[] texts = pageTexts.get(pageId);
+            boolean hasBody = texts != null && texts[0] != null && !texts[0].isEmpty();
+            boolean hasFoot = texts != null && texts[1] != null && !texts[1].isEmpty();
+            if (!hasBody && !hasFoot) {
+                missingPages.add(pageId);
+            }
+        }
+
+        if (!missingPages.isEmpty()) {
+            String missingInfo = missingPages.size() <= 10
+                ? missingPages.toString()
+                : missingPages.subList(0, 10) + "... and " + (missingPages.size() - 10) + " more";
+            throw new RuntimeException("Book " + bookId + " has " + missingPages.size() +
+                " pages with no content available. Missing page IDs: " + missingInfo);
+        }
+
+        // Group pages by part
+        Map<String, List<Map<String, Object>>> parts = new LinkedHashMap<>();
+        for (Map<String, Object> page : pages) {
+            String partName = (String) page.get("part");
+            if (partName == null) partName = "";
+            parts.computeIfAbsent(partName, k -> new ArrayList<>()).add(page);
+        }
+
+        // Export each part to memory
+        Map<String, String> result = new LinkedHashMap<>();
+        int fileCounter = 1;
+        for (Map.Entry<String, List<Map<String, Object>>> entry : parts.entrySet()) {
+            String partName = entry.getKey();
+            List<Map<String, Object>> partPages = entry.getValue();
+
+            String filename = String.format("%03d.htm", fileCounter);
+            String content = exportPartToMemory(bookInfo, bookName, partName, partPages, pageTexts, betaka);
+            result.put(filename, content);
+            fileCounter++;
+        }
+
+        System.err.println("  Exported " + result.size() + " files to memory");
+        return result;
+    }
+
+    /**
+     * Export a book and output as JSON to stdout (for Python integration)
+     */
+    public void exportBookToStdout(int bookId) throws Exception {
+        Map<String, String> files = exportBookToMemory(bookId);
+
+        // Output as JSON
+        StringBuilder json = new StringBuilder();
+        json.append("{\n");
+        json.append("  \"book_id\": ").append(bookId).append(",\n");
+        json.append("  \"files\": {\n");
+
+        int count = 0;
+        int total = files.size();
+        for (Map.Entry<String, String> entry : files.entrySet()) {
+            String filename = entry.getKey();
+            String content = entry.getValue();
+
+            json.append("    \"").append(escapeJson(filename)).append("\": \"");
+            json.append(escapeJson(content)).append("\"");
+
+            if (++count < total) {
+                json.append(",");
+            }
+            json.append("\n");
+        }
+
+        json.append("  }\n");
+        json.append("}\n");
+
+        // Output to stdout
+        System.out.print(json.toString());
+    }
+
+    /**
+     * Escape string for JSON
+     */
+    private static String escapeJson(String s) {
+        if (s == null) return "";
+        StringBuilder result = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            switch (c) {
+                case '"': result.append("\\\""); break;
+                case '\\': result.append("\\\\"); break;
+                case '\b': result.append("\\b"); break;
+                case '\f': result.append("\\f"); break;
+                case '\n': result.append("\\n"); break;
+                case '\r': result.append("\\r"); break;
+                case '\t': result.append("\\t"); break;
+                default:
+                    if (c < ' ') {
+                        result.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        result.append(c);
+                    }
+            }
+        }
+        return result.toString();
+    }
+
+    /**
      * List all books
      */
     public void listBooks() throws SQLException {
@@ -928,8 +1164,9 @@ padding:1px;
         if (args.length == 0) {
             System.out.println("Usage:");
             System.out.println("  ShamelaExporter --list              # List all books");
-            System.out.println("  ShamelaExporter <id> [id...]        # Export specific books");
-            System.out.println("  ShamelaExporter --all               # Export all books");
+            System.out.println("  ShamelaExporter <id> [id...]        # Export specific books to files");
+            System.out.println("  ShamelaExporter --stdout <id>       # Export single book as JSON to stdout");
+            System.out.println("  ShamelaExporter --all               # Export all books to files");
             System.exit(1);
         }
 
@@ -940,6 +1177,14 @@ padding:1px;
             try {
                 if (args[0].equals("--list") || args[0].equals("-l")) {
                     exporter.listBooks();
+                } else if (args[0].equals("--stdout") || args[0].equals("-s")) {
+                    // Export single book to stdout as JSON (for Python integration)
+                    if (args.length < 2) {
+                        System.err.println("Error: --stdout requires a book ID");
+                        System.exit(1);
+                    }
+                    int bookId = Integer.parseInt(args[1]);
+                    exporter.exportBookToStdout(bookId);
                 } else if (args[0].equals("--all") || args[0].equals("-a")) {
                     List<Map<String, Object>> books = exporter.getAllBooks();
                     List<Integer> bookIds = new ArrayList<>();
