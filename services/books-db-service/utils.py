@@ -556,7 +556,7 @@ class ExportService:
         Returns:
             Tuple of (raw_files_count, metadata_url)
         """
-        from scrape import process_book_html_metadata_only
+        from scrape import process_book_html
 
         # Check if already fully exported (raw files + metadata)
         raw_files = self.get_book_files_from_s3(book_id)
@@ -577,8 +577,7 @@ class ExportService:
             # Download raw HTML files to generate metadata
             html_contents = list(self._stream_raw_html_files(book_id))
 
-            # Process HTML to get metadata only (no text)
-            metadata = process_book_html_metadata_only(
+            metadata = process_book_html(
                 html_contents=html_contents,
                 book_id=book_id,
                 book_name=book_name,
