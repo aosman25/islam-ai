@@ -8,11 +8,14 @@ import shutil
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple, Iterator
+from typing import List, Dict, Any, Optional, Tuple, Iterator, TYPE_CHECKING
 from contextlib import contextmanager
 import structlog
 import boto3
 from botocore.config import Config as BotoConfig
+
+if TYPE_CHECKING:
+    from postgres_service import PostgresService
 
 logger = structlog.get_logger()
 
@@ -302,7 +305,8 @@ class ExportService:
         s3_endpoint: Optional[str] = None,
         s3_access_key: Optional[str] = None,
         s3_secret_key: Optional[str] = None,
-        s3_bucket: str = "islamic-library"
+        s3_bucket: str = "islamic-library",
+        postgres_service: Optional["PostgresService"] = None
     ):
         self.base_dir = Path(base_dir)
         self.export_script = self.base_dir / "export_books.sh"
@@ -312,6 +316,7 @@ class ExportService:
         self.s3_bucket = s3_bucket
         self.s3_endpoint = s3_endpoint
         self.s3_client = None
+        self.postgres_service = postgres_service
 
         if s3_endpoint and s3_access_key and s3_secret_key:
             self.s3_client = boto3.client(
@@ -322,6 +327,9 @@ class ExportService:
                 config=BotoConfig(signature_version='s3v4')
             )
             logger.info("S3 client initialized", endpoint=s3_endpoint, bucket=s3_bucket)
+
+        if postgres_service:
+            logger.info("PostgreSQL export enabled")
 
     def get_book_files_from_s3(self, book_id: int) -> Optional[List[str]]:
         """Check if a book exists in S3 and return list of file URLs."""
@@ -367,6 +375,80 @@ class ExportService:
         """Check if a book already exists in S3."""
         files = self.get_book_files_from_s3(book_id)
         return files is not None and len(files) > 0
+
+    def delete_book_from_s3(self, book_id: int) -> bool:
+        """
+        Delete a book's raw files and metadata from S3.
+
+        Returns:
+            True if files were deleted, False if nothing was found
+        """
+        if not self.s3_client:
+            raise ValueError("S3 client not configured")
+
+        deleted_count = 0
+
+        # Delete raw files
+        raw_prefix = f"raw/{book_id}/"
+        try:
+            response = self.s3_client.list_objects_v2(
+                Bucket=self.s3_bucket,
+                Prefix=raw_prefix
+            )
+            if "Contents" in response:
+                for obj in response["Contents"]:
+                    self.s3_client.delete_object(Bucket=self.s3_bucket, Key=obj["Key"])
+                    deleted_count += 1
+        except Exception as e:
+            logger.error("Failed to delete raw files from S3", book_id=book_id, error=str(e))
+            raise
+
+        # Delete metadata file
+        metadata_key = f"metadata/{book_id}.json"
+        try:
+            self.s3_client.delete_object(Bucket=self.s3_bucket, Key=metadata_key)
+            deleted_count += 1
+        except Exception as e:
+            # Ignore if metadata doesn't exist
+            logger.debug("Metadata file not found or already deleted", book_id=book_id)
+
+        # Delete text file if exists
+        text_key = f"text/{book_id}.md"
+        try:
+            self.s3_client.delete_object(Bucket=self.s3_bucket, Key=text_key)
+            deleted_count += 1
+        except Exception:
+            pass
+
+        logger.info("Deleted book from S3", book_id=book_id, deleted_files=deleted_count)
+        return deleted_count > 0
+
+    def delete_book(self, book_id: int) -> bool:
+        """
+        Delete a book from both S3 and PostgreSQL.
+
+        Returns:
+            True if book was deleted from at least one store
+        """
+        s3_deleted = False
+        pg_deleted = False
+
+        # Delete from S3
+        try:
+            s3_deleted = self.delete_book_from_s3(book_id)
+        except Exception as e:
+            logger.error("Failed to delete from S3", book_id=book_id, error=str(e))
+            raise
+
+        # Delete from PostgreSQL
+        if self.postgres_service:
+            try:
+                pg_deleted = self.postgres_service.delete_book(book_id)
+            except Exception as e:
+                logger.error("Failed to delete from PostgreSQL", book_id=book_id, error=str(e))
+                raise
+
+        return s3_deleted or pg_deleted
 
     def download_books_as_zip(self, book_ids: List[int]) -> Tuple[io.BytesIO, str]:
         """Download book files from S3 and return as a zip file in memory.
@@ -633,13 +715,31 @@ class ExportService:
         logger.info("Uploaded metadata", book_id=book_id, metadata_key=metadata_key)
         return metadata_url
 
+    def _export_to_postgres(
+        self,
+        metadata: Dict[str, Any],
+        author_id: Optional[int] = None,
+        category_id: Optional[int] = None
+    ) -> None:
+        """Export metadata to PostgreSQL."""
+        if not self.postgres_service:
+            raise ValueError("PostgreSQL service not configured")
+
+        self.postgres_service.export_book_metadata(
+            metadata,
+            author_id=author_id,
+            category_id=category_id
+        )
+
     def export_book_with_metadata(
         self,
         book_id: int,
         book_name: str,
         author_name: Optional[str],
         category_name: Optional[str],
-        table_of_contents: Optional[str] = None
+        table_of_contents: Optional[str] = None,
+        author_id: Optional[int] = None,
+        category_id: Optional[int] = None
     ) -> Tuple[int, Optional[str]]:
         """
         Export a book: export raw HTML files and generate metadata (no text file).
@@ -648,7 +748,7 @@ class ExportService:
         1. Export raw files to memory (not S3)
         2. Process metadata from in-memory HTML
         3. Upload both raw files and metadata to S3
-        This avoids the round-trip of uploading then downloading from S3.
+        4. Export metadata to PostgreSQL
 
         Returns:
             Tuple of (raw_files_count, metadata_url)
@@ -675,6 +775,7 @@ class ExportService:
                 table_of_contents=table_of_contents
             )
             metadata_url = self._upload_metadata(book_id, metadata)
+            self._export_to_postgres(metadata, author_id=author_id, category_id=category_id)
             return len(raw_files), metadata_url
 
         # Optimized flow: export to memory, process, then upload everything
@@ -705,6 +806,9 @@ class ExportService:
         uploaded_urls = self._upload_raw_files_from_memory(book_id, files_in_memory)
         metadata_url = self._upload_metadata(book_id, metadata)
 
+        # Export to PostgreSQL
+        self._export_to_postgres(metadata, author_id=author_id, category_id=category_id)
+
         return len(uploaded_urls), metadata_url
 
     async def export_book_with_metadata_async(
@@ -713,7 +817,9 @@ class ExportService:
         book_name: str,
         author_name: Optional[str],
         category_name: Optional[str],
-        table_of_contents: Optional[str] = None
+        table_of_contents: Optional[str] = None,
+        author_id: Optional[int] = None,
+        category_id: Optional[int] = None
     ) -> Tuple[int, Optional[str]]:
         """
         Async version of export_book_with_metadata for concurrent batch processing.
@@ -721,12 +827,15 @@ class ExportService:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(
             _executor,
-            self.export_book_with_metadata,
-            book_id,
-            book_name,
-            author_name,
-            category_name,
-            table_of_contents
+            lambda: self.export_book_with_metadata(
+                book_id,
+                book_name,
+                author_name,
+                category_name,
+                table_of_contents,
+                author_id,
+                category_id
+            )
         )
 
     async def export_books_batch(
@@ -738,7 +847,8 @@ class ExportService:
         Export multiple books concurrently with controlled parallelism.
 
         Args:
-            books_data: List of dicts with book_id, book_name, author_name, category_name, table_of_contents
+            books_data: List of dicts with book_id, book_name, author_name, category_name,
+                        table_of_contents, author_id, category_id
             max_concurrent: Maximum number of books to export concurrently
 
         Returns:
@@ -756,7 +866,9 @@ class ExportService:
                         book_name=book_data.get("book_name"),
                         author_name=book_data.get("author_name"),
                         category_name=book_data.get("category_name"),
-                        table_of_contents=book_data.get("table_of_contents")
+                        table_of_contents=book_data.get("table_of_contents"),
+                        author_id=book_data.get("author_id"),
+                        category_id=book_data.get("category_id")
                     )
                     return (book_id, raw_files_count, metadata_url, None)
                 except Exception as e:

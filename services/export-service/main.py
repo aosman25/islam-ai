@@ -18,13 +18,15 @@ from models import (
     CategoryResponse, CategoryListResponse,
     AuthorResponse, AuthorWithBooksResponse, AuthorListResponse,
     BookResponse, BookListResponse, BookSummaryResponse,
-    ExportRequest, ExportWithMetadataResponse, ExportedBookResult
+    ExportRequest, ExportWithMetadataResponse, ExportedBookResult,
+    DeleteResponse, DeleteBatchResponse
 )
 
 # Default pagination settings
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 500
 from utils import DatabaseService, ExportService
+from postgres_service import PostgresService
 
 # Load environment variables
 load_dotenv()
@@ -43,6 +45,13 @@ class Config:
     S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY", "")
     S3_SECRET_KEY = os.getenv("S3_SECRET_KEY", "")
     S3_BUCKET = os.getenv("S3_BUCKET", "islamic-library")
+
+    # PostgreSQL configuration
+    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "")
+    POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
+    POSTGRES_DB = os.getenv("POSTGRES_DB", "books")
+    POSTGRES_USER = os.getenv("POSTGRES_USER", "")
+    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
 
     @classmethod
     def validate(cls):
@@ -81,6 +90,7 @@ def setup_logging():
 # Global services
 db_service: Optional[DatabaseService] = None
 export_service: Optional[ExportService] = None
+postgres_service: Optional[PostgresService] = None
 logger = structlog.get_logger()
 
 
@@ -88,11 +98,24 @@ logger = structlog.get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
-    global db_service, export_service
+    global db_service, export_service, postgres_service
 
     try:
         logger.info("Starting Books DB Service")
         Config.validate()
+
+        # Initialize PostgreSQL service (required)
+        if not Config.POSTGRES_HOST or not Config.POSTGRES_USER or not Config.POSTGRES_PASSWORD:
+            raise ValueError("PostgreSQL configuration is required: POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD")
+
+        postgres_service = PostgresService(
+            host=Config.POSTGRES_HOST,
+            port=Config.POSTGRES_PORT,
+            database=Config.POSTGRES_DB,
+            user=Config.POSTGRES_USER,
+            password=Config.POSTGRES_PASSWORD
+        )
+        logger.info("PostgreSQL service initialized", host=Config.POSTGRES_HOST, database=Config.POSTGRES_DB)
 
         # Initialize services
         db_path = os.path.join(Config.BASE_DIR, Config.DATABASE_PATH)
@@ -102,7 +125,8 @@ async def lifespan(app: FastAPI):
             s3_endpoint=Config.S3_ENDPOINT or None,
             s3_access_key=Config.S3_ACCESS_KEY or None,
             s3_secret_key=Config.S3_SECRET_KEY or None,
-            s3_bucket=Config.S3_BUCKET
+            s3_bucket=Config.S3_BUCKET,
+            postgres_service=postgres_service
         )
 
         logger.info("Services initialized successfully")
@@ -115,16 +139,29 @@ async def lifespan(app: FastAPI):
         logger.info("Shutting down Books DB Service")
         db_service = None
         export_service = None
+        postgres_service = None
 
+
+# API Tags for documentation
+tags_metadata = [
+    {"name": "Health", "description": "Health and readiness checks"},
+    {"name": "Categories", "description": "Browse and search book categories"},
+    {"name": "Authors", "description": "Browse and search authors"},
+    {"name": "Books", "description": "Browse and search books"},
+    {"name": "Export", "description": "Export books to S3 and PostgreSQL"},
+    {"name": "Download", "description": "Download exported books and metadata"},
+    {"name": "Delete", "description": "Delete exported books from S3 and PostgreSQL"},
+]
 
 # FastAPI app
 app = FastAPI(
     title="Books DB API",
-    description="Read-only API for Shamela library metadata and book exports",
+    description="API for Shamela library metadata, book exports, and storage management",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
+    openapi_tags=tags_metadata,
 )
 
 # CORS Middleware
@@ -133,7 +170,7 @@ if Config.ALLOWED_ORIGINS:
         CORSMiddleware,
         allow_origins=Config.ALLOWED_ORIGINS.split(","),
         allow_credentials=True,
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "DELETE"],
         allow_headers=["*"],
     )
 
@@ -198,7 +235,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 # ============== Health Endpoints ==============
 
-@app.get("/health", response_model=HealthResponse)
+@app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     """Health check endpoint."""
     return HealthResponse(
@@ -207,7 +244,7 @@ async def health_check():
     )
 
 
-@app.get("/ready", response_model=HealthResponse)
+@app.get("/ready", response_model=HealthResponse, tags=["Health"])
 async def readiness_check():
     """Readiness check endpoint - verifies database connection."""
     try:
@@ -234,9 +271,9 @@ async def readiness_check():
         )
 
 
-# ============== Category Endpoints (Read-Only) ==============
+# ============== Category Endpoints ==============
 
-@app.get("/categories", response_model=CategoryListResponse)
+@app.get("/categories", response_model=CategoryListResponse, tags=["Categories"])
 async def list_categories(
     limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: Optional[int] = Query(0, ge=0)
@@ -255,7 +292,7 @@ async def list_categories(
     )
 
 
-@app.get("/categories/search", response_model=CategoryListResponse)
+@app.get("/categories/search", response_model=CategoryListResponse, tags=["Categories"])
 async def search_categories(
     q: str = Query(..., min_length=1),
     limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
@@ -275,7 +312,7 @@ async def search_categories(
     )
 
 
-@app.get("/categories/{category_id}", response_model=CategoryResponse)
+@app.get("/categories/{category_id}", response_model=CategoryResponse, tags=["Categories"])
 async def get_category(category_id: int):
     """Get a single category by ID."""
     category = db_service.get_category(category_id)
@@ -284,9 +321,9 @@ async def get_category(category_id: int):
     return CategoryResponse(**category)
 
 
-# ============== Author Endpoints (Read-Only) ==============
+# ============== Author Endpoints ==============
 
-@app.get("/authors", response_model=AuthorListResponse)
+@app.get("/authors", response_model=AuthorListResponse, tags=["Authors"])
 async def list_authors(
     limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: Optional[int] = Query(0, ge=0)
@@ -305,7 +342,7 @@ async def list_authors(
     )
 
 
-@app.get("/authors/search", response_model=AuthorListResponse)
+@app.get("/authors/search", response_model=AuthorListResponse, tags=["Authors"])
 async def search_authors(
     q: str = Query(..., min_length=1),
     limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
@@ -325,7 +362,7 @@ async def search_authors(
     )
 
 
-@app.get("/authors/{author_id}", response_model=AuthorWithBooksResponse)
+@app.get("/authors/{author_id}", response_model=AuthorWithBooksResponse, tags=["Authors"])
 async def get_author(author_id: int):
     """Get a single author by ID with their books."""
     author = db_service.get_author(author_id)
@@ -339,9 +376,9 @@ async def get_author(author_id: int):
     )
 
 
-# ============== Book Endpoints (Read-Only) ==============
+# ============== Book Endpoints ==============
 
-@app.get("/books", response_model=BookListResponse)
+@app.get("/books", response_model=BookListResponse, tags=["Books"])
 async def list_books(
     limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: Optional[int] = Query(0, ge=0)
@@ -360,7 +397,7 @@ async def list_books(
     )
 
 
-@app.get("/books/search", response_model=BookListResponse)
+@app.get("/books/search", response_model=BookListResponse, tags=["Books"])
 async def search_books(
     q: Optional[str] = Query(None, min_length=1),
     category_id: Optional[int] = None,
@@ -383,7 +420,7 @@ async def search_books(
     )
 
 
-@app.get("/books/by-category/{category_id}", response_model=BookListResponse)
+@app.get("/books/by-category/{category_id}", response_model=BookListResponse, tags=["Books"])
 async def get_books_by_category(
     category_id: int,
     limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
@@ -403,7 +440,7 @@ async def get_books_by_category(
     )
 
 
-@app.get("/books/by-author/{author_id}", response_model=BookListResponse)
+@app.get("/books/by-author/{author_id}", response_model=BookListResponse, tags=["Books"])
 async def get_books_by_author(
     author_id: int,
     limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
@@ -423,7 +460,7 @@ async def get_books_by_author(
     )
 
 
-@app.get("/books/{book_id}", response_model=BookResponse)
+@app.get("/books/{book_id}", response_model=BookResponse, tags=["Books"])
 async def get_book(book_id: int):
     """Get a single book by ID."""
     book = db_service.get_book(book_id)
@@ -434,7 +471,7 @@ async def get_book(book_id: int):
 
 # ============== Export Endpoints ==============
 
-@app.get("/export/list", response_model=BookListResponse)
+@app.get("/export/list", response_model=BookListResponse, tags=["Export"])
 async def list_exportable_books(
     limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: Optional[int] = Query(0, ge=0)
@@ -453,7 +490,7 @@ async def list_exportable_books(
     )
 
 
-@app.post("/export/books", response_model=ExportWithMetadataResponse)
+@app.post("/export/books", response_model=ExportWithMetadataResponse, tags=["Export"])
 async def export_books(request: ExportRequest):
     """
     Export multiple books: upload raw HTML files and generate metadata.
@@ -499,7 +536,9 @@ async def export_books(request: ExportRequest):
                 "book_name": book.get("book_name"),
                 "author_name": book.get("author_name"),
                 "category_name": book.get("category_name"),
-                "table_of_contents": book.get("table_of_contents")
+                "table_of_contents": book.get("table_of_contents"),
+                "author_id": book.get("main_author"),
+                "category_id": book.get("book_category")
             })
 
     # Export unprocessed books concurrently
@@ -545,7 +584,7 @@ async def export_books(request: ExportRequest):
     )
 
 
-@app.post("/export/books/{book_id}", response_model=ExportWithMetadataResponse)
+@app.post("/export/books/{book_id}", response_model=ExportWithMetadataResponse, tags=["Export"])
 async def export_single_book(book_id: int):
     """
     Export a single book: upload raw HTML files and generate metadata.
@@ -579,7 +618,9 @@ async def export_single_book(book_id: int):
             book_name=book.get("book_name"),
             author_name=book.get("author_name"),
             category_name=book.get("category_name"),
-            table_of_contents=book.get("table_of_contents")
+            table_of_contents=book.get("table_of_contents"),
+            author_id=book.get("main_author"),
+            category_id=book.get("book_category")
         )
 
         return ExportWithMetadataResponse(
@@ -599,7 +640,7 @@ async def export_single_book(book_id: int):
 
 # ============== Download Endpoints ==============
 
-@app.get("/download/books/{book_id}")
+@app.get("/download/books/{book_id}", tags=["Download"])
 async def download_single_book(book_id: int):
     """Download a single book as a zip file."""
     if not db_service.get_book(book_id):
@@ -624,7 +665,7 @@ async def download_single_book(book_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/download/books")
+@app.post("/download/books", tags=["Download"])
 async def download_multiple_books(request: ExportRequest):
     """Download multiple books as a zip file."""
     # Verify all books exist in database
@@ -659,9 +700,7 @@ async def download_multiple_books(request: ExportRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ============== Metadata Download Endpoints ==============
-
-@app.get("/download/metadata/{book_id}")
+@app.get("/download/metadata/{book_id}", tags=["Download"])
 async def download_single_metadata(book_id: int):
     """Download metadata file for a single book."""
     if not db_service.get_book(book_id):
@@ -685,7 +724,7 @@ async def download_single_metadata(book_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/download/metadata")
+@app.post("/download/metadata", tags=["Download"])
 async def download_multiple_metadata(request: ExportRequest):
     """Download metadata files for multiple books."""
     # Verify all books exist and are exported
@@ -712,6 +751,83 @@ async def download_multiple_metadata(request: ExportRequest):
     except Exception as e:
         logger.error("Download metadata failed", error=str(e), book_ids=request.book_ids)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============== Delete Endpoints ==============
+
+@app.delete("/books/{book_id}", response_model=DeleteResponse, tags=["Delete"])
+async def delete_book(book_id: int):
+    """
+    Delete a book from S3 and PostgreSQL.
+
+    This will:
+    - Delete raw HTML files from S3
+    - Delete metadata JSON from S3
+    - Delete the book record from PostgreSQL
+    - Delete associated pages from PostgreSQL
+    - Clean up orphaned authors and categories
+    """
+    # Verify book exists in the source database
+    if not db_service.get_book(book_id):
+        raise HTTPException(status_code=404, detail="Book not found in source database")
+
+    try:
+        deleted = export_service.delete_book(book_id)
+
+        if deleted:
+            return DeleteResponse(
+                book_id=book_id,
+                deleted=True,
+                message="Book deleted successfully from S3 and PostgreSQL",
+                timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+            )
+        else:
+            return DeleteResponse(
+                book_id=book_id,
+                deleted=False,
+                message="Book was not found in S3 or PostgreSQL (may not have been exported)",
+                timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+            )
+    except Exception as e:
+        logger.error("Delete failed", error=str(e), book_id=book_id)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/books", response_model=DeleteBatchResponse, tags=["Delete"])
+async def delete_books(request: ExportRequest):
+    """
+    Delete multiple books from S3 and PostgreSQL.
+
+    This will for each book:
+    - Delete raw HTML files from S3
+    - Delete metadata JSON from S3
+    - Delete the book record from PostgreSQL
+    - Delete associated pages from PostgreSQL
+    - Clean up orphaned authors and categories
+    """
+    deleted_count = 0
+    errors = []
+
+    for book_id in request.book_ids:
+        try:
+            if export_service.delete_book(book_id):
+                deleted_count += 1
+        except Exception as e:
+            errors.append(f"Book {book_id}: {str(e)}")
+            logger.error("Failed to delete book", book_id=book_id, error=str(e))
+
+    if errors:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete some books: {'; '.join(errors)}"
+        )
+
+    return DeleteBatchResponse(
+        book_ids=request.book_ids,
+        deleted_count=deleted_count,
+        message=f"Deleted {deleted_count} book(s) successfully",
+        timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+    )
 
 
 if __name__ == "__main__":

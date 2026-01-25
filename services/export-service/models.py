@@ -145,3 +145,21 @@ class ExportWithMetadataResponse(BaseModel):
     results: List[ExportedBookResult]
     message: str
     timestamp: str
+
+
+# ============== Delete Models ==============
+
+class DeleteResponse(BaseModel):
+    """Response for delete endpoint."""
+    book_id: int
+    deleted: bool
+    message: str
+    timestamp: str
+
+
+class DeleteBatchResponse(BaseModel):
+    """Response for batch delete endpoint."""
+    book_ids: List[int]
+    deleted_count: int
+    message: str
+    timestamp: str
