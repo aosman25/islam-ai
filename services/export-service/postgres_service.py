@@ -146,6 +146,63 @@ class PostgresService:
                 CREATE INDEX IF NOT EXISTS idx_books_category_id ON books(category_id)
             """)
 
+            # Stats table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS stats (
+                    book_id INTEGER PRIMARY KEY REFERENCES books(book_id) ON DELETE CASCADE,
+
+                    -- Chunk counts
+                    total_chunks INTEGER NOT NULL,
+                    segments_under_limit INTEGER,
+                    segments_over_limit INTEGER,
+
+                    -- Token statistics
+                    total_tokens BIGINT,
+                    min_tokens INTEGER,
+                    max_tokens INTEGER,
+                    avg_tokens FLOAT,
+                    median_tokens FLOAT,
+                    stddev_tokens FLOAT,
+                    p25_tokens FLOAT,
+                    p75_tokens FLOAT,
+                    p90_tokens FLOAT,
+                    p95_tokens FLOAT,
+
+                    -- Character statistics
+                    total_characters BIGINT,
+                    min_characters INTEGER,
+                    max_characters INTEGER,
+                    avg_characters FLOAT,
+                    median_characters FLOAT,
+
+                    -- Word statistics
+                    total_words BIGINT,
+                    min_words INTEGER,
+                    max_words INTEGER,
+                    avg_words FLOAT,
+                    median_words FLOAT,
+
+                    -- Embedding statistics
+                    avg_sparse_vector_nnz FLOAT,
+                    min_sparse_vector_nnz INTEGER,
+                    max_sparse_vector_nnz INTEGER,
+                    total_sparse_entries BIGINT,
+
+                    -- Page coverage
+                    min_page_offset INTEGER,
+                    max_page_offset INTEGER,
+                    avg_page_offset FLOAT,
+
+                    -- Content analysis
+                    avg_chunk_length_chars FLOAT,
+                    chunk_length_variance FLOAT,
+
+                    -- Timestamps
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             logger.info("PostgreSQL tables ensured")
 
     def _ensure_author(self, cursor, author_id: Optional[int], author_name: Optional[str]) -> Optional[int]:
@@ -397,3 +454,172 @@ class PostgresService:
 
             logger.info("Deleted book from PostgreSQL", book_id=book_id)
             return True
+
+    def save_stats(self, book_id: int, stats: Dict[str, Any]) -> None:
+        """
+        Save statistics for a book.
+
+        Args:
+            book_id: The book ID
+            stats: Dictionary containing statistics
+        """
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute("""
+                INSERT INTO stats (
+                    book_id,
+                    total_chunks, segments_under_limit, segments_over_limit,
+                    total_tokens, min_tokens, max_tokens, avg_tokens, median_tokens,
+                    stddev_tokens, p25_tokens, p75_tokens, p90_tokens, p95_tokens,
+                    total_characters, min_characters, max_characters, avg_characters, median_characters,
+                    total_words, min_words, max_words, avg_words, median_words,
+                    avg_sparse_vector_nnz, min_sparse_vector_nnz,
+                    max_sparse_vector_nnz, total_sparse_entries,
+                    min_page_offset, max_page_offset, avg_page_offset,
+                    avg_chunk_length_chars, chunk_length_variance,
+                    updated_at
+                ) VALUES (
+                    %s,
+                    %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s,
+                    CURRENT_TIMESTAMP
+                )
+                ON CONFLICT (book_id) DO UPDATE SET
+                    total_chunks = EXCLUDED.total_chunks,
+                    segments_under_limit = EXCLUDED.segments_under_limit,
+                    segments_over_limit = EXCLUDED.segments_over_limit,
+                    total_tokens = EXCLUDED.total_tokens,
+                    min_tokens = EXCLUDED.min_tokens,
+                    max_tokens = EXCLUDED.max_tokens,
+                    avg_tokens = EXCLUDED.avg_tokens,
+                    median_tokens = EXCLUDED.median_tokens,
+                    stddev_tokens = EXCLUDED.stddev_tokens,
+                    p25_tokens = EXCLUDED.p25_tokens,
+                    p75_tokens = EXCLUDED.p75_tokens,
+                    p90_tokens = EXCLUDED.p90_tokens,
+                    p95_tokens = EXCLUDED.p95_tokens,
+                    total_characters = EXCLUDED.total_characters,
+                    min_characters = EXCLUDED.min_characters,
+                    max_characters = EXCLUDED.max_characters,
+                    avg_characters = EXCLUDED.avg_characters,
+                    median_characters = EXCLUDED.median_characters,
+                    total_words = EXCLUDED.total_words,
+                    min_words = EXCLUDED.min_words,
+                    max_words = EXCLUDED.max_words,
+                    avg_words = EXCLUDED.avg_words,
+                    median_words = EXCLUDED.median_words,
+                    avg_sparse_vector_nnz = EXCLUDED.avg_sparse_vector_nnz,
+                    min_sparse_vector_nnz = EXCLUDED.min_sparse_vector_nnz,
+                    max_sparse_vector_nnz = EXCLUDED.max_sparse_vector_nnz,
+                    total_sparse_entries = EXCLUDED.total_sparse_entries,
+                    min_page_offset = EXCLUDED.min_page_offset,
+                    max_page_offset = EXCLUDED.max_page_offset,
+                    avg_page_offset = EXCLUDED.avg_page_offset,
+                    avg_chunk_length_chars = EXCLUDED.avg_chunk_length_chars,
+                    chunk_length_variance = EXCLUDED.chunk_length_variance,
+                    updated_at = CURRENT_TIMESTAMP
+            """, (
+                book_id,
+                stats.get("total_chunks"),
+                stats.get("segments_under_limit"),
+                stats.get("segments_over_limit"),
+                stats.get("total_tokens"),
+                stats.get("min_tokens"),
+                stats.get("max_tokens"),
+                stats.get("avg_tokens"),
+                stats.get("median_tokens"),
+                stats.get("stddev_tokens"),
+                stats.get("p25_tokens"),
+                stats.get("p75_tokens"),
+                stats.get("p90_tokens"),
+                stats.get("p95_tokens"),
+                stats.get("total_characters"),
+                stats.get("min_characters"),
+                stats.get("max_characters"),
+                stats.get("avg_characters"),
+                stats.get("median_characters"),
+                stats.get("total_words"),
+                stats.get("min_words"),
+                stats.get("max_words"),
+                stats.get("avg_words"),
+                stats.get("median_words"),
+                stats.get("avg_sparse_vector_nnz"),
+                stats.get("min_sparse_vector_nnz"),
+                stats.get("max_sparse_vector_nnz"),
+                stats.get("total_sparse_entries"),
+                stats.get("min_page_offset"),
+                stats.get("max_page_offset"),
+                stats.get("avg_page_offset"),
+                stats.get("avg_chunk_length_chars"),
+                stats.get("chunk_length_variance"),
+            ))
+
+            logger.info("Saved stats to PostgreSQL", book_id=book_id, total_chunks=stats.get("total_chunks"))
+
+    def get_stats(self, book_id: int) -> Optional[Dict[str, Any]]:
+        """Get statistics for a book."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    book_id, total_chunks, segments_under_limit, segments_over_limit,
+                    total_tokens, min_tokens, max_tokens, avg_tokens, median_tokens,
+                    stddev_tokens, p25_tokens, p75_tokens, p90_tokens, p95_tokens,
+                    total_characters, min_characters, max_characters, avg_characters, median_characters,
+                    total_words, min_words, max_words, avg_words, median_words,
+                    avg_sparse_vector_nnz, min_sparse_vector_nnz,
+                    max_sparse_vector_nnz, total_sparse_entries,
+                    min_page_offset, max_page_offset, avg_page_offset,
+                    avg_chunk_length_chars, chunk_length_variance,
+                    created_at, updated_at
+                FROM stats
+                WHERE book_id = %s
+            """, (book_id,))
+
+            row = cursor.fetchone()
+            if not row:
+                return None
+
+            return {
+                "book_id": row[0],
+                "total_chunks": row[1],
+                "segments_under_limit": row[2],
+                "segments_over_limit": row[3],
+                "total_tokens": row[4],
+                "min_tokens": row[5],
+                "max_tokens": row[6],
+                "avg_tokens": row[7],
+                "median_tokens": row[8],
+                "stddev_tokens": row[9],
+                "p25_tokens": row[10],
+                "p75_tokens": row[11],
+                "p90_tokens": row[12],
+                "p95_tokens": row[13],
+                "total_characters": row[14],
+                "min_characters": row[15],
+                "max_characters": row[16],
+                "avg_characters": row[17],
+                "median_characters": row[18],
+                "total_words": row[19],
+                "min_words": row[20],
+                "max_words": row[21],
+                "avg_words": row[22],
+                "median_words": row[23],
+                "avg_sparse_vector_nnz": row[24],
+                "min_sparse_vector_nnz": row[25],
+                "max_sparse_vector_nnz": row[26],
+                "total_sparse_entries": row[27],
+                "min_page_offset": row[28],
+                "max_page_offset": row[29],
+                "avg_page_offset": row[30],
+                "avg_chunk_length_chars": row[31],
+                "chunk_length_variance": row[32],
+                "created_at": row[33],
+                "updated_at": row[34],
+            }

@@ -25,8 +25,9 @@ from models import (
 # Default pagination settings
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 500
-from utils import DatabaseService, ExportService
+from utils import DatabaseService, ExportService, EMBEDDING_DEVICE, EMBEDDING_USE_FP16
 from postgres_service import PostgresService
+from embedding_service import load_embedding_model
 
 # Load environment variables
 load_dotenv()
@@ -128,6 +129,10 @@ async def lifespan(app: FastAPI):
             s3_bucket=Config.S3_BUCKET,
             postgres_service=postgres_service
         )
+
+        # Load embedding model into memory
+        logger.info("Loading embedding model...")
+        load_embedding_model(device=EMBEDDING_DEVICE, use_fp16=EMBEDDING_USE_FP16)
 
         logger.info("Services initialized successfully")
         yield
@@ -496,52 +501,39 @@ async def export_books(request: ExportRequest):
     Export multiple books: upload raw HTML files and generate metadata.
 
     This endpoint combines the previous export and process functionality:
-    - Exports raw HTML files to S3 (if not already there)
-    - Generates and uploads metadata JSON (if not already there)
+    - Deletes existing book data from S3 and PostgreSQL (if exists)
+    - Exports raw HTML files to S3
+    - Generates and uploads metadata JSON
 
     Optimizations:
-    - Early exit for already exported books (skips work entirely)
-    - Concurrent processing for unprocessed books (up to 5 at a time)
+    - Concurrent processing for books (up to 5 at a time)
     - Streaming HTML download to reduce memory usage
     """
     # Verify all books exist and gather their data
-    books_data = {}
+    books_to_export = []
     for book_id in request.book_ids:
         book = db_service.get_book(book_id)
         if not book:
             raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
-        books_data[book_id] = book
 
-    # Early exit check: find already exported books
-    export_status = export_service.check_books_export_status_batch(request.book_ids)
+        # Delete existing book data before re-exporting
+        if export_service.book_exists_in_s3(book_id):
+            logger.info("Deleting existing book before re-export", book_id=book_id)
+            export_service.delete_book(book_id)
+
+        books_to_export.append({
+            "book_id": book_id,
+            "book_name": book.get("book_name"),
+            "author_name": book.get("author_name"),
+            "category_name": book.get("category_name"),
+            "table_of_contents": book.get("table_of_contents"),
+            "author_id": book.get("main_author"),
+            "category_id": book.get("book_category")
+        })
 
     results = []
-    books_to_export = []
 
-    for book_id in request.book_ids:
-        raw_files_count, metadata_url = export_status.get(book_id, (None, None))
-        if raw_files_count and metadata_url:
-            # Book already exported - add to results immediately
-            results.append(ExportedBookResult(
-                book_id=book_id,
-                raw_files_count=raw_files_count,
-                metadata_url=metadata_url
-            ))
-            logger.info("Book already exported, skipping", book_id=book_id)
-        else:
-            # Book needs exporting
-            book = books_data[book_id]
-            books_to_export.append({
-                "book_id": book_id,
-                "book_name": book.get("book_name"),
-                "author_name": book.get("author_name"),
-                "category_name": book.get("category_name"),
-                "table_of_contents": book.get("table_of_contents"),
-                "author_id": book.get("main_author"),
-                "category_id": book.get("book_category")
-            })
-
-    # Export unprocessed books concurrently
+    # Export all books concurrently
     if books_to_export:
         logger.info("Exporting books concurrently", count=len(books_to_export))
         batch_results = await export_service.export_books_batch(
@@ -571,15 +563,10 @@ async def export_books(request: ExportRequest):
     book_id_order = {book_id: idx for idx, book_id in enumerate(request.book_ids)}
     results.sort(key=lambda r: book_id_order.get(r.book_id, 999999))
 
-    already_exported = len(request.book_ids) - len(books_to_export)
-    message = f"Exported {len(results)} book(s) successfully"
-    if already_exported > 0:
-        message += f" ({already_exported} already exported, {len(books_to_export)} newly exported)"
-
     return ExportWithMetadataResponse(
         book_ids=request.book_ids,
         results=results,
-        message=message,
+        message=f"Exported {len(results)} book(s) successfully",
         timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
     )
 
@@ -590,27 +577,18 @@ async def export_single_book(book_id: int):
     Export a single book: upload raw HTML files and generate metadata.
 
     This endpoint combines the previous export and process functionality:
-    - Exports raw HTML files to S3 (if not already there)
-    - Generates and uploads metadata JSON (if not already there)
+    - Deletes existing book data from S3 and PostgreSQL (if exists)
+    - Exports raw HTML files to S3
+    - Generates and uploads metadata JSON
     """
     book = db_service.get_book(book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    # Early exit check
-    raw_files_count, metadata_url = export_service.check_export_status(book_id)
-    if raw_files_count and metadata_url:
-        logger.info("Book already exported, returning cached data", book_id=book_id)
-        return ExportWithMetadataResponse(
-            book_ids=[book_id],
-            results=[ExportedBookResult(
-                book_id=book_id,
-                raw_files_count=raw_files_count,
-                metadata_url=metadata_url
-            )],
-            message="Book already exported",
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
-        )
+    # Delete existing book data before re-exporting
+    if export_service.book_exists_in_s3(book_id):
+        logger.info("Deleting existing book before re-export", book_id=book_id)
+        export_service.delete_book(book_id)
 
     try:
         raw_files_count, metadata_url = export_service.export_book_with_metadata(
@@ -753,6 +731,59 @@ async def download_multiple_metadata(request: ExportRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/download/embeddings/{book_id}", tags=["Download"])
+async def download_single_embeddings(book_id: int):
+    """Download embeddings file for a single book."""
+    if not db_service.get_book(book_id):
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    if not export_service.get_embeddings_url(book_id):
+        raise HTTPException(
+            status_code=404,
+            detail="Embeddings not available. Use /export/books/{book_id} first."
+        )
+
+    try:
+        zip_buffer, filename = export_service.download_embeddings_as_zip([book_id])
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        logger.error("Download embeddings failed", error=str(e), book_id=book_id)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/download/embeddings", tags=["Download"])
+async def download_multiple_embeddings(request: ExportRequest):
+    """Download embeddings files for multiple books."""
+    # Verify all books exist and are exported
+    missing_embeddings = []
+    for book_id in request.book_ids:
+        if not db_service.get_book(book_id):
+            raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
+        if not export_service.get_embeddings_url(book_id):
+            missing_embeddings.append(book_id)
+
+    if missing_embeddings:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Embeddings not available for books: {missing_embeddings}. Use /export/books first."
+        )
+
+    try:
+        zip_buffer, filename = export_service.download_embeddings_as_zip(request.book_ids)
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        logger.error("Download embeddings failed", error=str(e), book_ids=request.book_ids)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============== Delete Endpoints ==============
 
 @app.delete("/books/{book_id}", response_model=DeleteResponse, tags=["Delete"])
@@ -763,8 +794,10 @@ async def delete_book(book_id: int):
     This will:
     - Delete raw HTML files from S3
     - Delete metadata JSON from S3
+    - Delete embeddings JSONL from S3
     - Delete the book record from PostgreSQL
     - Delete associated pages from PostgreSQL
+    - Delete stats from PostgreSQL
     - Clean up orphaned authors and categories
     """
     # Verify book exists in the source database
@@ -801,8 +834,10 @@ async def delete_books(request: ExportRequest):
     This will for each book:
     - Delete raw HTML files from S3
     - Delete metadata JSON from S3
+    - Delete embeddings JSONL from S3
     - Delete the book record from PostgreSQL
     - Delete associated pages from PostgreSQL
+    - Delete stats from PostgreSQL
     - Clean up orphaned authors and categories
     """
     deleted_count = 0

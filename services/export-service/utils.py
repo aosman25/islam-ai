@@ -2,6 +2,7 @@
 
 import asyncio
 import io
+import json
 import sqlite3
 import subprocess
 import shutil
@@ -18,6 +19,11 @@ if TYPE_CHECKING:
     from postgres_service import PostgresService
 
 logger = structlog.get_logger()
+
+# Embedding configuration
+EMBEDDING_DEVICE = 'cuda'  # Use 'cpu' if no GPU available
+EMBEDDING_USE_FP16 = True
+EMBEDDING_BATCH_SIZE = 1000
 
 # Thread pool for async S3 operations
 _executor = ThreadPoolExecutor(max_workers=10)
@@ -420,6 +426,15 @@ class ExportService:
         except Exception:
             pass
 
+        # Delete embeddings file if exists
+        embeddings_key = f"embeddings/{book_id}.jsonl"
+        try:
+            self.s3_client.delete_object(Bucket=self.s3_bucket, Key=embeddings_key)
+            deleted_count += 1
+            logger.debug("Embeddings file deleted", book_id=book_id)
+        except Exception:
+            pass
+
         logger.info("Deleted book from S3", book_id=book_id, deleted_files=deleted_count)
         return deleted_count > 0
 
@@ -742,25 +757,37 @@ class ExportService:
         category_id: Optional[int] = None
     ) -> Tuple[int, Optional[str]]:
         """
-        Export a book: export raw HTML files and generate metadata (no text file).
+        Export a book: export raw HTML files, generate metadata, and create embeddings.
 
         The optimized flow:
-        1. Export raw files to memory (not S3)
+        1. Export raw files to memory
         2. Process metadata from in-memory HTML
-        3. Upload both raw files and metadata to S3
-        4. Export metadata to PostgreSQL
+        3. Generate embeddings from metadata
+        4. Upload all files (raw, metadata, embeddings) to S3
+        5. Export metadata to PostgreSQL
 
         Returns:
             Tuple of (raw_files_count, metadata_url)
         """
         from scrape import process_book_html
 
-        # Check if already fully exported (raw files + metadata)
+        # Check if already fully exported (raw files + metadata + embeddings)
         raw_files = self.get_book_files_from_s3(book_id)
         metadata_url = self.get_processed_metadata_url(book_id)
+        embeddings_url = self.get_embeddings_url(book_id)
 
-        if raw_files and metadata_url:
-            logger.info("Book already exported with metadata", book_id=book_id)
+        if raw_files and metadata_url and embeddings_url:
+            logger.info("Book already exported with metadata and embeddings", book_id=book_id)
+            return len(raw_files), metadata_url
+
+        # If raw files and metadata exist but embeddings don't, generate and upload embeddings
+        if raw_files and metadata_url and not embeddings_url:
+            logger.info("Generating missing embeddings", book_id=book_id)
+            metadata = self._download_metadata_from_s3(book_id)
+            if metadata:
+                jsonl_content, stats = self._generate_embeddings(metadata)
+                self._upload_embeddings(book_id, jsonl_content)
+                self._save_stats(book_id, stats)
             return len(raw_files), metadata_url
 
         # If raw files exist but metadata doesn't, download from S3 to process
@@ -774,25 +801,35 @@ class ExportService:
                 category_name=category_name,
                 table_of_contents=table_of_contents
             )
+
+            # Generate embeddings first
+            jsonl_content, stats = self._generate_embeddings(metadata)
+
+            # Upload metadata and embeddings to S3
             metadata_url = self._upload_metadata(book_id, metadata)
+            self._upload_embeddings(book_id, jsonl_content)
+
+            # Export to PostgreSQL as final step
             self._export_to_postgres(metadata, author_id=author_id, category_id=category_id)
+            self._save_stats(book_id, stats)
+
             return len(raw_files), metadata_url
 
-        # Optimized flow: export to memory, process, then upload everything
+        # Full export flow: export to memory, process, generate embeddings, then upload everything
         if not self.s3_client:
             raise ValueError("S3 client not configured - cannot export without storage")
 
-        # Export raw files to memory
+        # Step 1: Export raw files to memory
         files_in_memory = self._export_to_memory(book_id)
 
-        # Convert bytes to strings for HTML processing
+        # Step 2: Convert bytes to strings for HTML processing
         html_contents = [
             content.decode("utf-8", errors="ignore")
             for filename, content in sorted(files_in_memory.items())
             if filename.lower().endswith((".htm", ".html"))
         ]
 
-        # Process metadata from in-memory HTML
+        # Step 3: Process metadata from in-memory HTML
         metadata = process_book_html(
             html_contents=html_contents,
             book_id=book_id,
@@ -802,12 +839,17 @@ class ExportService:
             table_of_contents=table_of_contents
         )
 
-        # Upload raw files and metadata to S3
+        # Step 4: Generate embeddings from metadata
+        jsonl_content, stats = self._generate_embeddings(metadata)
+
+        # Step 5: Upload all files to S3 (raw files, metadata, embeddings)
         uploaded_urls = self._upload_raw_files_from_memory(book_id, files_in_memory)
         metadata_url = self._upload_metadata(book_id, metadata)
+        self._upload_embeddings(book_id, jsonl_content)
 
-        # Export to PostgreSQL
+        # Step 6: Export to PostgreSQL as final step (metadata + embedding stats)
         self._export_to_postgres(metadata, author_id=author_id, category_id=category_id)
+        self._save_stats(book_id, stats)
 
         return len(uploaded_urls), metadata_url
 
@@ -883,13 +925,14 @@ class ExportService:
 
     def check_export_status(self, book_id: int) -> Tuple[Optional[int], Optional[str]]:
         """
-        Check if a book is fully exported (raw files + metadata).
+        Check if a book is fully exported (raw files + metadata + embeddings).
         Returns (raw_files_count, metadata_url) - both set if fully exported, None otherwise.
         """
         raw_files = self.get_book_files_from_s3(book_id)
         metadata_url = self.get_processed_metadata_url(book_id)
+        embeddings_url = self.get_embeddings_url(book_id)
 
-        if raw_files and metadata_url:
+        if raw_files and metadata_url and embeddings_url:
             return len(raw_files), metadata_url
         return None, None
 
@@ -967,6 +1010,99 @@ class ExportService:
             endpoint_host = self.s3_endpoint.replace("https://", "").replace("http://", "")
             return f"https://{self.s3_bucket}.{endpoint_host}/{s3_key}"
         except Exception:
+            return None
+
+    def get_embeddings_url(self, book_id: int) -> Optional[str]:
+        """Check if embeddings file exists and return its URL."""
+        if not self.s3_client:
+            return None
+
+        s3_key = f"embeddings/{book_id}.jsonl"
+        try:
+            self.s3_client.head_object(Bucket=self.s3_bucket, Key=s3_key)
+            endpoint_host = self.s3_endpoint.replace("https://", "").replace("http://", "")
+            return f"https://{self.s3_bucket}.{endpoint_host}/{s3_key}"
+        except Exception:
+            return None
+
+    def _generate_embeddings(self, metadata: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        """
+        Generate embeddings for a book from its metadata.
+
+        Args:
+            metadata: Book metadata containing parts, pages, etc.
+
+        Returns:
+            Tuple of (JSONL string containing embedded chunks, stats dictionary)
+        """
+        from embedding_service import generate_embeddings, embeddings_to_jsonl, compute_embedding_stats
+
+        book_id = metadata.get("book_id")
+        logger.info("Generating embeddings", book_id=book_id)
+
+        embedded_chunks, chunking_stats = generate_embeddings(
+            metadata=metadata,
+            device=EMBEDDING_DEVICE,
+            use_fp16=EMBEDDING_USE_FP16,
+            batch_size=EMBEDDING_BATCH_SIZE
+        )
+
+        jsonl_content = embeddings_to_jsonl(embedded_chunks)
+        stats = compute_embedding_stats(embedded_chunks, chunking_stats)
+
+        logger.info("Embeddings generated", book_id=book_id, num_chunks=len(embedded_chunks))
+
+        return jsonl_content, stats
+
+    def _save_stats(self, book_id: int, stats: Dict[str, Any]) -> None:
+        """Save statistics to PostgreSQL."""
+        if not self.postgres_service:
+            logger.warning("PostgreSQL service not configured, skipping stats save", book_id=book_id)
+            return
+
+        self.postgres_service.save_stats(book_id, stats)
+        logger.info("Saved stats", book_id=book_id)
+
+    def _upload_embeddings(self, book_id: int, jsonl_content: str) -> str:
+        """
+        Upload embeddings JSONL to S3.
+
+        Args:
+            book_id: The book ID
+            jsonl_content: JSONL string containing embedded chunks
+
+        Returns:
+            URL of the uploaded embeddings file
+        """
+        if not self.s3_client:
+            raise ValueError("S3 client not configured")
+
+        embeddings_key = f"embeddings/{book_id}.jsonl"
+        self.s3_client.put_object(
+            Bucket=self.s3_bucket,
+            Key=embeddings_key,
+            Body=jsonl_content.encode("utf-8"),
+            ContentType="application/jsonl; charset=utf-8"
+        )
+
+        endpoint_host = self.s3_endpoint.replace("https://", "").replace("http://", "")
+        embeddings_url = f"https://{self.s3_bucket}.{endpoint_host}/{embeddings_key}"
+
+        logger.info("Uploaded embeddings", book_id=book_id, embeddings_key=embeddings_key)
+        return embeddings_url
+
+    def _download_metadata_from_s3(self, book_id: int) -> Optional[Dict[str, Any]]:
+        """Download metadata JSON from S3."""
+        if not self.s3_client:
+            return None
+
+        metadata_key = f"metadata/{book_id}.json"
+        try:
+            file_obj = self.s3_client.get_object(Bucket=self.s3_bucket, Key=metadata_key)
+            content = file_obj["Body"].read().decode("utf-8")
+            return json.loads(content)
+        except Exception as e:
+            logger.warning("Failed to download metadata", book_id=book_id, error=str(e))
             return None
 
     def book_is_processed(self, book_id: int) -> bool:
@@ -1294,5 +1430,32 @@ class ExportService:
             filename = f"metadata_{book_ids[0]}.zip"
         else:
             filename = f"metadata_{'-'.join(map(str, book_ids[:5]))}.zip"
+
+        return zip_buffer, filename
+
+    def download_embeddings_as_zip(self, book_ids: List[int]) -> Tuple[io.BytesIO, str]:
+        """Download embeddings JSONL files from S3 and return as a zip file."""
+        if not self.s3_client:
+            raise ValueError("S3 client not configured")
+
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for book_id in book_ids:
+                s3_key = f"embeddings/{book_id}.jsonl"
+                try:
+                    file_obj = self.s3_client.get_object(Bucket=self.s3_bucket, Key=s3_key)
+                    content = file_obj["Body"].read()
+                    zip_file.writestr(f"{book_id}.jsonl", content)
+                except Exception as e:
+                    logger.warning("Embeddings file not found", book_id=book_id, error=str(e))
+                    continue
+
+        zip_buffer.seek(0)
+
+        if len(book_ids) == 1:
+            filename = f"embeddings_{book_ids[0]}.zip"
+        else:
+            filename = f"embeddings_{'-'.join(map(str, book_ids[:5]))}.zip"
 
         return zip_buffer, filename
