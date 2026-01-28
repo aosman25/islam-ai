@@ -1,7 +1,7 @@
 services:
   minio:
     container_name: books-minio
-    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
     env_file:
       - .env.storage
     ports:
@@ -47,7 +47,7 @@ services:
 
   etcd:
     container_name: milvus-etcd
-    image: quay.io/coreos/etcd:v3.5.5
+    image: quay.io/coreos/etcd:v3.5.25
     environment:
       - ETCD_AUTO_COMPACTION_MODE=revision
       - ETCD_AUTO_COMPACTION_RETENTION=1000
@@ -64,7 +64,7 @@ services:
 
   milvus-minio:
     container_name: milvus-minio
-    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
     env_file:
       - .env.storage
     ports:
@@ -81,7 +81,7 @@ services:
 
   milvus:
     container_name: milvus-standalone
-    image: milvusdb/milvus:v2.5.14
+    image: milvusdb/milvus:v2.6.9
     command: ["milvus", "run", "standalone"]
     security_opt:
       - seccomp:unconfined
@@ -108,7 +108,7 @@ services:
 
   attu:
     container_name: milvus-attu
-    image: zilliz/attu:v2.5.10
+    image: zilliz/attu:v2.6.4
     environment:
       MILVUS_URL: milvus:19530
     ports:
