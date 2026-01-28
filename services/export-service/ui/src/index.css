@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Noto Sans Arabic', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: 'Noto Sans Arabic', system-ui, sans-serif;
+  direction: rtl;
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+button, [role="button"] {
+  cursor: pointer;
+}

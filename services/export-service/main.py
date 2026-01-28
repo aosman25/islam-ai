@@ -11,7 +11,8 @@ import structlog
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Query, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from models import (
     HealthResponse, ErrorResponse, PaginationMeta,
@@ -210,14 +211,14 @@ app = FastAPI(
 )
 
 # CORS Middleware
-if Config.ALLOWED_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=Config.ALLOWED_ORIGINS.split(","),
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "DELETE"],
-        allow_headers=["*"],
-    )
+cors_origins = Config.ALLOWED_ORIGINS.split(",") if Config.ALLOWED_ORIGINS else ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["*"],
+)
 
 
 # Request logging middleware
@@ -448,11 +449,13 @@ async def search_books(
     category_id: Optional[int] = None,
     author_id: Optional[int] = None,
     hidden: Optional[int] = None,
+    printed: Optional[int] = None,
+    has_toc: Optional[bool] = None,
     limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: Optional[int] = Query(0, ge=0)
 ):
     """Search books by name, category, or author with pagination."""
-    books, total = db_service.search_books(q, category_id, author_id, hidden, limit=limit, offset=offset)
+    books, total = db_service.search_books(q, category_id, author_id, hidden, printed=printed, has_toc=has_toc, limit=limit, offset=offset)
     return BookListResponse(
         books=[BookResponse(**b) for b in books],
         count=len(books),
@@ -505,6 +508,20 @@ async def get_books_by_author(
     )
 
 
+@app.get("/books/ids", tags=["Books"])
+async def get_filtered_book_ids(
+    q: Optional[str] = Query(None, min_length=1),
+    category_id: Optional[int] = None,
+    author_id: Optional[int] = None,
+    hidden: Optional[int] = None,
+    printed: Optional[int] = None,
+    has_toc: Optional[bool] = None,
+):
+    """Return all book IDs matching the given filters (no pagination)."""
+    ids = db_service.search_book_ids(q, category_id, author_id, hidden, printed=printed, has_toc=has_toc)
+    return {"book_ids": ids, "total": len(ids)}
+
+
 @app.get("/books/{book_id}", response_model=BookResponse, tags=["Books"])
 async def get_book(book_id: int):
     """Get a single book by ID."""
@@ -512,6 +529,15 @@ async def get_book(book_id: int):
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     return BookResponse(**book)
+
+
+@app.post("/books/exported", tags=["Books"])
+async def check_exported_books(request: ExportRequest):
+    """Return which of the given book IDs have been exported to PostgreSQL."""
+    if postgres_service is None:
+        return {"exported_ids": []}
+    exported = postgres_service.get_exported_book_ids(request.book_ids)
+    return {"exported_ids": exported}
 
 
 # ============== Export Endpoints ==============
@@ -896,6 +922,22 @@ async def delete_books(request: ExportRequest):
         message=f"Deleted {deleted_count} book(s) successfully",
         timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
     )
+
+
+# ============== Static UI Serving ==============
+
+UI_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", "dist")
+
+if os.path.isdir(UI_DIR):
+    app.mount("/assets", StaticFiles(directory=os.path.join(UI_DIR, "assets")), name="ui-assets")
+
+    @app.get("/{full_path:path}", tags=["UI"])
+    async def serve_ui(full_path: str):
+        """Serve the React SPA for any non-API route."""
+        file_path = os.path.join(UI_DIR, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(UI_DIR, "index.html"))
 
 
 if __name__ == "__main__":

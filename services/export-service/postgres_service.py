@@ -347,6 +347,16 @@ class PostgresService:
             cursor.execute("SELECT 1 FROM books WHERE book_id = %s", (book_id,))
             return cursor.fetchone() is not None
 
+    def get_exported_book_ids(self, book_ids: List[int]) -> List[int]:
+        """Return the subset of book_ids that exist in the exported books table."""
+        if not book_ids:
+            return []
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            placeholders = ','.join(['%s'] * len(book_ids))
+            cursor.execute(f"SELECT book_id FROM books WHERE book_id IN ({placeholders})", book_ids)
+            return [row[0] for row in cursor.fetchall()]
+
     def get_book(self, book_id: int) -> Optional[Dict[str, Any]]:
         """Get book metadata from PostgreSQL."""
         with self.get_connection() as conn:

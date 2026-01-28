@@ -264,6 +264,8 @@ class DatabaseService:
         category_id: Optional[int] = None,
         author_id: Optional[int] = None,
         hidden: Optional[int] = None,
+        printed: Optional[int] = None,
+        has_toc: Optional[bool] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None
     ) -> Tuple[List[Dict[str, Any]], int]:
@@ -287,6 +289,16 @@ class DatabaseService:
             where_clause += " AND b.hidden = ?"
             params.append(hidden)
 
+        if printed is not None:
+            where_clause += " AND b.printed = ?"
+            params.append(printed)
+
+        if has_toc is not None:
+            if has_toc:
+                where_clause += " AND b.table_of_contents IS NOT NULL"
+            else:
+                where_clause += " AND b.table_of_contents IS NULL"
+
         with self.get_connection() as conn:
             # Get total count
             count_sql = f"SELECT COUNT(*) FROM book b {where_clause}"
@@ -303,6 +315,45 @@ class DatabaseService:
             sql = self._apply_pagination(sql, limit, offset)
             cursor = conn.execute(sql, params)
             return [self._row_to_dict(row) for row in cursor.fetchall()], total
+
+    def search_book_ids(
+        self,
+        query: Optional[str] = None,
+        category_id: Optional[int] = None,
+        author_id: Optional[int] = None,
+        hidden: Optional[int] = None,
+        printed: Optional[int] = None,
+        has_toc: Optional[bool] = None,
+    ) -> List[int]:
+        """Return all book IDs matching the given filters (no pagination)."""
+        where_clause = "WHERE 1=1"
+        params: list = []
+
+        if query:
+            where_clause += " AND b.book_name LIKE ?"
+            params.append(f"%{query}%")
+        if category_id is not None:
+            where_clause += " AND b.book_category = ?"
+            params.append(category_id)
+        if author_id is not None:
+            where_clause += " AND (b.main_author = ? OR b.book_id IN (SELECT book_id FROM author_book WHERE author_id = ?))"
+            params.extend([author_id, author_id])
+        if hidden is not None:
+            where_clause += " AND b.hidden = ?"
+            params.append(hidden)
+        if printed is not None:
+            where_clause += " AND b.printed = ?"
+            params.append(printed)
+        if has_toc is not None:
+            if has_toc:
+                where_clause += " AND b.table_of_contents IS NOT NULL"
+            else:
+                where_clause += " AND b.table_of_contents IS NULL"
+
+        with self.get_connection() as conn:
+            sql = f"SELECT b.book_id FROM book b {where_clause} ORDER BY b.book_name"
+            cursor = conn.execute(sql, params)
+            return [row[0] for row in cursor.fetchall()]
 
 
 class ExportService:
