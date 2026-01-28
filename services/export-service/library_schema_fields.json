@@ -1,25 +1,19 @@
 [
   {
     "field_name": "id",
-    "datatype": "VARCHAR",
-    "is_primary": true,
-    "max_length": 50
+    "datatype": "INT64",
+    "is_primary": true
   },
-  { "field_name": "book_id", "datatype": "VARCHAR", "max_length": 50 },
+  { "field_name": "book_id", "datatype": "INT32"},
   { "field_name": "book_name", "datatype": "VARCHAR", "max_length": 500 },
   { "field_name": "order", "datatype": "INT32" },
   { "field_name": "author", "datatype": "VARCHAR", "max_length": 500 },
-  { "field_name": "knowledge", "datatype": "VARCHAR", "max_length": 500 },
   { "field_name": "category", "datatype": "VARCHAR", "max_length": 500 },
+  {"field_name": "part_title", "datatype": "VARCHAR", "max_length": 500 },
+  { "field_name": "start_page_id", "datatype": "INT32" },
+  { "field_name": "page_offset", "datatype": "INT32" },
   {
-    "field_name": "header_titles",
-    "datatype": "ARRAY",
-    "element_type": "VARCHAR",
-    "max_capacity": 5,
-    "max_length": 500
-  },
-  {
-    "field_name": "page_range",
+    "field_name": "page_num_range",
     "datatype": "ARRAY",
     "element_type": "INT32",
     "max_capacity": 2

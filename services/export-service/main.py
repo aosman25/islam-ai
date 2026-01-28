@@ -27,6 +27,7 @@ DEFAULT_LIMIT = 50
 MAX_LIMIT = 500
 from utils import DatabaseService, ExportService, EMBEDDING_DEVICE, EMBEDDING_USE_FP16
 from postgres_service import PostgresService
+from milvus_service import MilvusService
 from embedding_service import load_embedding_model
 
 # Load environment variables
@@ -53,6 +54,12 @@ class Config:
     POSTGRES_DB = os.getenv("POSTGRES_DB", "books")
     POSTGRES_USER = os.getenv("POSTGRES_USER", "")
     POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
+
+    # Milvus configuration
+    MILVUS_URI = os.getenv("MILVUS_URI", "")
+    MILVUS_TOKEN = os.getenv("MILVUS_TOKEN", "")
+    MILVUS_COLLECTION = os.getenv("MILVUS_COLLECTION", "islamic_library")
+    MILVUS_PARTITION = os.getenv("MILVUS_PARTITION", "_default")
 
     @classmethod
     def validate(cls):
@@ -92,6 +99,7 @@ def setup_logging():
 db_service: Optional[DatabaseService] = None
 export_service: Optional[ExportService] = None
 postgres_service: Optional[PostgresService] = None
+milvus_service: Optional[MilvusService] = None
 logger = structlog.get_logger()
 
 
@@ -99,7 +107,7 @@ logger = structlog.get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
-    global db_service, export_service, postgres_service
+    global db_service, export_service, postgres_service, milvus_service
 
     try:
         logger.info("Starting Books DB Service")
@@ -118,6 +126,24 @@ async def lifespan(app: FastAPI):
         )
         logger.info("PostgreSQL service initialized", host=Config.POSTGRES_HOST, database=Config.POSTGRES_DB)
 
+        # Initialize Milvus service (required)
+        if not Config.MILVUS_URI:
+            raise ValueError("Milvus configuration is required: MILVUS_URI")
+
+        milvus_service = MilvusService(
+            uri=Config.MILVUS_URI,
+            token=Config.MILVUS_TOKEN or None,
+            collection_name=Config.MILVUS_COLLECTION
+        )
+        milvus_service.connect()
+        milvus_service.ensure_collection_exists()
+        logger.info(
+            "Milvus service initialized",
+            uri=Config.MILVUS_URI,
+            collection=Config.MILVUS_COLLECTION,
+            partition=Config.MILVUS_PARTITION
+        )
+
         # Initialize services
         db_path = os.path.join(Config.BASE_DIR, Config.DATABASE_PATH)
         db_service = DatabaseService(db_path)
@@ -127,7 +153,9 @@ async def lifespan(app: FastAPI):
             s3_access_key=Config.S3_ACCESS_KEY or None,
             s3_secret_key=Config.S3_SECRET_KEY or None,
             s3_bucket=Config.S3_BUCKET,
-            postgres_service=postgres_service
+            postgres_service=postgres_service,
+            milvus_service=milvus_service,
+            milvus_partition=Config.MILVUS_PARTITION
         )
 
         # Load embedding model into memory
@@ -145,6 +173,7 @@ async def lifespan(app: FastAPI):
         db_service = None
         export_service = None
         postgres_service = None
+        milvus_service = None
 
 
 # API Tags for documentation
@@ -501,9 +530,10 @@ async def export_books(request: ExportRequest):
     Export multiple books: upload raw HTML files and generate metadata.
 
     This endpoint combines the previous export and process functionality:
-    - Deletes existing book data from S3 and PostgreSQL (if exists)
+    - Deletes existing book data from S3, PostgreSQL, and Milvus (if exists)
     - Exports raw HTML files to S3
     - Generates and uploads metadata JSON
+    - Upserts embeddings to Milvus (must succeed before S3/PostgreSQL)
 
     Optimizations:
     - Concurrent processing for books (up to 5 at a time)
@@ -577,9 +607,10 @@ async def export_single_book(book_id: int):
     Export a single book: upload raw HTML files and generate metadata.
 
     This endpoint combines the previous export and process functionality:
-    - Deletes existing book data from S3 and PostgreSQL (if exists)
+    - Deletes existing book data from S3, PostgreSQL, and Milvus (if exists)
     - Exports raw HTML files to S3
     - Generates and uploads metadata JSON
+    - Upserts embeddings to Milvus
     """
     book = db_service.get_book(book_id)
     if not book:

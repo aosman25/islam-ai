@@ -17,6 +17,7 @@ from botocore.config import Config as BotoConfig
 
 if TYPE_CHECKING:
     from postgres_service import PostgresService
+    from milvus_service import MilvusService
 
 logger = structlog.get_logger()
 
@@ -312,7 +313,9 @@ class ExportService:
         s3_access_key: Optional[str] = None,
         s3_secret_key: Optional[str] = None,
         s3_bucket: str = "islamic-library",
-        postgres_service: Optional["PostgresService"] = None
+        postgres_service: Optional["PostgresService"] = None,
+        milvus_service: Optional["MilvusService"] = None,
+        milvus_partition: str = "_default"
     ):
         self.base_dir = Path(base_dir)
         self.export_script = self.base_dir / "export_books.sh"
@@ -323,6 +326,8 @@ class ExportService:
         self.s3_endpoint = s3_endpoint
         self.s3_client = None
         self.postgres_service = postgres_service
+        self.milvus_service = milvus_service
+        self.milvus_partition = milvus_partition
 
         if s3_endpoint and s3_access_key and s3_secret_key:
             self.s3_client = boto3.client(
@@ -336,6 +341,9 @@ class ExportService:
 
         if postgres_service:
             logger.info("PostgreSQL export enabled")
+
+        if milvus_service:
+            logger.info("Milvus export enabled", partition=milvus_partition)
 
     def get_book_files_from_s3(self, book_id: int) -> Optional[List[str]]:
         """Check if a book exists in S3 and return list of file URLs."""
@@ -440,13 +448,22 @@ class ExportService:
 
     def delete_book(self, book_id: int) -> bool:
         """
-        Delete a book from both S3 and PostgreSQL.
+        Delete a book from S3, PostgreSQL, and Milvus.
 
         Returns:
             True if book was deleted from at least one store
         """
         s3_deleted = False
         pg_deleted = False
+        milvus_deleted = False
+
+        # Delete from Milvus first
+        if self.milvus_service:
+            try:
+                milvus_deleted = self.milvus_service.delete_by_book_id(book_id, self.milvus_partition)
+            except Exception as e:
+                logger.error("Failed to delete from Milvus", book_id=book_id, error=str(e))
+                raise
 
         # Delete from S3
         try:
@@ -463,7 +480,7 @@ class ExportService:
                 logger.error("Failed to delete from PostgreSQL", book_id=book_id, error=str(e))
                 raise
 
-        return s3_deleted or pg_deleted
+        return s3_deleted or pg_deleted or milvus_deleted
 
     def download_books_as_zip(self, book_ids: List[int]) -> Tuple[io.BytesIO, str]:
         """Download book files from S3 and return as a zip file in memory.
@@ -757,17 +774,21 @@ class ExportService:
         category_id: Optional[int] = None
     ) -> Tuple[int, Optional[str]]:
         """
-        Export a book: export raw HTML files, generate metadata, and create embeddings.
+        Export a book: export raw HTML files, generate metadata, create embeddings, and upsert to Milvus.
 
         The optimized flow:
         1. Export raw files to memory
         2. Process metadata from in-memory HTML
         3. Generate embeddings from metadata
-        4. Upload all files (raw, metadata, embeddings) to S3
-        5. Export metadata to PostgreSQL
+        4. Upsert embeddings to Milvus (if configured) - MUST succeed before proceeding
+        5. Upload all files (raw, metadata, embeddings) to S3
+        6. Export metadata to PostgreSQL
 
         Returns:
             Tuple of (raw_files_count, metadata_url)
+
+        Raises:
+            RuntimeError: If Milvus upsert fails (stops the export process)
         """
         from scrape import process_book_html
 
@@ -785,7 +806,12 @@ class ExportService:
             logger.info("Generating missing embeddings", book_id=book_id)
             metadata = self._download_metadata_from_s3(book_id)
             if metadata:
-                jsonl_content, stats = self._generate_embeddings(metadata)
+                jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata)
+
+                # Upsert to Milvus first - if it fails, stop the export
+                if self.milvus_service:
+                    self._upsert_to_milvus(embedded_chunks, book_id)
+
                 self._upload_embeddings(book_id, jsonl_content)
                 self._save_stats(book_id, stats)
             return len(raw_files), metadata_url
@@ -803,7 +829,11 @@ class ExportService:
             )
 
             # Generate embeddings first
-            jsonl_content, stats = self._generate_embeddings(metadata)
+            jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata)
+
+            # Upsert to Milvus first - if it fails, stop the export
+            if self.milvus_service:
+                self._upsert_to_milvus(embedded_chunks, book_id)
 
             # Upload metadata and embeddings to S3
             metadata_url = self._upload_metadata(book_id, metadata)
@@ -840,14 +870,18 @@ class ExportService:
         )
 
         # Step 4: Generate embeddings from metadata
-        jsonl_content, stats = self._generate_embeddings(metadata)
+        jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata)
 
-        # Step 5: Upload all files to S3 (raw files, metadata, embeddings)
+        # Step 5: Upsert to Milvus FIRST - if it fails, stop the export before S3/PostgreSQL
+        if self.milvus_service:
+            self._upsert_to_milvus(embedded_chunks, book_id)
+
+        # Step 6: Upload all files to S3 (raw files, metadata, embeddings)
         uploaded_urls = self._upload_raw_files_from_memory(book_id, files_in_memory)
         metadata_url = self._upload_metadata(book_id, metadata)
         self._upload_embeddings(book_id, jsonl_content)
 
-        # Step 6: Export to PostgreSQL as final step (metadata + embedding stats)
+        # Step 7: Export to PostgreSQL as final step (metadata + embedding stats)
         self._export_to_postgres(metadata, author_id=author_id, category_id=category_id)
         self._save_stats(book_id, stats)
 
@@ -1025,7 +1059,7 @@ class ExportService:
         except Exception:
             return None
 
-    def _generate_embeddings(self, metadata: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+    def _generate_embeddings(self, metadata: Dict[str, Any]) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
         """
         Generate embeddings for a book from its metadata.
 
@@ -1033,7 +1067,7 @@ class ExportService:
             metadata: Book metadata containing parts, pages, etc.
 
         Returns:
-            Tuple of (JSONL string containing embedded chunks, stats dictionary)
+            Tuple of (JSONL string containing embedded chunks, stats dictionary, embedded chunks list)
         """
         from embedding_service import generate_embeddings, embeddings_to_jsonl, compute_embedding_stats
 
@@ -1052,7 +1086,37 @@ class ExportService:
 
         logger.info("Embeddings generated", book_id=book_id, num_chunks=len(embedded_chunks))
 
-        return jsonl_content, stats
+        return jsonl_content, stats, embedded_chunks
+
+    def _upsert_to_milvus(self, embedded_chunks: List[Dict[str, Any]], book_id: int) -> int:
+        """
+        Upsert embedded chunks to Milvus.
+
+        Args:
+            embedded_chunks: List of chunks with embeddings
+            book_id: The book ID for logging
+
+        Returns:
+            Number of records upserted
+
+        Raises:
+            RuntimeError: If Milvus service is not configured or upsert fails
+        """
+        if not self.milvus_service:
+            raise RuntimeError("Milvus service not configured")
+
+        logger.info("Upserting to Milvus", book_id=book_id, num_chunks=len(embedded_chunks))
+
+        try:
+            upserted_count = self.milvus_service.upsert_chunks(
+                embedded_chunks=embedded_chunks,
+                partition_name=self.milvus_partition
+            )
+            logger.info("Milvus upsert successful", book_id=book_id, upserted_count=upserted_count)
+            return upserted_count
+        except Exception as e:
+            logger.error("Milvus upsert failed", book_id=book_id, error=str(e))
+            raise RuntimeError(f"Failed to upsert to Milvus: {e}")
 
     def _save_stats(self, book_id: int, stats: Dict[str, Any]) -> None:
         """Save statistics to PostgreSQL."""

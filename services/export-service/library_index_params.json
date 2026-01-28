@@ -1,11 +1,13 @@
 [
   { "field_name": "id", "index_type": "INVERTED" },
-  { "field_name": "book_id", "index_type": "INVERTED" },
+  { "field_name": "book_id", "index_type": "STL_SORT" },
   { "field_name": "book_name", "index_type": "INVERTED" },
   { "field_name": "order", "index_type": "STL_SORT" },
   { "field_name": "author", "index_type": "INVERTED" },
-  { "field_name": "knowledge", "index_type": "INVERTED" },
   { "field_name": "category", "index_type": "INVERTED" },
+  { "field_name": "part_title", "index_type": "INVERTED" },
+  { "field_name": "start_page_id", "index_type": "STL_SORT" },
+  { "field_name": "page_offset", "index_type": "STL_SORT" },
   { "field_name": "text", "index_type": "Trie" },
   {
     "field_name": "dense_vector",
