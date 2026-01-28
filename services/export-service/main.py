@@ -18,9 +18,12 @@ from models import (
     CategoryResponse, CategoryListResponse,
     AuthorResponse, AuthorWithBooksResponse, AuthorListResponse,
     BookResponse, BookListResponse, BookSummaryResponse,
-    ExportRequest, ExportWithMetadataResponse, ExportedBookResult,
-    DeleteResponse, DeleteBatchResponse
+    ExportRequest,
+    DeleteResponse, DeleteBatchResponse,
+    JobStatus, JobSubmitResponse, JobResponse, JobListResponse,
+    DeadLetterListResponse,
 )
+from job_manager import JobManager
 
 # Default pagination settings
 DEFAULT_LIMIT = 50
@@ -100,6 +103,7 @@ db_service: Optional[DatabaseService] = None
 export_service: Optional[ExportService] = None
 postgres_service: Optional[PostgresService] = None
 milvus_service: Optional[MilvusService] = None
+job_manager: Optional[JobManager] = None
 logger = structlog.get_logger()
 
 
@@ -107,7 +111,7 @@ logger = structlog.get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
-    global db_service, export_service, postgres_service, milvus_service
+    global db_service, export_service, postgres_service, milvus_service, job_manager
 
     try:
         logger.info("Starting Books DB Service")
@@ -162,6 +166,9 @@ async def lifespan(app: FastAPI):
         logger.info("Loading embedding model...")
         load_embedding_model(device=EMBEDDING_DEVICE, use_fp16=EMBEDDING_USE_FP16)
 
+        # Initialize job manager
+        job_manager = JobManager(export_service)
+
         logger.info("Services initialized successfully")
         yield
 
@@ -170,6 +177,9 @@ async def lifespan(app: FastAPI):
         raise
     finally:
         logger.info("Shutting down Books DB Service")
+        if job_manager is not None:
+            job_manager.shutdown()
+        job_manager = None
         db_service = None
         export_service = None
         postgres_service = None
@@ -185,6 +195,7 @@ tags_metadata = [
     {"name": "Export", "description": "Export books to S3 and PostgreSQL"},
     {"name": "Download", "description": "Download exported books and metadata"},
     {"name": "Delete", "description": "Delete exported books from S3 and PostgreSQL"},
+    {"name": "Jobs", "description": "Monitor export jobs and manage the dead letter queue"},
 ]
 
 # FastAPI app
@@ -524,32 +535,24 @@ async def list_exportable_books(
     )
 
 
-@app.post("/export/books", response_model=ExportWithMetadataResponse, tags=["Export"])
+@app.post("/export/books", response_model=JobSubmitResponse, status_code=status.HTTP_202_ACCEPTED, tags=["Export"])
 async def export_books(request: ExportRequest):
     """
-    Export multiple books: upload raw HTML files and generate metadata.
+    Submit a batch export job. Returns immediately with a job ID.
 
-    This endpoint combines the previous export and process functionality:
+    The job runs in the background using a thread pool:
     - Deletes existing book data from S3, PostgreSQL, and Milvus (if exists)
     - Exports raw HTML files to S3
     - Generates and uploads metadata JSON
-    - Upserts embeddings to Milvus (must succeed before S3/PostgreSQL)
+    - Upserts embeddings to Milvus
 
-    Optimizations:
-    - Concurrent processing for books (up to 5 at a time)
-    - Streaming HTML download to reduce memory usage
+    Poll GET /jobs/{job_id} to track progress.
     """
-    # Verify all books exist and gather their data
     books_to_export = []
     for book_id in request.book_ids:
         book = db_service.get_book(book_id)
         if not book:
             raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
-
-        # Delete existing book data before re-exporting
-        if export_service.book_exists_in_s3(book_id):
-            logger.info("Deleting existing book before re-export", book_id=book_id)
-            export_service.delete_book(book_id)
 
         books_to_export.append({
             "book_id": book_id,
@@ -558,95 +561,44 @@ async def export_books(request: ExportRequest):
             "category_name": book.get("category_name"),
             "table_of_contents": book.get("table_of_contents"),
             "author_id": book.get("main_author"),
-            "category_id": book.get("book_category")
+            "category_id": book.get("book_category"),
         })
 
-    results = []
+    job_id = job_manager.submit_job(books_to_export, use_deepinfra=request.use_deepinfra)
 
-    # Export all books concurrently
-    if books_to_export:
-        logger.info("Exporting books concurrently", count=len(books_to_export), use_deepinfra=request.use_deepinfra)
-        batch_results = await export_service.export_books_batch(
-            books_data=books_to_export,
-            max_concurrent=5,
-            use_deepinfra=request.use_deepinfra
-        )
-
-        # Check for errors and build results
-        errors = []
-        for book_id, raw_files_count, metadata_url, error in batch_results:
-            if error:
-                errors.append(f"Book {book_id}: {error}")
-            else:
-                results.append(ExportedBookResult(
-                    book_id=book_id,
-                    raw_files_count=raw_files_count,
-                    metadata_url=metadata_url
-                ))
-
-        if errors:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to export some books: {'; '.join(errors)}"
-            )
-
-    # Sort results by original request order
-    book_id_order = {book_id: idx for idx, book_id in enumerate(request.book_ids)}
-    results.sort(key=lambda r: book_id_order.get(r.book_id, 999999))
-
-    return ExportWithMetadataResponse(
-        book_ids=request.book_ids,
-        results=results,
-        message=f"Exported {len(results)} book(s) successfully",
-        timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
+    return JobSubmitResponse(
+        job_id=job_id,
+        message=f"Export job submitted for {len(books_to_export)} book(s)",
     )
 
 
-@app.post("/export/books/{book_id}", response_model=ExportWithMetadataResponse, tags=["Export"])
+@app.post("/export/books/{book_id}", response_model=JobSubmitResponse, status_code=status.HTTP_202_ACCEPTED, tags=["Export"])
 async def export_single_book(book_id: int, use_deepinfra: bool = Query(False, description="Use DeepInfra API for embeddings instead of local model")):
     """
-    Export a single book: upload raw HTML files and generate metadata.
+    Submit a single-book export job. Returns immediately with a job ID.
 
-    This endpoint combines the previous export and process functionality:
-    - Deletes existing book data from S3, PostgreSQL, and Milvus (if exists)
-    - Exports raw HTML files to S3
-    - Generates and uploads metadata JSON
-    - Upserts embeddings to Milvus
+    Poll GET /jobs/{job_id} to track progress.
     """
     book = db_service.get_book(book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    # Delete existing book data before re-exporting
-    if export_service.book_exists_in_s3(book_id):
-        logger.info("Deleting existing book before re-export", book_id=book_id)
-        export_service.delete_book(book_id)
+    book_data = {
+        "book_id": book_id,
+        "book_name": book.get("book_name"),
+        "author_name": book.get("author_name"),
+        "category_name": book.get("category_name"),
+        "table_of_contents": book.get("table_of_contents"),
+        "author_id": book.get("main_author"),
+        "category_id": book.get("book_category"),
+    }
 
-    try:
-        raw_files_count, metadata_url = export_service.export_book_with_metadata(
-            book_id=book_id,
-            book_name=book.get("book_name"),
-            author_name=book.get("author_name"),
-            category_name=book.get("category_name"),
-            table_of_contents=book.get("table_of_contents"),
-            author_id=book.get("main_author"),
-            category_id=book.get("book_category"),
-            use_deepinfra=use_deepinfra
-        )
+    job_id = job_manager.submit_job([book_data], use_deepinfra=use_deepinfra)
 
-        return ExportWithMetadataResponse(
-            book_ids=[book_id],
-            results=[ExportedBookResult(
-                book_id=book_id,
-                raw_files_count=raw_files_count,
-                metadata_url=metadata_url
-            )],
-            message="Book exported successfully",
-            timestamp=time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
-        )
-    except Exception as e:
-        logger.error("Export failed", error=str(e), book_id=book_id)
-        raise HTTPException(status_code=500, detail=str(e))
+    return JobSubmitResponse(
+        job_id=job_id,
+        message="Export job submitted for 1 book",
+    )
 
 
 # ============== Download Endpoints ==============
@@ -815,6 +767,54 @@ async def download_multiple_embeddings(request: ExportRequest):
     except Exception as e:
         logger.error("Download embeddings failed", error=str(e), book_ids=request.book_ids)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============== Job Endpoints ==============
+
+@app.get("/jobs", response_model=JobListResponse, tags=["Jobs"])
+async def list_jobs(
+    status_filter: Optional[JobStatus] = Query(None, alias="status", description="Filter by job status"),
+    limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
+    offset: Optional[int] = Query(0, ge=0),
+):
+    """List all export jobs with optional status filter and pagination."""
+    jobs, total = job_manager.list_jobs(status_filter=status_filter, limit=limit, offset=offset)
+    return JobListResponse(jobs=jobs, total=total)
+
+
+@app.get("/jobs/dlq", response_model=DeadLetterListResponse, tags=["Jobs"])
+async def list_dlq(
+    limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
+    offset: Optional[int] = Query(0, ge=0),
+):
+    """List dead letter queue entries (failed book exports)."""
+    entries, total = job_manager.get_dlq(limit=limit, offset=offset)
+    return DeadLetterListResponse(entries=entries, total=total)
+
+
+@app.get("/jobs/{job_id}", response_model=JobResponse, tags=["Jobs"])
+async def get_job(job_id: str):
+    """Get detailed status of a specific export job, including per-book progress."""
+    job = job_manager.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
+
+
+@app.post("/jobs/dlq/{index}/retry", response_model=JobSubmitResponse, status_code=status.HTTP_202_ACCEPTED, tags=["Jobs"])
+async def retry_dlq_entry(index: int):
+    """Retry a failed export from the dead letter queue. Creates a new job."""
+    new_job_id = job_manager.retry_dlq_entry(index)
+    if new_job_id is None:
+        raise HTTPException(status_code=404, detail="DLQ entry not found")
+    return JobSubmitResponse(job_id=new_job_id, message="Retry job submitted")
+
+
+@app.delete("/jobs/dlq", tags=["Jobs"])
+async def clear_dlq():
+    """Clear all entries from the dead letter queue."""
+    job_manager.clear_dlq()
+    return {"message": "Dead letter queue cleared"}
 
 
 # ============== Delete Endpoints ==============

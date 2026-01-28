@@ -148,6 +148,67 @@ class ExportWithMetadataResponse(BaseModel):
     timestamp: str
 
 
+# ============== Job Models ==============
+
+class JobStatus(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    COMPLETED_WITH_ERRORS = "completed_with_errors"
+    FAILED = "failed"
+
+
+class BookJobStatus(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class BookJobResult(BaseModel):
+    book_id: int
+    status: BookJobStatus
+    raw_files_count: Optional[int] = None
+    metadata_url: Optional[str] = None
+    error: Optional[str] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+
+
+class JobResponse(BaseModel):
+    job_id: str
+    status: JobStatus
+    total_books: int
+    completed_books: int
+    failed_books: int
+    progress: float
+    books: List[BookJobResult]
+    created_at: str
+    updated_at: str
+
+
+class JobSubmitResponse(BaseModel):
+    job_id: str
+    message: str
+
+
+class DeadLetterEntry(BaseModel):
+    job_id: str
+    book_id: int
+    error: str
+    failed_at: str
+
+
+class DeadLetterListResponse(BaseModel):
+    entries: List[DeadLetterEntry]
+    total: int
+
+
+class JobListResponse(BaseModel):
+    jobs: List[JobResponse]
+    total: int
+
+
 # ============== Delete Models ==============
 
 class DeleteResponse(BaseModel):
