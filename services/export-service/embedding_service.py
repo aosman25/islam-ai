@@ -5,7 +5,9 @@ import logging
 import os
 import re
 import unicodedata
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
+
+import requests
 
 # Suppress huggingface_hub progress bars before importing
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
@@ -542,18 +544,90 @@ class EmbeddingService:
         return matched_chunks
 
 
+class DeepInfraEmbeddingService:
+    """Service for generating embeddings using DeepInfra API."""
+
+    API_URL = "https://api.deepinfra.com/v1/inference/BAAI/bge-m3-multi"
+
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+
+    def embed_chunks(
+        self,
+        matched_chunks: List[Dict[str, Any]],
+        batch_size: int = 100,
+        show_progress: bool = False
+    ) -> List[Dict[str, Any]]:
+        """
+        Embed chunks using the DeepInfra API and add dense/sparse vectors to each chunk.
+
+        Args:
+            matched_chunks: List of chunk dicts with text and metadata
+            batch_size: Batch size for API requests
+            show_progress: Whether to show progress bar
+
+        Returns:
+            List of chunk dicts with added dense_vector and sparse_vector
+        """
+        texts_to_embed = [chunk["text"] for chunk in matched_chunks]
+
+        all_dense_vectors = []
+        all_sparse_vectors = []
+
+        iterator = range(0, len(texts_to_embed), batch_size)
+        if show_progress:
+            iterator = tqdm(iterator, desc="Embedding (DeepInfra)")
+
+        headers = {
+            "Authorization": f"bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        for i in iterator:
+            batch_texts = texts_to_embed[i:i + batch_size]
+            payload = {"inputs": batch_texts, "return_sparse": True}
+
+            response = requests.post(self.API_URL, headers=headers, json=payload, timeout=120)
+            response.raise_for_status()
+            data = response.json()
+
+            embeddings = data.get("embeddings")
+            sparse = data.get("sparse")
+
+            if not embeddings:
+                raise RuntimeError(f"DeepInfra API returned no embeddings. Response keys: {list(data.keys())}")
+
+            all_dense_vectors.extend(embeddings)
+
+            if sparse:
+                for sparse_vec in sparse:
+                    sparse_dict = {str(idx): float(v) for idx, v in enumerate(sparse_vec) if v != 0.0}
+                    all_sparse_vectors.append(sparse_dict)
+            else:
+                logger.warning("DeepInfra API returned no sparse vectors, using empty dicts")
+                all_sparse_vectors.extend([{} for _ in range(len(batch_texts))])
+
+        for i, chunk in enumerate(matched_chunks):
+            chunk["dense_vector"] = all_dense_vectors[i]
+            chunk["sparse_vector"] = all_sparse_vectors[i]
+
+        return matched_chunks
+
+
 def generate_embeddings(
     metadata: Dict[str, Any],
     device: str = 'cuda',
     use_fp16: bool = True,
     batch_size: int = 1000,
-    show_progress: bool = False
+    show_progress: bool = False,
+    use_deepinfra: bool = False,
+    deepinfra_api_key: Optional[str] = None
 ) -> tuple:
     """
     Generate embeddings for a book from its metadata.
 
     This is the main entry point for the embedding pipeline.
-    Note: The embedding model must be loaded via load_embedding_model() before calling this.
+    Note: When using local model, it must be loaded via load_embedding_model() before calling this.
 
     Args:
         metadata: Book metadata containing parts, pages, table_of_contents, etc.
@@ -561,12 +635,14 @@ def generate_embeddings(
         use_fp16: Whether to use FP16 precision for embedding model
         batch_size: Batch size for embedding
         show_progress: Whether to show progress bars
+        use_deepinfra: Whether to use DeepInfra API instead of local model
+        deepinfra_api_key: API key for DeepInfra (required if use_deepinfra is True)
 
     Returns:
         Tuple of (embedded_chunks list, chunking_stats dict)
     """
     book_id = metadata.get("book_id")
-    logger.info("Starting embedding generation", book_id=book_id)
+    logger.info("Starting embedding generation", book_id=book_id, use_deepinfra=use_deepinfra)
 
     # Step 1: Chunk the book
     chunker = BookChunker()
@@ -578,13 +654,23 @@ def generate_embeddings(
     matched_chunks = matcher.match_chunks_to_pages(chunks, metadata)
     logger.info("Page matching complete", book_id=book_id)
 
-    # Step 3: Generate embeddings (uses singleton EmbeddingService with preloaded model)
-    embedding_service = EmbeddingService(device=device, use_fp16=use_fp16)
-    embedded_chunks = embedding_service.embed_chunks(
-        matched_chunks,
-        batch_size=batch_size,
-        show_progress=show_progress
-    )
+    # Step 3: Generate embeddings
+    if use_deepinfra:
+        if not deepinfra_api_key:
+            raise ValueError("deepinfra_api_key is required when use_deepinfra is True")
+        embedding_service = DeepInfraEmbeddingService(api_key=deepinfra_api_key)
+        embedded_chunks = embedding_service.embed_chunks(
+            matched_chunks,
+            batch_size=batch_size,
+            show_progress=show_progress
+        )
+    else:
+        embedding_service = EmbeddingService(device=device, use_fp16=use_fp16)
+        embedded_chunks = embedding_service.embed_chunks(
+            matched_chunks,
+            batch_size=batch_size,
+            show_progress=show_progress
+        )
     logger.info("Embedding complete", book_id=book_id, num_chunks=len(embedded_chunks))
 
     return embedded_chunks, chunking_stats

@@ -121,6 +121,7 @@ class BookListResponse(BaseModel):
 
 class ExportRequest(BaseModel):
     book_ids: List[int] = Field(..., min_length=1, max_length=100)
+    use_deepinfra: bool = Field(default=False, description="Use DeepInfra API for embeddings instead of local model")
 
 
 class ExportResponse(BaseModel):

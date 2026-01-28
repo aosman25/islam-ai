@@ -565,10 +565,11 @@ async def export_books(request: ExportRequest):
 
     # Export all books concurrently
     if books_to_export:
-        logger.info("Exporting books concurrently", count=len(books_to_export))
+        logger.info("Exporting books concurrently", count=len(books_to_export), use_deepinfra=request.use_deepinfra)
         batch_results = await export_service.export_books_batch(
             books_data=books_to_export,
-            max_concurrent=5
+            max_concurrent=5,
+            use_deepinfra=request.use_deepinfra
         )
 
         # Check for errors and build results
@@ -602,7 +603,7 @@ async def export_books(request: ExportRequest):
 
 
 @app.post("/export/books/{book_id}", response_model=ExportWithMetadataResponse, tags=["Export"])
-async def export_single_book(book_id: int):
+async def export_single_book(book_id: int, use_deepinfra: bool = Query(False, description="Use DeepInfra API for embeddings instead of local model")):
     """
     Export a single book: upload raw HTML files and generate metadata.
 
@@ -629,7 +630,8 @@ async def export_single_book(book_id: int):
             category_name=book.get("category_name"),
             table_of_contents=book.get("table_of_contents"),
             author_id=book.get("main_author"),
-            category_id=book.get("book_category")
+            category_id=book.get("book_category"),
+            use_deepinfra=use_deepinfra
         )
 
         return ExportWithMetadataResponse(
