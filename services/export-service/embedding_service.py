@@ -36,10 +36,12 @@ TOKENIZER_MODEL = "o200k_base"
 MAX_CHUNK_TOKENS = 7500
 
 
+_tiktoken_encoder = tiktoken.get_encoding(TOKENIZER_MODEL)
+
+
 def count_tokens(text: str) -> int:
     """Count tokens in text using tiktoken."""
-    encoder = tiktoken.get_encoding(TOKENIZER_MODEL)
-    return len(encoder.encode(text))
+    return len(_tiktoken_encoder.encode(text))
 
 
 def count_words(text: str) -> int:
@@ -47,25 +49,37 @@ def count_words(text: str) -> int:
     return len(text.split())
 
 
+_RE_FOOTNOTE = re.compile(r'<div class="footnote">.*?</div>', re.DOTALL)
+_RE_PAGEHEAD = re.compile(r'<div class="PageHead">.*?</div>', re.DOTALL)
+_RE_SUP = re.compile(r'<sup[^>]*>.*?</sup>', re.DOTALL)
+_RE_SUB = re.compile(r'<sub[^>]*>.*?</sub>', re.DOTALL)
+_RE_EMPTY_P = re.compile(r'<p></p>')
+_RE_BR = re.compile(r'<br\s*/?>')
+_RE_HR = re.compile(r'<hr[^>]*/>')
+_RE_ALL_TAGS = re.compile(r'<[^>]+>')
+_RE_MULTI_NEWLINE = re.compile(r'\n{3,}')
+
+
 def strip_html(html: str) -> str:
     """Remove HTML tags and convert to plain text."""
-    # Remove footnotes (div with class footnote)
-    html = re.sub(r'<div class="footnote">.*?</div>', '', html, flags=re.DOTALL)
-    # Remove page parts
-    html = re.sub(r'<div class="PageHead">.*?</div>', '', html, flags=re.DOTALL)
-    # Remove sup and sub elements with their content
-    html = re.sub(r'<sup[^>]*>.*?</sup>', '', html, flags=re.DOTALL)
-    html = re.sub(r'<sub[^>]*>.*?</sub>', '', html, flags=re.DOTALL)
-    # Replace <p></p> and <br/> with newlines
-    html = re.sub(r'<p></p>', '\n\n', html)
-    html = re.sub(r'<br\s*/?>', '\n', html)
-    # Remove <hr/> tags
-    html = re.sub(r'<hr[^>]*/>', '', html)
-    # Remove all remaining HTML tags
-    html = re.sub(r'<[^>]+>', '', html)
-    # Clean up whitespace
-    html = re.sub(r'\n{3,}', '\n\n', html)
+    html = _RE_FOOTNOTE.sub('', html)
+    html = _RE_PAGEHEAD.sub('', html)
+    html = _RE_SUP.sub('', html)
+    html = _RE_SUB.sub('', html)
+    html = _RE_EMPTY_P.sub('\n\n', html)
+    html = _RE_BR.sub('\n', html)
+    html = _RE_HR.sub('', html)
+    html = _RE_ALL_TAGS.sub('', html)
+    html = _RE_MULTI_NEWLINE.sub('\n\n', html)
     return html.strip()
+
+
+_RE_DIACRITICS = re.compile(r'[\u064B-\u065F\u0610-\u061A\u06D6-\u06ED]')
+_RE_TATWEEL = re.compile(r'ـ')
+_RE_INVISIBLE = re.compile(r'[\u200c\u200d\u200e\u200f\u00ad\u200b\ufeff]')
+_RE_CONTROL = re.compile(r'[\u0000-\u001F\u007F-\u009F]')
+_RE_NON_ALPHANUM = re.compile(r'[^\u0621-\u064A\u0660-\u0669\u06F0-\u06F9a-zA-Z0-9]')
+_RE_WHITESPACE = re.compile(r'\s+')
 
 
 def clean_arabic_text(text: str) -> str:
@@ -73,28 +87,17 @@ def clean_arabic_text(text: str) -> str:
     Strict normalization that only keeps pure text content for accurate length matching.
     Removes all decorative marks, control characters, punctuation, and whitespace.
     """
-    # Normalize Unicode to canonical form
     text = unicodedata.normalize("NFKC", text)
-
-    # Remove Arabic diacritics (Tashkeel) - all vowel marks and pronunciation guides
-    text = re.sub(r'[\u064B-\u065F\u0610-\u061A\u06D6-\u06ED]', '', text)
-
-    # Remove tatweel (elongation character)
-    text = re.sub(r'ـ', '', text)
-
-    # Remove ALL invisible and control characters
-    text = re.sub(r'[\u200c\u200d\u200e\u200f\u00ad\u200b\ufeff]', '', text)
-
-    # Remove all Unicode control characters (C0, C1 controls)
-    text = re.sub(r'[\u0000-\u001F\u007F-\u009F]', '', text)
-
-    # Remove ALL punctuation and special characters (Arabic and Latin)
-    text = re.sub(r'[^\u0621-\u064A\u0660-\u0669\u06F0-\u06F9a-zA-Z0-9]', '', text)
-
-    # Remove ALL remaining whitespace completely
-    text = re.sub(r'\s+', '', text)
-
+    text = _RE_DIACRITICS.sub('', text)
+    text = _RE_TATWEEL.sub('', text)
+    text = _RE_INVISIBLE.sub('', text)
+    text = _RE_CONTROL.sub('', text)
+    text = _RE_NON_ALPHANUM.sub('', text)
+    text = _RE_WHITESPACE.sub('', text)
     return text
+
+
+_RE_PERIOD_BOUNDARY = re.compile(r'\.(?=\s*<|\s+[^\s<])')
 
 
 def find_sentence_boundary_before(html: str, pos: int) -> int:
@@ -103,31 +106,27 @@ def find_sentence_boundary_before(html: str, pos: int) -> int:
     Looks for sentence boundaries like periods, paragraph tags, or page starts.
     Returns the position where the new sentence/section begins.
     """
-    search_region = html[:pos]
-
-    # Find the last paragraph break <p></p> before pos
-    para_match = None
-    for m in re.finditer(r'<p></p>', search_region):
-        para_match = m
-
-    # Find the last period followed by a tag or space
-    period_match = None
-    for m in re.finditer(r'\.(?=\s*<|\s+[^\s<])', search_region):
-        period_match = m
-
-    # Find the last page div start
-    page_match = None
-    for m in re.finditer(r'<div class="PageText">', search_region):
-        page_match = m
-
-    # Choose the latest boundary
     best_pos = 0
-    if para_match:
-        best_pos = max(best_pos, para_match.end())
+
+    # Find the last paragraph break <p></p> before pos using rfind (O(n) single pass)
+    para_idx = html.rfind('<p></p>', 0, pos)
+    if para_idx != -1:
+        best_pos = max(best_pos, para_idx + len('<p></p>'))
+
+    # Find the last page div start before pos using rfind
+    page_idx = html.rfind('<div class="PageText">', 0, pos)
+    if page_idx != -1:
+        best_pos = max(best_pos, page_idx + len('<div class="PageText">'))
+
+    # Find the last period followed by a tag or space in a limited window before pos
+    # (searching a small window avoids scanning megabytes of text)
+    window_start = max(0, pos - 50000)
+    search_region = html[window_start:pos]
+    period_match = None
+    for m in _RE_PERIOD_BOUNDARY.finditer(search_region):
+        period_match = m
     if period_match:
-        best_pos = max(best_pos, period_match.end())
-    if page_match:
-        best_pos = max(best_pos, page_match.end())
+        best_pos = max(best_pos, window_start + period_match.end())
 
     return best_pos
 
@@ -174,14 +173,14 @@ class BookChunker:
     """Handles chunking of book content based on TOC markers and semantic boundaries."""
 
     def __init__(self, chunk_size: int = MAX_CHUNK_TOKENS, chunk_overlap: int = 0):
-        self.tokenizer = tiktoken.get_encoding(TOKENIZER_MODEL)
+        self.tokenizer = _tiktoken_encoder
         self.chunker = SentenceChunker(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             tokenizer=self.tokenizer,
             delim=["."]
         )
-        self.toc_pattern = r'<span data-type="title" id="toc-(\d+)">'
+        self.toc_pattern = re.compile(r'<span data-type="title" id="toc-(\d+)">')
         # Track chunking stats
         self.segments_under_limit = 0  # Chunks splitted by toc
         self.segments_over_limit = 0  # Chunks splitted by SentenceChunker
@@ -268,11 +267,14 @@ class BookChunker:
         iterator = tqdm(parts, desc="Chunking") if show_progress else parts
 
         for p in iterator:
-            full_html = pending_html
-            for entry in pages.get(p, []):
-                full_html += entry.get("display_elem", "") + "\n"
+            pages_in_part = pages.get(p, [])
+            html_parts = [pending_html] if pending_html else []
+            for entry in pages_in_part:
+                html_parts.append(entry.get("display_elem", ""))
+                html_parts.append("\n")
+            full_html = "".join(html_parts)
 
-            matches = list(re.finditer(self.toc_pattern, full_html))
+            matches = list(self.toc_pattern.finditer(full_html))
 
             if not matches:
                 pending_html = full_html
@@ -285,18 +287,22 @@ class BookChunker:
                 split_points.append(sentence_start)
 
             if split_points[0] > 0:
-                chunk_pages.extend(self._process_html_segment(full_html[:split_points[0]]))
+                seg_html = full_html[:split_points[0]]
+                chunk_pages.extend(self._process_html_segment(seg_html))
 
             for i, start in enumerate(split_points):
                 if i + 1 < len(split_points):
-                    chunk_pages.extend(self._process_html_segment(full_html[start:split_points[i + 1]]))
+                    seg_html = full_html[start:split_points[i + 1]]
+                    chunk_pages.extend(self._process_html_segment(seg_html))
                 else:
                     pending_html = full_html[start:]
 
         if pending_html:
             chunk_pages.extend(self._process_html_segment(pending_html))
 
-        return self._post_process_chunks(chunk_pages), self.get_chunking_stats()
+        result = self._post_process_chunks(chunk_pages)
+
+        return result, self.get_chunking_stats()
 
 
 class PageMatcher:

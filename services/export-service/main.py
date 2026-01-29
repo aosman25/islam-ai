@@ -555,6 +555,107 @@ async def check_exported_books(request: ExportRequest):
     return {"exported_ids": exported}
 
 
+# ============== Debug Endpoints ==============
+
+@app.get("/raw/{book_id}", tags=["Export"])
+async def get_raw_files(book_id: int):
+    """Return the raw HTML files for a book as a zip download."""
+    import asyncio
+    import io
+    import zipfile
+
+    book = db_service.get_book(book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    def _do():
+        files_in_memory = export_service._export_to_memory(book_id)
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            for filename, content in sorted(files_in_memory.items()):
+                zf.writestr(filename, content)
+        buf.seek(0)
+        return buf
+
+    zip_buf = await asyncio.get_event_loop().run_in_executor(None, _do)
+    return StreamingResponse(
+        zip_buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename=book_{book_id}_raw.zip"},
+    )
+
+
+@app.post("/chunk/{book_id}", tags=["Export"])
+async def chunk_book_endpoint(book_id: int):
+    """
+    Chunk a book and return the result as a downloadable JSON file.
+    Runs: export to memory -> HTML processing -> chunking -> page matching.
+    No embedding or uploading.
+    """
+    import asyncio
+    import io
+
+    book = db_service.get_book(book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    def _do():
+        import json as _json
+        from scrape import process_book_html
+        from embedding_service import BookChunker, PageMatcher
+
+        files_in_memory = export_service._export_to_memory(book_id)
+        html_contents = [
+            content.decode("utf-8", errors="ignore")
+            for filename, content in sorted(files_in_memory.items())
+            if filename.lower().endswith((".htm", ".html"))
+        ]
+
+        metadata = process_book_html(
+            html_contents=html_contents,
+            book_id=book_id,
+            book_name=book.get("book_name"),
+            author_name=book.get("author_name"),
+            category_name=book.get("category_name"),
+            table_of_contents=book.get("table_of_contents"),
+        )
+
+        chunker = BookChunker()
+        chunks, chunking_stats = chunker.chunk_book(metadata)
+
+        matcher = PageMatcher()
+        matched_chunks = matcher.match_chunks_to_pages(chunks, metadata)
+
+        result = {
+            "book_id": book_id,
+            "book_name": book.get("book_name"),
+            "parts": metadata.get("parts", []),
+            "parts_count": len(metadata.get("parts", [])),
+            "total_pages": sum(len(v) for v in metadata.get("pages", {}).values()),
+            "total_chunks": len(chunks),
+            "chunking_stats": chunking_stats,
+            "chunks": [
+                {
+                    "order": c.get("order"),
+                    "text": c.get("text", ""),
+                    "start_page_id": c.get("start_page_id"),
+                    "page_offset": c.get("page_offset"),
+                    "page_num_range": c.get("page_num_range"),
+                    "part_title": c.get("part_title"),
+                }
+                for c in matched_chunks
+            ],
+        }
+        return _json.dumps(result, ensure_ascii=False, indent=2)
+
+    json_str = await asyncio.get_event_loop().run_in_executor(None, _do)
+    return StreamingResponse(
+        io.BytesIO(json_str.encode("utf-8")),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename=book_{book_id}_chunks.json"},
+    )
+
+
 # ============== Export Endpoints ==============
 
 @app.get("/export/list", response_model=BookListResponse, tags=["Export"])
