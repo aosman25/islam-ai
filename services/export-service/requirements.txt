@@ -16,3 +16,4 @@ tqdm==4.67.1
 torch==2.10.0
 pymilvus==2.6.6
 requests>=2.31.0
+bm25s==0.2.14

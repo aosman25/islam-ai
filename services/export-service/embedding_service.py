@@ -508,7 +508,9 @@ class EmbeddingService:
         progress_callback: Optional[Callable[[int], None]] = None
     ) -> List[Dict[str, Any]]:
         """
-        Embed chunks and add dense/sparse vectors to each chunk.
+        Embed chunks and add dense vectors to each chunk.
+
+        Sparse vectors are generated separately using ArabicBM25S in generate_embeddings().
 
         Args:
             matched_chunks: List of chunk dicts with text and metadata
@@ -517,12 +519,11 @@ class EmbeddingService:
             progress_callback: Called after each batch with total chunks embedded so far
 
         Returns:
-            List of chunk dicts with added dense_vector and sparse_vector
+            List of chunk dicts with added dense_vector
         """
         texts_to_embed = [chunk["text"] for chunk in matched_chunks]
 
         all_dense_vectors = []
-        all_sparse_vectors = []
 
         iterator = range(0, len(texts_to_embed), batch_size)
         if show_progress:
@@ -533,19 +534,16 @@ class EmbeddingService:
             embeddings = self.model.encode(
                 batch_texts,
                 return_dense=True,
-                return_sparse=True,
+                return_sparse=False,
                 return_colbert_vecs=False
             )
             all_dense_vectors.extend(embeddings['dense_vecs'].tolist())
-            for sparse_dict in embeddings['lexical_weights']:
-                all_sparse_vectors.append({str(k): float(v) for k, v in sparse_dict.items()})
 
             if progress_callback:
                 progress_callback(len(all_dense_vectors))
 
         for i, chunk in enumerate(matched_chunks):
             chunk["dense_vector"] = all_dense_vectors[i]
-            chunk["sparse_vector"] = all_sparse_vectors[i]
 
         return matched_chunks
 
@@ -566,7 +564,9 @@ class DeepInfraEmbeddingService:
         progress_callback: Optional[Callable[[int], None]] = None
     ) -> List[Dict[str, Any]]:
         """
-        Embed chunks using the DeepInfra API and add dense/sparse vectors to each chunk.
+        Embed chunks using the DeepInfra API and add dense vectors to each chunk.
+
+        Sparse vectors are generated separately using ArabicBM25S in generate_embeddings().
 
         Args:
             matched_chunks: List of chunk dicts with text and metadata
@@ -575,12 +575,11 @@ class DeepInfraEmbeddingService:
             progress_callback: Called after each batch with total chunks embedded so far
 
         Returns:
-            List of chunk dicts with added dense_vector and sparse_vector
+            List of chunk dicts with added dense_vector
         """
         texts_to_embed = [chunk["text"] for chunk in matched_chunks]
 
         all_dense_vectors = []
-        all_sparse_vectors = []
 
         iterator = range(0, len(texts_to_embed), batch_size)
         if show_progress:
@@ -593,7 +592,7 @@ class DeepInfraEmbeddingService:
 
         for i in iterator:
             batch_texts = texts_to_embed[i:i + batch_size]
-            payload = {"inputs": batch_texts, "sparse": True}
+            payload = {"inputs": batch_texts}
 
             max_retries = 3
             for attempt in range(max_retries):
@@ -617,27 +616,17 @@ class DeepInfraEmbeddingService:
             data = response.json()
 
             embeddings = data.get("embeddings")
-            sparse = data.get("sparse")
 
             if not embeddings:
                 raise RuntimeError(f"DeepInfra API returned no embeddings. Response keys: {list(data.keys())}")
 
             all_dense_vectors.extend(embeddings)
 
-            if sparse:
-                for sparse_vec in sparse:
-                    sparse_dict = {str(idx): float(v) for idx, v in enumerate(sparse_vec) if v != 0.0}
-                    all_sparse_vectors.append(sparse_dict)
-            else:
-                logger.warning("DeepInfra API returned no sparse vectors, using empty dicts")
-                all_sparse_vectors.extend([{} for _ in range(len(batch_texts))])
-
             if progress_callback:
                 progress_callback(len(all_dense_vectors))
 
         for i, chunk in enumerate(matched_chunks):
             chunk["dense_vector"] = all_dense_vectors[i]
-            chunk["sparse_vector"] = all_sparse_vectors[i]
 
         return matched_chunks
 
@@ -656,6 +645,9 @@ def generate_embeddings(
     Generate embeddings for a book from its metadata.
 
     This is the main entry point for the embedding pipeline.
+    Dense vectors are generated via BGE-M3 (local or DeepInfra).
+    Sparse vectors are generated via ArabicBM25S (fitted per-book on the chunks).
+
     Note: When using local model, it must be loaded via load_embedding_model() before calling this.
 
     Args:
@@ -664,12 +656,14 @@ def generate_embeddings(
         use_fp16: Whether to use FP16 precision for embedding model
         batch_size: Batch size for embedding
         show_progress: Whether to show progress bars
-        use_deepinfra: Whether to use DeepInfra API instead of local model
+        use_deepinfra: Whether to use DeepInfra API instead of local model for dense embeddings
         deepinfra_api_key: API key for DeepInfra (required if use_deepinfra is True)
 
     Returns:
         Tuple of (embedded_chunks list, chunking_stats dict)
     """
+    from sparse_vector_generator import ArabicBM25S
+
     book_id = metadata.get("book_id")
     logger.info("Starting embedding generation", book_id=book_id, use_deepinfra=use_deepinfra)
 
@@ -692,7 +686,7 @@ def generate_embeddings(
         def embed_progress_cb(chunks_so_far: int):
             progress_callback("embedding_progress", chunks_so_far)
 
-    # Step 3: Generate embeddings
+    # Step 3: Generate dense embeddings
     if use_deepinfra:
         if not deepinfra_api_key:
             raise ValueError("deepinfra_api_key is required when use_deepinfra is True")
@@ -713,7 +707,16 @@ def generate_embeddings(
             show_progress=show_progress,
             progress_callback=embed_progress_cb
         )
-    logger.info("Embedding complete", book_id=book_id, num_chunks=len(embedded_chunks))
+    logger.info("Dense embedding complete", book_id=book_id, num_chunks=len(embedded_chunks))
+
+    # Step 4: Generate sparse vectors using BM25
+    texts = [chunk["text"] for chunk in embedded_chunks]
+    bm25 = ArabicBM25S()
+    bm25.fit(texts)
+    sparse_vectors = bm25.encode_documents(texts)
+    for i, chunk in enumerate(embedded_chunks):
+        chunk["sparse_vector"] = sparse_vectors[i].to_milvus()
+    logger.info("Sparse embedding complete (BM25)", book_id=book_id, num_chunks=len(embedded_chunks))
 
     return embedded_chunks, chunking_stats
 
