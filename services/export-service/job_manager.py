@@ -22,6 +22,7 @@ logger = structlog.get_logger()
 EXPORT_WORKERS = int(os.getenv("EXPORT_WORKERS", "3"))
 
 
+
 def _now_utc() -> str:
     return time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
 
@@ -29,10 +30,9 @@ def _now_utc() -> str:
 class _JobState:
     """Internal mutable state for a single job."""
 
-    def __init__(self, job_id: str, books_data: List[Dict[str, Any]], use_deepinfra: bool):
+    def __init__(self, job_id: str, books_data: List[Dict[str, Any]]):
         self.job_id = job_id
         self.status = JobStatus.PENDING
-        self.use_deepinfra = use_deepinfra
         self.created_at = _now_utc()
         self.updated_at = self.created_at
         self.books: Dict[int, BookJobResult] = {
@@ -88,12 +88,13 @@ class JobManager:
     # Public API
     # ------------------------------------------------------------------
 
-    def submit_job(self, books_data: List[Dict[str, Any]], use_deepinfra: bool = False) -> str:
+    def submit_job(self, books_data: List[Dict[str, Any]]) -> str:
         job_id = str(uuid.uuid4())
-        state = _JobState(job_id, books_data, use_deepinfra)
+        state = _JobState(job_id, books_data)
         with self._lock:
             self._jobs[job_id] = state
-        self._executor.submit(self._run_job, job_id)
+        t = threading.Thread(target=self._run_job, args=(job_id,), daemon=True)
+        t.start()
         logger.info("Job submitted", job_id=job_id, book_count=len(books_data))
         return job_id
 
@@ -144,7 +145,7 @@ class JobManager:
             if original and entry.book_id in original.books_data:
                 book_data = original.books_data[entry.book_id]
 
-        return self.submit_job([book_data], use_deepinfra=False)
+        return self.submit_job([book_data])
 
     def clear_dlq(self):
         with self._lock:
@@ -201,7 +202,6 @@ class JobManager:
             state = self._jobs[job_id]
             book_result = state.books[book_id]
             book_data = state.books_data[book_id]
-            use_deepinfra = state.use_deepinfra
             book_result.status = BookJobStatus.IN_PROGRESS
             book_result.started_at = _now_utc()
             book_result.current_step = "exporting"
@@ -233,7 +233,6 @@ class JobManager:
                 table_of_contents=book_data.get("table_of_contents"),
                 author_id=book_data.get("author_id"),
                 category_id=book_data.get("category_id"),
-                use_deepinfra=use_deepinfra,
                 progress_callback=_progress_callback,
             )
 

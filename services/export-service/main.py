@@ -29,10 +29,9 @@ from job_manager import JobManager
 # Default pagination settings
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 500
-from utils import DatabaseService, ExportService, EMBEDDING_DEVICE, EMBEDDING_USE_FP16
+from utils import DatabaseService, ExportService
 from postgres_service import PostgresService
 from milvus_service import MilvusService
-from embedding_service import load_embedding_model
 
 # Load environment variables
 load_dotenv()
@@ -162,10 +161,6 @@ async def lifespan(app: FastAPI):
             milvus_service=milvus_service,
             milvus_partition=Config.MILVUS_PARTITION
         )
-
-        # Load embedding model into memory
-        logger.info("Loading embedding model...")
-        load_embedding_model(device=EMBEDDING_DEVICE, use_fp16=EMBEDDING_USE_FP16)
 
         # Initialize job manager
         job_manager = JobManager(export_service)
@@ -706,7 +701,7 @@ async def export_books(request: ExportRequest):
             "category_id": book.get("book_category"),
         })
 
-    job_id = job_manager.submit_job(books_to_export, use_deepinfra=request.use_deepinfra)
+    job_id = job_manager.submit_job(books_to_export)
 
     return JobSubmitResponse(
         job_id=job_id,
@@ -715,7 +710,7 @@ async def export_books(request: ExportRequest):
 
 
 @app.post("/export/books/{book_id}", response_model=JobSubmitResponse, status_code=status.HTTP_202_ACCEPTED, tags=["Export"])
-async def export_single_book(book_id: int, use_deepinfra: bool = Query(False, description="Use DeepInfra API for embeddings instead of local model")):
+async def export_single_book(book_id: int):
     """
     Submit a single-book export job. Returns immediately with a job ID.
 
@@ -735,7 +730,7 @@ async def export_single_book(book_id: int, use_deepinfra: bool = Query(False, de
         "category_id": book.get("book_category"),
     }
 
-    job_id = job_manager.submit_job([book_data], use_deepinfra=use_deepinfra)
+    job_id = job_manager.submit_job([book_data])
 
     return JobSubmitResponse(
         job_id=job_id,

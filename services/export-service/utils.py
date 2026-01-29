@@ -22,10 +22,6 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger()
 
-# Embedding configuration
-EMBEDDING_DEVICE = 'cuda'  # Use 'cpu' if no GPU available
-EMBEDDING_USE_FP16 = True
-EMBEDDING_BATCH_SIZE = 1000
 DEEPINFRA_API_KEY = os.environ.get("DEEPINFRA_API_KEY", "")
 
 # Thread pool for async S3 operations
@@ -852,7 +848,6 @@ class ExportService:
         table_of_contents: Optional[str] = None,
         author_id: Optional[int] = None,
         category_id: Optional[int] = None,
-        use_deepinfra: bool = False,
         progress_callback=None
     ) -> Tuple[int, Optional[str]]:
         """
@@ -890,7 +885,7 @@ class ExportService:
             if metadata:
                 if progress_callback:
                     progress_callback("step", "embedding")
-                jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, use_deepinfra=use_deepinfra, progress_callback=progress_callback)
+                jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, progress_callback=progress_callback)
 
                 # Upsert to Milvus first - if it fails, stop the export
                 if self.milvus_service:
@@ -919,7 +914,7 @@ class ExportService:
             # Generate embeddings first
             if progress_callback:
                 progress_callback("step", "embedding")
-            jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, use_deepinfra=use_deepinfra, progress_callback=progress_callback)
+            jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, progress_callback=progress_callback)
 
             # Upsert to Milvus first - if it fails, stop the export
             if self.milvus_service:
@@ -970,7 +965,7 @@ class ExportService:
         # Step 4: Generate embeddings from metadata
         if progress_callback:
             progress_callback("step", "embedding")
-        jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, use_deepinfra=use_deepinfra, progress_callback=progress_callback)
+        jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, progress_callback=progress_callback)
 
         # Step 5: Upsert to Milvus FIRST - if it fails, stop the export before S3/PostgreSQL
         if self.milvus_service:
@@ -1000,7 +995,6 @@ class ExportService:
         table_of_contents: Optional[str] = None,
         author_id: Optional[int] = None,
         category_id: Optional[int] = None,
-        use_deepinfra: bool = False
     ) -> Tuple[int, Optional[str]]:
         """
         Async version of export_book_with_metadata for concurrent batch processing.
@@ -1016,7 +1010,6 @@ class ExportService:
                 table_of_contents,
                 author_id,
                 category_id,
-                use_deepinfra=use_deepinfra
             )
         )
 
@@ -1024,7 +1017,6 @@ class ExportService:
         self,
         books_data: List[Dict[str, Any]],
         max_concurrent: int = 5,
-        use_deepinfra: bool = False
     ) -> List[Tuple[int, int, Optional[str], Optional[str]]]:
         """
         Export multiple books concurrently with controlled parallelism.
@@ -1033,7 +1025,6 @@ class ExportService:
             books_data: List of dicts with book_id, book_name, author_name, category_name,
                         table_of_contents, author_id, category_id
             max_concurrent: Maximum number of books to export concurrently
-            use_deepinfra: Whether to use DeepInfra API for embeddings
 
         Returns:
             List of tuples: (book_id, raw_files_count, metadata_url, error_message)
@@ -1053,7 +1044,6 @@ class ExportService:
                         table_of_contents=book_data.get("table_of_contents"),
                         author_id=book_data.get("author_id"),
                         category_id=book_data.get("category_id"),
-                        use_deepinfra=use_deepinfra
                     )
                     return (book_id, raw_files_count, metadata_url, None)
                 except Exception as e:
@@ -1171,7 +1161,6 @@ class ExportService:
     def _generate_embeddings(
         self,
         metadata: Dict[str, Any],
-        use_deepinfra: bool = False,
         progress_callback=None
     ) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
         """
@@ -1179,7 +1168,7 @@ class ExportService:
 
         Args:
             metadata: Book metadata containing parts, pages, etc.
-            use_deepinfra: Whether to use DeepInfra API instead of local model
+            progress_callback: Called with (event, value) for progress updates
 
         Returns:
             Tuple of (JSONL string containing embedded chunks, stats dictionary, embedded chunks list)
@@ -1187,15 +1176,11 @@ class ExportService:
         from embedding_service import generate_embeddings, embeddings_to_jsonl, compute_embedding_stats
 
         book_id = metadata.get("book_id")
-        logger.info("Generating embeddings", book_id=book_id, use_deepinfra=use_deepinfra)
+        logger.info("Generating embeddings", book_id=book_id)
 
         embedded_chunks, chunking_stats = generate_embeddings(
             metadata=metadata,
-            device=EMBEDDING_DEVICE,
-            use_fp16=EMBEDDING_USE_FP16,
-            batch_size=EMBEDDING_BATCH_SIZE,
-            use_deepinfra=use_deepinfra,
-            deepinfra_api_key=DEEPINFRA_API_KEY if use_deepinfra else None,
+            deepinfra_api_key=DEEPINFRA_API_KEY,
             progress_callback=progress_callback
         )
 

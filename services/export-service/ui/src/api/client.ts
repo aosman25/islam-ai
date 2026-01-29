@@ -74,15 +74,15 @@ export function checkExportedBooks(bookIds: number[]) {
   return request<{ exported_ids: number[] }>('/books/exported', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ book_ids: bookIds, use_deepinfra: false }),
+    body: JSON.stringify({ book_ids: bookIds }),
   })
 }
 
-export function exportBooks(bookIds: number[], useDeepinfra = false) {
+export function exportBooks(bookIds: number[]) {
   return request<JobSubmitResponse>('/export/books', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ book_ids: bookIds, use_deepinfra: useDeepinfra }),
+    body: JSON.stringify({ book_ids: bookIds }),
   })
 }
 
@@ -112,6 +112,6 @@ export function deleteBooks(bookIds: number[]) {
   return request<DeleteBatchResponse>('/books', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ book_ids: bookIds, use_deepinfra: false }),
+    body: JSON.stringify({ book_ids: bookIds }),
   })
 }

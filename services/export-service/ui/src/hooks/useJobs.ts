@@ -25,8 +25,7 @@ export function useJob(jobId: string | null) {
 export function useExportBooks() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ bookIds, useDeepinfra }: { bookIds: number[]; useDeepinfra: boolean }) =>
-      exportBooks(bookIds, useDeepinfra),
+    mutationFn: (bookIds: number[]) => exportBooks(bookIds),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['jobs'] })
     },

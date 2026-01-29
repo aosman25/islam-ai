@@ -1,15 +1,11 @@
-import { useState } from 'react'
-
 interface Props {
   selectedCount: number
-  onExport: (useDeepinfra: boolean) => void
+  onExport: () => void
   onClose: () => void
   loading?: boolean
 }
 
 export default function ExportDialog({ selectedCount, onExport, onClose, loading }: Props) {
-  const [useDeepinfra, setUseDeepinfra] = useState(false)
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
       <div
@@ -22,22 +18,9 @@ export default function ExportDialog({ selectedCount, onExport, onClose, loading
           هل تريد المتابعة؟
         </p>
 
-        <label className="flex items-center gap-3 mb-6 p-3 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={useDeepinfra}
-            onChange={(e) => setUseDeepinfra(e.target.checked)}
-            className="w-4 h-4 rounded accent-blue-600"
-          />
-          <div>
-            <div className="text-sm font-medium text-slate-700">استخدام DeepInfra</div>
-            <div className="text-xs text-slate-500">توليد التضمينات عبر واجهة DeepInfra بدلاً من النموذج المحلي</div>
-          </div>
-        </label>
-
         <div className="flex gap-3">
           <button
-            onClick={() => onExport(useDeepinfra)}
+            onClick={onExport}
             disabled={loading}
             className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >

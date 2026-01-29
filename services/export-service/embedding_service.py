@@ -1,33 +1,16 @@
 """Embedding service for chunking and embedding book content."""
 
+import asyncio
 import json
-import logging
-import os
 import re
-import time
 import unicodedata
 from typing import Callable, Dict, List, Any, Optional
 
-import requests
-
-# Suppress huggingface_hub progress bars before importing
-os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
-os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-import tiktoken
+import httpx
 import structlog
+import tiktoken
 from chonkie import SentenceChunker
 from tqdm import tqdm
-
-# Suppress FlagEmbedding and related library logs
-logging.getLogger("FlagEmbedding").setLevel(logging.ERROR)
-logging.getLogger("sentence_transformers").setLevel(logging.ERROR)
-logging.getLogger("transformers").setLevel(logging.ERROR)
-logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
-logging.getLogger("filelock").setLevel(logging.ERROR)
-logging.getLogger("torch").setLevel(logging.ERROR)
-logging.getLogger("accelerate").setLevel(logging.ERROR)
 
 logger = structlog.get_logger()
 
@@ -457,104 +440,6 @@ class PageMatcher:
 
 
 class EmbeddingService:
-    """Service for generating embeddings using BGE-M3 model."""
-
-    _instance = None
-    _model = None
-
-    def __new__(cls, device: str = 'cuda', use_fp16: bool = True):
-        """Singleton pattern to ensure only one model instance exists."""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance.device = device
-            cls._instance.use_fp16 = use_fp16
-        return cls._instance
-
-    def __init__(self, device: str = 'cuda', use_fp16: bool = True):
-        """
-        Initialize the embedding service.
-
-        Args:
-            device: Device to run model on ('cuda' or 'cpu')
-            use_fp16: Whether to use FP16 precision
-        """
-        self.device = device
-        self.use_fp16 = use_fp16
-
-    @property
-    def model(self):
-        """Get the embedding model (must be loaded first via load_model)."""
-        if EmbeddingService._model is None:
-            raise RuntimeError("Embedding model not loaded. Call load_model() first.")
-        return EmbeddingService._model
-
-    def load_model(self):
-        """Load the embedding model into memory."""
-        if EmbeddingService._model is None:
-            from FlagEmbedding import BGEM3FlagModel
-            logger.info("Loading BGE-M3 model...", device=self.device)
-            EmbeddingService._model = BGEM3FlagModel(
-                'BAAI/bge-m3',
-                use_fp16=self.use_fp16,
-                device=self.device
-            )
-            logger.info("BGE-M3 model loaded")
-        return EmbeddingService._model
-
-    @classmethod
-    def is_model_loaded(cls) -> bool:
-        """Check if the model is already loaded."""
-        return cls._model is not None
-
-    def embed_chunks(
-        self,
-        matched_chunks: List[Dict[str, Any]],
-        batch_size: int = 1000,
-        show_progress: bool = False,
-        progress_callback: Optional[Callable[[int], None]] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Embed chunks and add dense vectors to each chunk.
-
-        Sparse vectors are generated separately using ArabicBM25S in generate_embeddings().
-
-        Args:
-            matched_chunks: List of chunk dicts with text and metadata
-            batch_size: Batch size for embedding
-            show_progress: Whether to show progress bar
-            progress_callback: Called after each batch with total chunks embedded so far
-
-        Returns:
-            List of chunk dicts with added dense_vector
-        """
-        texts_to_embed = [chunk["text"] for chunk in matched_chunks]
-
-        all_dense_vectors = []
-
-        iterator = range(0, len(texts_to_embed), batch_size)
-        if show_progress:
-            iterator = tqdm(iterator, desc="Embedding")
-
-        for i in iterator:
-            batch_texts = texts_to_embed[i:i + batch_size]
-            embeddings = self.model.encode(
-                batch_texts,
-                return_dense=True,
-                return_sparse=False,
-                return_colbert_vecs=False
-            )
-            all_dense_vectors.extend(embeddings['dense_vecs'].tolist())
-
-            if progress_callback:
-                progress_callback(len(all_dense_vectors))
-
-        for i, chunk in enumerate(matched_chunks):
-            chunk["dense_vector"] = all_dense_vectors[i]
-
-        return matched_chunks
-
-
-class DeepInfraEmbeddingService:
     """Service for generating embeddings using DeepInfra API."""
 
     API_URL = "https://api.deepinfra.com/v1/inference/BAAI/bge-m3-multi"
@@ -562,108 +447,150 @@ class DeepInfraEmbeddingService:
     def __init__(self, api_key: str):
         self.api_key = api_key
 
-    def embed_chunks(
+    async def _embed_batch(
         self,
-        matched_chunks: List[Dict[str, Any]],
-        batch_size: int = 100,
-        show_progress: bool = False,
-        progress_callback: Optional[Callable[[int], None]] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Embed chunks using the DeepInfra API and add dense vectors to each chunk.
-
-        Sparse vectors are generated separately using ArabicBM25S in generate_embeddings().
-
-        Args:
-            matched_chunks: List of chunk dicts with text and metadata
-            batch_size: Batch size for API requests
-            show_progress: Whether to show progress bar
-            progress_callback: Called after each batch with total chunks embedded so far
-
-        Returns:
-            List of chunk dicts with added dense_vector
-        """
-        texts_to_embed = [chunk["text"] for chunk in matched_chunks]
-
-        all_dense_vectors = []
-
-        iterator = range(0, len(texts_to_embed), batch_size)
-        if show_progress:
-            iterator = tqdm(iterator, desc="Embedding (DeepInfra)")
-
+        client: httpx.AsyncClient,
+        semaphore: asyncio.Semaphore,
+        batch_texts: List[str],
+        batch_index: int,
+    ) -> List[List[float]]:
+        """Embed a single batch with semaphore-controlled concurrency."""
         headers = {
             "Authorization": f"bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+        payload = {"inputs": batch_texts}
 
-        for i in iterator:
-            batch_texts = texts_to_embed[i:i + batch_size]
-            payload = {"inputs": batch_texts}
-
-            max_retries = 3
+        max_retries = 3
+        async with semaphore:
             for attempt in range(max_retries):
                 try:
-                    response = requests.post(self.API_URL, headers=headers, json=payload, timeout=300)
+                    response = await client.post(
+                        self.API_URL,
+                        headers=headers,
+                        json=payload,
+                        timeout=300,
+                    )
                     response.raise_for_status()
-                    break
-                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    data = response.json()
+                    embeddings = data.get("embeddings")
+                    if not embeddings:
+                        raise RuntimeError(
+                            f"DeepInfra API returned no embeddings for batch {batch_index}. "
+                            f"Response keys: {list(data.keys())}"
+                        )
+                    logger.info("Batch embedded", batch=batch_index, chunks=len(batch_texts))
+                    return embeddings
+                except (httpx.TimeoutException, httpx.ConnectError) as e:
                     if attempt < max_retries - 1:
                         wait_time = 2 ** attempt * 5
                         logger.warning(
                             "DeepInfra API request failed, retrying",
+                            batch=batch_index,
                             attempt=attempt + 1,
                             max_retries=max_retries,
                             wait_seconds=wait_time,
                             error=str(e),
                         )
-                        time.sleep(wait_time)
+                        await asyncio.sleep(wait_time)
                     else:
                         raise
-            data = response.json()
 
-            embeddings = data.get("embeddings")
+    async def embed_chunks_async(
+        self,
+        matched_chunks: List[Dict[str, Any]],
+        batch_size: int = 100,
+        max_concurrent: int = 4,
+        progress_callback: Optional[Callable[[int], None]] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Embed chunks using concurrent async HTTP requests to DeepInfra API.
 
-            if not embeddings:
-                raise RuntimeError(f"DeepInfra API returned no embeddings. Response keys: {list(data.keys())}")
+        Args:
+            matched_chunks: List of chunk dicts with text and metadata
+            batch_size: Batch size for API requests
+            max_concurrent: Maximum number of concurrent API requests
+            progress_callback: Called after each batch with total chunks embedded so far
 
-            all_dense_vectors.extend(embeddings)
+        Returns:
+            List of chunk dicts with added dense_vector
+        """
+        texts = [chunk["text"] for chunk in matched_chunks]
+        if not texts:
+            return matched_chunks
 
+        # Build batches
+        batches = []
+        for i in range(0, len(texts), batch_size):
+            batches.append(texts[i:i + batch_size])
+
+        logger.info(
+            "Starting async embedding",
+            total_chunks=len(texts),
+            batches=len(batches),
+            max_concurrent=max_concurrent,
+        )
+
+        semaphore = asyncio.Semaphore(max_concurrent)
+        all_dense_vectors: List[List[float]] = []
+        chunks_so_far = 0
+
+        async with httpx.AsyncClient() as client:
+            tasks = [
+                self._embed_batch(client, semaphore, batch, idx)
+                for idx, batch in enumerate(batches)
+            ]
+            results = await asyncio.gather(*tasks)
+
+        for batch_result in results:
+            all_dense_vectors.extend(batch_result)
+            chunks_so_far += len(batch_result)
             if progress_callback:
-                progress_callback(len(all_dense_vectors))
+                progress_callback(chunks_so_far)
 
         for i, chunk in enumerate(matched_chunks):
             chunk["dense_vector"] = all_dense_vectors[i]
 
         return matched_chunks
 
+    def embed_chunks(
+        self,
+        matched_chunks: List[Dict[str, Any]],
+        batch_size: int = 100,
+        progress_callback: Optional[Callable[[int], None]] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Synchronous wrapper that runs async embed_chunks_async via asyncio.run().
+
+        Called from worker threads so it's safe to create a new event loop.
+        """
+        return asyncio.run(
+            self.embed_chunks_async(
+                matched_chunks,
+                batch_size=batch_size,
+                progress_callback=progress_callback,
+            )
+        )
+
 
 def generate_embeddings(
     metadata: Dict[str, Any],
-    device: str = 'cuda',
-    use_fp16: bool = True,
-    batch_size: int = 1000,
+    deepinfra_api_key: str,
     show_progress: bool = False,
-    use_deepinfra: bool = False,
-    deepinfra_api_key: Optional[str] = None,
     progress_callback: Optional[Callable[[str, Any], None]] = None
 ) -> tuple:
     """
     Generate embeddings for a book from its metadata.
 
     This is the main entry point for the embedding pipeline.
-    Dense vectors are generated via BGE-M3 (local or DeepInfra).
+    Dense vectors are generated via DeepInfra API.
     Sparse vectors are generated via ArabicBM25S (fitted per-book on the chunks).
-
-    Note: When using local model, it must be loaded via load_embedding_model() before calling this.
 
     Args:
         metadata: Book metadata containing parts, pages, table_of_contents, etc.
-        device: Device to run embedding model on ('cuda' or 'cpu')
-        use_fp16: Whether to use FP16 precision for embedding model
-        batch_size: Batch size for embedding
+        deepinfra_api_key: API key for DeepInfra
         show_progress: Whether to show progress bars
-        use_deepinfra: Whether to use DeepInfra API instead of local model for dense embeddings
-        deepinfra_api_key: API key for DeepInfra (required if use_deepinfra is True)
+        progress_callback: Called with (event, value) for progress updates
 
     Returns:
         Tuple of (embedded_chunks list, chunking_stats dict)
@@ -671,7 +598,7 @@ def generate_embeddings(
     from sparse_vector_generator import ArabicBM25S
 
     book_id = metadata.get("book_id")
-    logger.info("Starting embedding generation", book_id=book_id, use_deepinfra=use_deepinfra)
+    logger.info("Starting embedding generation", book_id=book_id)
 
     # Step 1: Chunk the book
     chunker = BookChunker()
@@ -692,27 +619,13 @@ def generate_embeddings(
         def embed_progress_cb(chunks_so_far: int):
             progress_callback("embedding_progress", chunks_so_far)
 
-    # Step 3: Generate dense embeddings
-    if use_deepinfra:
-        if not deepinfra_api_key:
-            raise ValueError("deepinfra_api_key is required when use_deepinfra is True")
-        embedding_service = DeepInfraEmbeddingService(api_key=deepinfra_api_key)
-        # Cap batch size for API calls to avoid timeouts
-        deepinfra_batch_size = min(batch_size, 100)
-        embedded_chunks = embedding_service.embed_chunks(
-            matched_chunks,
-            batch_size=deepinfra_batch_size,
-            show_progress=show_progress,
-            progress_callback=embed_progress_cb
-        )
-    else:
-        embedding_service = EmbeddingService(device=device, use_fp16=use_fp16)
-        embedded_chunks = embedding_service.embed_chunks(
-            matched_chunks,
-            batch_size=batch_size,
-            show_progress=show_progress,
-            progress_callback=embed_progress_cb
-        )
+    # Step 3: Generate dense embeddings via DeepInfra API
+    embedding_service = EmbeddingService(api_key=deepinfra_api_key)
+    embedded_chunks = embedding_service.embed_chunks(
+        matched_chunks,
+        batch_size=100,
+        progress_callback=embed_progress_cb,
+    )
     logger.info("Dense embedding complete", book_id=book_id, num_chunks=len(embedded_chunks))
 
     # Step 4: Generate sparse vectors using BM25
@@ -725,21 +638,6 @@ def generate_embeddings(
     logger.info("Sparse embedding complete (BM25)", book_id=book_id, num_chunks=len(embedded_chunks))
 
     return embedded_chunks, chunking_stats
-
-
-def load_embedding_model(device: str = 'cuda', use_fp16: bool = True):
-    """
-    Load the embedding model into memory at startup.
-
-    This should be called during application startup to preload the model.
-
-    Args:
-        device: Device to run model on ('cuda' or 'cpu')
-        use_fp16: Whether to use FP16 precision
-    """
-    embedding_service = EmbeddingService(device=device, use_fp16=use_fp16)
-    embedding_service.load_model()
-    logger.info("Embedding model preloaded and ready")
 
 
 def embeddings_to_jsonl(embedded_chunks: List[Dict[str, Any]]) -> str:

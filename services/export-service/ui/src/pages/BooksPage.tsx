@@ -118,9 +118,9 @@ export default function BooksPage() {
       })
   }
 
-  function handleExport(useDeepinfra: boolean) {
+  function handleExport() {
     exportMutation.mutate(
-      { bookIds: Array.from(selectedIds), useDeepinfra },
+      Array.from(selectedIds),
       {
         onSuccess: () => {
           setShowExport(false)
