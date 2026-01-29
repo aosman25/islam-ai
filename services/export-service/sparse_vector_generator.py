@@ -314,7 +314,7 @@ class ArabicBM25S:
                 continue
             idx = self._vocab[token]
             idf = self._idf[token]
-            norm_tf = tf / (tf + k1 * (1 - b + b * doc_length / self._avg_doc_length))
+            norm_tf = (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * doc_length / self._avg_doc_length))
             score = idf * norm_tf
             if score > 0:
                 indices.append(idx)
