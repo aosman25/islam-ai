@@ -6,18 +6,22 @@ interface Props {
   onSearchChange: (q: string) => void
   onCategoryChange: (id: number | undefined) => void
   onAuthorChange: (id: number | undefined, name: string) => void
+  onExportedChange: (exported: boolean | undefined) => void
   selectedCategoryId?: number
   selectedAuthorId?: number
   selectedAuthorName?: string
+  selectedExported?: boolean
 }
 
 export default function FilterBar({
   onSearchChange,
   onCategoryChange,
   onAuthorChange,
+  onExportedChange,
   selectedCategoryId,
   selectedAuthorId,
   selectedAuthorName,
+  selectedExported,
 }: Props) {
   const [searchText, setSearchText] = useState('')
   const [authorQuery, setAuthorQuery] = useState('')
@@ -121,6 +125,23 @@ export default function FilterBar({
             ))}
           </div>
         )}
+      </div>
+
+      {/* Exported filter */}
+      <div className="min-w-[150px]">
+        <label className="block text-sm font-medium text-slate-600 mb-1">حالة التصدير</label>
+        <select
+          value={selectedExported === undefined ? '' : selectedExported ? 'true' : 'false'}
+          onChange={(e) => {
+            const v = e.target.value
+            onExportedChange(v === '' ? undefined : v === 'true')
+          }}
+          className="w-full h-[38px] px-3 rounded-lg border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">الكل</option>
+          <option value="true">تم التصدير</option>
+          <option value="false">غير مصدّر</option>
+        </select>
       </div>
     </div>
   )

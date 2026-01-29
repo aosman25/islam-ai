@@ -6,6 +6,7 @@ import type {
   Job,
   JobSubmitResponse,
   DeadLetterListResponse,
+  DeleteBatchResponse,
 } from '../types'
 
 const BASE = ''
@@ -25,17 +26,23 @@ export interface SearchBooksParams {
   author_id?: number
   printed?: number
   has_toc?: boolean
+  exported?: boolean
   limit?: number
   offset?: number
 }
 
-export function searchBooks(params: SearchBooksParams) {
-  const sp = new URLSearchParams()
+function applySearchParams(sp: URLSearchParams, params: SearchBooksParams) {
   if (params.q) sp.set('q', params.q)
   if (params.category_id != null) sp.set('category_id', String(params.category_id))
   if (params.author_id != null) sp.set('author_id', String(params.author_id))
   if (params.printed != null) sp.set('printed', String(params.printed))
   if (params.has_toc != null) sp.set('has_toc', String(params.has_toc))
+  if (params.exported != null) sp.set('exported', String(params.exported))
+}
+
+export function searchBooks(params: SearchBooksParams) {
+  const sp = new URLSearchParams()
+  applySearchParams(sp, params)
   if (params.limit != null) sp.set('limit', String(params.limit))
   if (params.offset != null) sp.set('offset', String(params.offset))
   return request<BookListResponse>(`/books/search?${sp}`)
@@ -43,11 +50,7 @@ export function searchBooks(params: SearchBooksParams) {
 
 export function fetchFilteredBookIds(params: Omit<SearchBooksParams, 'limit' | 'offset'>) {
   const sp = new URLSearchParams()
-  if (params.q) sp.set('q', params.q)
-  if (params.category_id != null) sp.set('category_id', String(params.category_id))
-  if (params.author_id != null) sp.set('author_id', String(params.author_id))
-  if (params.printed != null) sp.set('printed', String(params.printed))
-  if (params.has_toc != null) sp.set('has_toc', String(params.has_toc))
+  applySearchParams(sp, params)
   return request<{ book_ids: number[]; total: number }>(`/books/ids?${sp}`)
 }
 
@@ -103,4 +106,12 @@ export function retryDLQ(index: number) {
 
 export function clearDLQ() {
   return request<{ message: string }>('/jobs/dlq', { method: 'DELETE' })
+}
+
+export function deleteBooks(bookIds: number[]) {
+  return request<DeleteBatchResponse>('/books', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ book_ids: bookIds, use_deepinfra: false }),
+  })
 }

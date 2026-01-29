@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchJobs, fetchJob, exportBooks, fetchDLQ, retryDLQ, clearDLQ } from '../api/client'
+import { fetchJobs, fetchJob, exportBooks, deleteBooks, fetchDLQ, retryDLQ, clearDLQ } from '../api/client'
 
 export function useJobs(status?: string) {
   return useQuery({
@@ -29,6 +29,17 @@ export function useExportBooks() {
       exportBooks(bookIds, useDeepinfra),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['jobs'] })
+    },
+  })
+}
+
+export function useDeleteBooks() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (bookIds: number[]) => deleteBooks(bookIds),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['books'] })
+      qc.invalidateQueries({ queryKey: ['exported-status'] })
     },
   })
 }

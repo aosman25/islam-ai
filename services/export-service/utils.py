@@ -266,6 +266,8 @@ class DatabaseService:
         hidden: Optional[int] = None,
         printed: Optional[int] = None,
         has_toc: Optional[bool] = None,
+        exported_ids: Optional[List[int]] = None,
+        exported_filter: Optional[bool] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None
     ) -> Tuple[List[Dict[str, Any]], int]:
@@ -299,6 +301,18 @@ class DatabaseService:
             else:
                 where_clause += " AND b.table_of_contents IS NULL"
 
+        if exported_filter is not None and exported_ids is not None:
+            if exported_ids:
+                placeholders = ','.join(['?'] * len(exported_ids))
+                if exported_filter:
+                    where_clause += f" AND b.book_id IN ({placeholders})"
+                else:
+                    where_clause += f" AND b.book_id NOT IN ({placeholders})"
+                params.extend(exported_ids)
+            elif exported_filter:
+                # Want exported but none are exported → no results
+                where_clause += " AND 1=0"
+
         with self.get_connection() as conn:
             # Get total count
             count_sql = f"SELECT COUNT(*) FROM book b {where_clause}"
@@ -324,6 +338,8 @@ class DatabaseService:
         hidden: Optional[int] = None,
         printed: Optional[int] = None,
         has_toc: Optional[bool] = None,
+        exported_ids: Optional[List[int]] = None,
+        exported_filter: Optional[bool] = None,
     ) -> List[int]:
         """Return all book IDs matching the given filters (no pagination)."""
         where_clause = "WHERE 1=1"
@@ -349,6 +365,17 @@ class DatabaseService:
                 where_clause += " AND b.table_of_contents IS NOT NULL"
             else:
                 where_clause += " AND b.table_of_contents IS NULL"
+
+        if exported_filter is not None and exported_ids is not None:
+            if exported_ids:
+                placeholders = ','.join(['?'] * len(exported_ids))
+                if exported_filter:
+                    where_clause += f" AND b.book_id IN ({placeholders})"
+                else:
+                    where_clause += f" AND b.book_id NOT IN ({placeholders})"
+                params.extend(exported_ids)
+            elif exported_filter:
+                where_clause += " AND 1=0"
 
         with self.get_connection() as conn:
             sql = f"SELECT b.book_id FROM book b {where_clause} ORDER BY b.book_name"

@@ -357,6 +357,13 @@ class PostgresService:
             cursor.execute(f"SELECT book_id FROM books WHERE book_id IN ({placeholders})", book_ids)
             return [row[0] for row in cursor.fetchall()]
 
+    def get_all_exported_book_ids(self) -> List[int]:
+        """Return all book_ids that have been exported."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT book_id FROM books")
+            return [row[0] for row in cursor.fetchall()]
+
     def get_book(self, book_id: int) -> Optional[Dict[str, Any]]:
         """Get book metadata from PostgreSQL."""
         with self.get_connection() as conn:

@@ -108,3 +108,10 @@ export interface DeadLetterListResponse {
   entries: DeadLetterEntry[]
   total: number
 }
+
+export interface DeleteBatchResponse {
+  book_ids: number[]
+  deleted_count: number
+  message: string
+  timestamp: string
+}

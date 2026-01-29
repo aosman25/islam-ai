@@ -451,11 +451,19 @@ async def search_books(
     hidden: Optional[int] = None,
     printed: Optional[int] = None,
     has_toc: Optional[bool] = None,
+    exported: Optional[bool] = None,
     limit: Optional[int] = Query(DEFAULT_LIMIT, ge=1, le=MAX_LIMIT),
     offset: Optional[int] = Query(0, ge=0)
 ):
     """Search books by name, category, or author with pagination."""
-    books, total = db_service.search_books(q, category_id, author_id, hidden, printed=printed, has_toc=has_toc, limit=limit, offset=offset)
+    exported_ids = None
+    if exported is not None and postgres_service is not None:
+        exported_ids = postgres_service.get_all_exported_book_ids()
+    books, total = db_service.search_books(
+        q, category_id, author_id, hidden, printed=printed, has_toc=has_toc,
+        exported_ids=exported_ids, exported_filter=exported,
+        limit=limit, offset=offset,
+    )
     return BookListResponse(
         books=[BookResponse(**b) for b in books],
         count=len(books),
@@ -516,9 +524,16 @@ async def get_filtered_book_ids(
     hidden: Optional[int] = None,
     printed: Optional[int] = None,
     has_toc: Optional[bool] = None,
+    exported: Optional[bool] = None,
 ):
     """Return all book IDs matching the given filters (no pagination)."""
-    ids = db_service.search_book_ids(q, category_id, author_id, hidden, printed=printed, has_toc=has_toc)
+    exported_ids = None
+    if exported is not None and postgres_service is not None:
+        exported_ids = postgres_service.get_all_exported_book_ids()
+    ids = db_service.search_book_ids(
+        q, category_id, author_id, hidden, printed=printed, has_toc=has_toc,
+        exported_ids=exported_ids, exported_filter=exported,
+    )
     return {"book_ids": ids, "total": len(ids)}
 
 
