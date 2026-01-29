@@ -7,6 +7,21 @@ const bookStatusLabel: Record<BookJobStatusType, { label: string; color: string 
   failed: { label: 'فشل', color: 'text-red-600' },
 }
 
+const stepLabels: Record<string, string> = {
+  exporting: 'تصدير الملفات',
+  chunking: 'تقطيع النص',
+  embedding: 'توليد التضمينات',
+  upserting: 'رفع إلى Milvus',
+  uploading: 'رفع إلى S3',
+}
+
+function formatElapsed(seconds: number | null): string {
+  if (seconds == null) return ''
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
 interface Props {
   job: Job
 }
@@ -37,18 +52,65 @@ export default function JobDetail({ job }: Props) {
       <div className="space-y-2">
         {job.books.map((b) => {
           const cfg = bookStatusLabel[b.status]
+          const stepLabel = b.current_step ? stepLabels[b.current_step] || b.current_step : null
+          const chunkProgress =
+            b.total_chunks != null && b.total_chunks > 0 && b.chunks_embedded != null
+              ? b.chunks_embedded / b.total_chunks
+              : null
+
           return (
             <div
               key={b.book_id}
-              className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100"
+              className="p-3 rounded-lg bg-slate-50 border border-slate-100"
             >
-              <div>
-                <span className="text-sm font-medium text-slate-700">كتاب #{b.book_id}</span>
-                {b.error && (
-                  <p className="text-xs text-red-500 mt-1">{b.error}</p>
-                )}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium text-slate-700">كتاب #{b.book_id}</span>
+                  {b.error && (
+                    <p className="text-xs text-red-500 mt-1">{b.error}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {b.elapsed_seconds != null && (
+                    <span className="font-mono text-xs text-slate-400">
+                      {formatElapsed(b.elapsed_seconds)}
+                    </span>
+                  )}
+                  <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+                </div>
               </div>
-              <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+
+              {b.status === 'in_progress' && (
+                <div className="mt-2 space-y-1.5">
+                  {stepLabel && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      <span className="text-xs text-blue-600">{stepLabel}</span>
+                    </div>
+                  )}
+
+                  {chunkProgress != null && b.current_step === 'embedding' && (
+                    <div>
+                      <div className="flex items-center justify-between text-xs text-slate-500 mb-0.5">
+                        <span>التضمينات</span>
+                        <span>{b.chunks_embedded} / {b.total_chunks}</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                          style={{ width: `${Math.round(chunkProgress * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(b.status === 'completed' || b.status === 'failed') && b.total_chunks != null && (
+                <div className="mt-1.5 text-xs text-slate-400">
+                  {b.total_chunks} أجزاء
+                </div>
+              )}
             </div>
           )
         })}

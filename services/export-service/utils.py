@@ -825,7 +825,8 @@ class ExportService:
         table_of_contents: Optional[str] = None,
         author_id: Optional[int] = None,
         category_id: Optional[int] = None,
-        use_deepinfra: bool = False
+        use_deepinfra: bool = False,
+        progress_callback=None
     ) -> Tuple[int, Optional[str]]:
         """
         Export a book: export raw HTML files, generate metadata, create embeddings, and upsert to Milvus.
@@ -860,12 +861,18 @@ class ExportService:
             logger.info("Generating missing embeddings", book_id=book_id)
             metadata = self._download_metadata_from_s3(book_id)
             if metadata:
-                jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, use_deepinfra=use_deepinfra)
+                if progress_callback:
+                    progress_callback("step", "embedding")
+                jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, use_deepinfra=use_deepinfra, progress_callback=progress_callback)
 
                 # Upsert to Milvus first - if it fails, stop the export
                 if self.milvus_service:
+                    if progress_callback:
+                        progress_callback("step", "upserting")
                     self._upsert_to_milvus(embedded_chunks, book_id)
 
+                if progress_callback:
+                    progress_callback("step", "uploading")
                 self._upload_embeddings(book_id, jsonl_content)
                 self._save_stats(book_id, stats)
             return len(raw_files), metadata_url
@@ -883,13 +890,19 @@ class ExportService:
             )
 
             # Generate embeddings first
-            jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, use_deepinfra=use_deepinfra)
+            if progress_callback:
+                progress_callback("step", "embedding")
+            jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, use_deepinfra=use_deepinfra, progress_callback=progress_callback)
 
             # Upsert to Milvus first - if it fails, stop the export
             if self.milvus_service:
+                if progress_callback:
+                    progress_callback("step", "upserting")
                 self._upsert_to_milvus(embedded_chunks, book_id)
 
             # Upload metadata and embeddings to S3
+            if progress_callback:
+                progress_callback("step", "uploading")
             metadata_url = self._upload_metadata(book_id, metadata)
             self._upload_embeddings(book_id, jsonl_content)
 
@@ -904,6 +917,8 @@ class ExportService:
             raise ValueError("S3 client not configured - cannot export without storage")
 
         # Step 1: Export raw files to memory
+        if progress_callback:
+            progress_callback("step", "exporting")
         files_in_memory = self._export_to_memory(book_id)
 
         # Step 2: Convert bytes to strings for HTML processing
@@ -914,6 +929,8 @@ class ExportService:
         ]
 
         # Step 3: Process metadata from in-memory HTML
+        if progress_callback:
+            progress_callback("step", "chunking")
         metadata = process_book_html(
             html_contents=html_contents,
             book_id=book_id,
@@ -924,13 +941,19 @@ class ExportService:
         )
 
         # Step 4: Generate embeddings from metadata
-        jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, use_deepinfra=use_deepinfra)
+        if progress_callback:
+            progress_callback("step", "embedding")
+        jsonl_content, stats, embedded_chunks = self._generate_embeddings(metadata, use_deepinfra=use_deepinfra, progress_callback=progress_callback)
 
         # Step 5: Upsert to Milvus FIRST - if it fails, stop the export before S3/PostgreSQL
         if self.milvus_service:
+            if progress_callback:
+                progress_callback("step", "upserting")
             self._upsert_to_milvus(embedded_chunks, book_id)
 
         # Step 6: Upload all files to S3 (raw files, metadata, embeddings)
+        if progress_callback:
+            progress_callback("step", "uploading")
         uploaded_urls = self._upload_raw_files_from_memory(book_id, files_in_memory)
         metadata_url = self._upload_metadata(book_id, metadata)
         self._upload_embeddings(book_id, jsonl_content)
@@ -1121,7 +1144,8 @@ class ExportService:
     def _generate_embeddings(
         self,
         metadata: Dict[str, Any],
-        use_deepinfra: bool = False
+        use_deepinfra: bool = False,
+        progress_callback=None
     ) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
         """
         Generate embeddings for a book from its metadata.
@@ -1144,7 +1168,8 @@ class ExportService:
             use_fp16=EMBEDDING_USE_FP16,
             batch_size=EMBEDDING_BATCH_SIZE,
             use_deepinfra=use_deepinfra,
-            deepinfra_api_key=DEEPINFRA_API_KEY if use_deepinfra else None
+            deepinfra_api_key=DEEPINFRA_API_KEY if use_deepinfra else None,
+            progress_callback=progress_callback
         )
 
         jsonl_content = embeddings_to_jsonl(embedded_chunks)

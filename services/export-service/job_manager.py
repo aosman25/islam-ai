@@ -40,9 +40,17 @@ class _JobState:
             for b in books_data
         }
         self.books_data: Dict[int, Dict[str, Any]] = {b["book_id"]: b for b in books_data}
+        # Track start timestamps as floats for elapsed_seconds computation
+        self._started_at_ts: Dict[int, float] = {}
 
     def to_response(self) -> JobResponse:
-        book_list = list(self.books.values())
+        book_list = []
+        now = time.time()
+        for book_id, b in self.books.items():
+            # Compute elapsed_seconds dynamically for in-progress books
+            if b.status == BookJobStatus.IN_PROGRESS and book_id in self._started_at_ts:
+                b.elapsed_seconds = round(now - self._started_at_ts[book_id], 1)
+            book_list.append(b)
         completed = sum(1 for b in book_list if b.status == BookJobStatus.COMPLETED)
         failed = sum(1 for b in book_list if b.status == BookJobStatus.FAILED)
         total = len(book_list)
@@ -196,7 +204,20 @@ class JobManager:
             use_deepinfra = state.use_deepinfra
             book_result.status = BookJobStatus.IN_PROGRESS
             book_result.started_at = _now_utc()
+            book_result.current_step = "exporting"
+            state._started_at_ts[book_id] = time.time()
             state.updated_at = _now_utc()
+
+        def _progress_callback(event: str, value):
+            with self._lock:
+                if event == "step":
+                    book_result.current_step = value
+                elif event == "chunking_done":
+                    book_result.total_chunks = value
+                    book_result.chunks_embedded = 0
+                elif event == "embedding_progress":
+                    book_result.chunks_embedded = value
+                state.updated_at = _now_utc()
 
         try:
             # Delete existing book data before re-exporting
@@ -213,6 +234,7 @@ class JobManager:
                 author_id=book_data.get("author_id"),
                 category_id=book_data.get("category_id"),
                 use_deepinfra=use_deepinfra,
+                progress_callback=_progress_callback,
             )
 
             with self._lock:
@@ -220,6 +242,9 @@ class JobManager:
                 book_result.raw_files_count = raw_files_count
                 book_result.metadata_url = metadata_url
                 book_result.completed_at = _now_utc()
+                book_result.current_step = None
+                elapsed = time.time() - state._started_at_ts.get(book_id, time.time())
+                book_result.elapsed_seconds = round(elapsed, 1)
                 state.updated_at = _now_utc()
 
             logger.info("Book exported successfully", book_id=book_id, job_id=job_id)
@@ -232,6 +257,9 @@ class JobManager:
                 book_result.status = BookJobStatus.FAILED
                 book_result.error = error_msg
                 book_result.completed_at = _now_utc()
+                book_result.current_step = None
+                elapsed = time.time() - state._started_at_ts.get(book_id, time.time())
+                book_result.elapsed_seconds = round(elapsed, 1)
                 state.updated_at = _now_utc()
 
                 self._dlq.append(DeadLetterEntry(

@@ -173,6 +173,10 @@ class BookJobResult(BaseModel):
     error: Optional[str] = None
     started_at: Optional[str] = None
     completed_at: Optional[str] = None
+    current_step: Optional[str] = None
+    total_chunks: Optional[int] = None
+    chunks_embedded: Optional[int] = None
+    elapsed_seconds: Optional[float] = None
 
 
 class JobResponse(BaseModel):

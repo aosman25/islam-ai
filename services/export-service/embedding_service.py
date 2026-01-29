@@ -4,8 +4,9 @@ import json
 import logging
 import os
 import re
+import time
 import unicodedata
-from typing import Dict, List, Any, Optional
+from typing import Callable, Dict, List, Any, Optional
 
 import requests
 
@@ -503,7 +504,8 @@ class EmbeddingService:
         self,
         matched_chunks: List[Dict[str, Any]],
         batch_size: int = 1000,
-        show_progress: bool = False
+        show_progress: bool = False,
+        progress_callback: Optional[Callable[[int], None]] = None
     ) -> List[Dict[str, Any]]:
         """
         Embed chunks and add dense/sparse vectors to each chunk.
@@ -512,6 +514,7 @@ class EmbeddingService:
             matched_chunks: List of chunk dicts with text and metadata
             batch_size: Batch size for embedding
             show_progress: Whether to show progress bar
+            progress_callback: Called after each batch with total chunks embedded so far
 
         Returns:
             List of chunk dicts with added dense_vector and sparse_vector
@@ -537,6 +540,9 @@ class EmbeddingService:
             for sparse_dict in embeddings['lexical_weights']:
                 all_sparse_vectors.append({str(k): float(v) for k, v in sparse_dict.items()})
 
+            if progress_callback:
+                progress_callback(len(all_dense_vectors))
+
         for i, chunk in enumerate(matched_chunks):
             chunk["dense_vector"] = all_dense_vectors[i]
             chunk["sparse_vector"] = all_sparse_vectors[i]
@@ -556,7 +562,8 @@ class DeepInfraEmbeddingService:
         self,
         matched_chunks: List[Dict[str, Any]],
         batch_size: int = 100,
-        show_progress: bool = False
+        show_progress: bool = False,
+        progress_callback: Optional[Callable[[int], None]] = None
     ) -> List[Dict[str, Any]]:
         """
         Embed chunks using the DeepInfra API and add dense/sparse vectors to each chunk.
@@ -565,6 +572,7 @@ class DeepInfraEmbeddingService:
             matched_chunks: List of chunk dicts with text and metadata
             batch_size: Batch size for API requests
             show_progress: Whether to show progress bar
+            progress_callback: Called after each batch with total chunks embedded so far
 
         Returns:
             List of chunk dicts with added dense_vector and sparse_vector
@@ -585,10 +593,27 @@ class DeepInfraEmbeddingService:
 
         for i in iterator:
             batch_texts = texts_to_embed[i:i + batch_size]
-            payload = {"inputs": batch_texts, "return_sparse": True}
+            payload = {"inputs": batch_texts, "sparse": True}
 
-            response = requests.post(self.API_URL, headers=headers, json=payload, timeout=120)
-            response.raise_for_status()
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    response = requests.post(self.API_URL, headers=headers, json=payload, timeout=300)
+                    response.raise_for_status()
+                    break
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt * 5
+                        logger.warning(
+                            "DeepInfra API request failed, retrying",
+                            attempt=attempt + 1,
+                            max_retries=max_retries,
+                            wait_seconds=wait_time,
+                            error=str(e),
+                        )
+                        time.sleep(wait_time)
+                    else:
+                        raise
             data = response.json()
 
             embeddings = data.get("embeddings")
@@ -607,6 +632,9 @@ class DeepInfraEmbeddingService:
                 logger.warning("DeepInfra API returned no sparse vectors, using empty dicts")
                 all_sparse_vectors.extend([{} for _ in range(len(batch_texts))])
 
+            if progress_callback:
+                progress_callback(len(all_dense_vectors))
+
         for i, chunk in enumerate(matched_chunks):
             chunk["dense_vector"] = all_dense_vectors[i]
             chunk["sparse_vector"] = all_sparse_vectors[i]
@@ -621,7 +649,8 @@ def generate_embeddings(
     batch_size: int = 1000,
     show_progress: bool = False,
     use_deepinfra: bool = False,
-    deepinfra_api_key: Optional[str] = None
+    deepinfra_api_key: Optional[str] = None,
+    progress_callback: Optional[Callable[[str, Any], None]] = None
 ) -> tuple:
     """
     Generate embeddings for a book from its metadata.
@@ -649,27 +678,40 @@ def generate_embeddings(
     chunks, chunking_stats = chunker.chunk_book(metadata, show_progress=show_progress)
     logger.info("Chunking complete", book_id=book_id, num_chunks=len(chunks))
 
+    if progress_callback:
+        progress_callback("chunking_done", len(chunks))
+
     # Step 2: Match chunks to pages
     matcher = PageMatcher()
     matched_chunks = matcher.match_chunks_to_pages(chunks, metadata)
     logger.info("Page matching complete", book_id=book_id)
+
+    # Build an embedding progress callback that forwards batch counts
+    embed_progress_cb = None
+    if progress_callback:
+        def embed_progress_cb(chunks_so_far: int):
+            progress_callback("embedding_progress", chunks_so_far)
 
     # Step 3: Generate embeddings
     if use_deepinfra:
         if not deepinfra_api_key:
             raise ValueError("deepinfra_api_key is required when use_deepinfra is True")
         embedding_service = DeepInfraEmbeddingService(api_key=deepinfra_api_key)
+        # Cap batch size for API calls to avoid timeouts
+        deepinfra_batch_size = min(batch_size, 100)
         embedded_chunks = embedding_service.embed_chunks(
             matched_chunks,
-            batch_size=batch_size,
-            show_progress=show_progress
+            batch_size=deepinfra_batch_size,
+            show_progress=show_progress,
+            progress_callback=embed_progress_cb
         )
     else:
         embedding_service = EmbeddingService(device=device, use_fp16=use_fp16)
         embedded_chunks = embedding_service.embed_chunks(
             matched_chunks,
             batch_size=batch_size,
-            show_progress=show_progress
+            show_progress=show_progress,
+            progress_callback=embed_progress_cb
         )
     logger.info("Embedding complete", book_id=book_id, num_chunks=len(embedded_chunks))
 

@@ -69,6 +69,10 @@ export interface BookJobResult {
   error: string | null
   started_at: string | null
   completed_at: string | null
+  current_step: string | null
+  total_chunks: number | null
+  chunks_embedded: number | null
+  elapsed_seconds: number | null
 }
 
 export interface Job {
