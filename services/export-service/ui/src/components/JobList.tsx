@@ -6,6 +6,7 @@ const statusConfig: Record<JobStatusType, { label: string; color: string }> = {
   completed: { label: 'مكتمل', color: 'bg-green-100 text-green-800' },
   completed_with_errors: { label: 'مكتمل مع أخطاء', color: 'bg-orange-100 text-orange-800' },
   failed: { label: 'فشل', color: 'bg-red-100 text-red-800' },
+  cancelled: { label: 'ملغاة', color: 'bg-slate-100 text-slate-800' },
 }
 
 interface Props {
@@ -53,6 +54,7 @@ export default function JobList({ jobs, selectedJobId, onSelect, loading }: Prop
             <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
+                  job.status === 'cancelled' ? 'bg-slate-400' :
                   job.status === 'failed' ? 'bg-red-500' :
                   job.status === 'completed_with_errors' ? 'bg-orange-500' :
                   job.status === 'completed' ? 'bg-green-500' :

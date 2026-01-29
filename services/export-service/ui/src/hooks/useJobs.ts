@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchJobs, fetchJob, exportBooks, deleteBooks, fetchDLQ, retryDLQ, clearDLQ } from '../api/client'
+import { fetchJobs, fetchJob, exportBooks, deleteBooks, cancelJob, fetchDLQ, retryDLQ, clearDLQ } from '../api/client'
 
 export function useJobs(status?: string) {
   return useQuery({
@@ -28,6 +28,17 @@ export function useExportBooks() {
     mutationFn: (bookIds: number[]) => exportBooks(bookIds),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['jobs'] })
+    },
+  })
+}
+
+export function useCancelJob() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (jobId: string) => cancelJob(jobId),
+    onSuccess: (_data, jobId) => {
+      qc.invalidateQueries({ queryKey: ['jobs'] })
+      qc.invalidateQueries({ queryKey: ['job', jobId] })
     },
   })
 }

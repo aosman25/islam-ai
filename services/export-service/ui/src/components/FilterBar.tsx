@@ -11,6 +11,7 @@ interface Props {
   selectedAuthorId?: number
   selectedAuthorName?: string
   selectedExported?: boolean
+  initialSearch?: string
 }
 
 export default function FilterBar({
@@ -22,8 +23,9 @@ export default function FilterBar({
   selectedAuthorId,
   selectedAuthorName,
   selectedExported,
+  initialSearch = '',
 }: Props) {
-  const [searchText, setSearchText] = useState('')
+  const [searchText, setSearchText] = useState(initialSearch)
   const [authorQuery, setAuthorQuery] = useState('')
   const [showAuthorDropdown, setShowAuthorDropdown] = useState(false)
   const authorRef = useRef<HTMLDivElement>(null)

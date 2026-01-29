@@ -155,6 +155,7 @@ class JobStatus(str, Enum):
     COMPLETED = "completed"
     COMPLETED_WITH_ERRORS = "completed_with_errors"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class BookJobStatus(str, Enum):
@@ -162,6 +163,7 @@ class BookJobStatus(str, Enum):
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class BookJobResult(BaseModel):

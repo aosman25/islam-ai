@@ -42,14 +42,11 @@ class _JobState:
         self.books_data: Dict[int, Dict[str, Any]] = {b["book_id"]: b for b in books_data}
         # Track start timestamps as floats for elapsed_seconds computation
         self._started_at_ts: Dict[int, float] = {}
+        self._cancelled = False
 
     def to_response(self) -> JobResponse:
         book_list = []
-        now = time.time()
-        for book_id, b in self.books.items():
-            # Compute elapsed_seconds dynamically for in-progress books
-            if b.status == BookJobStatus.IN_PROGRESS and book_id in self._started_at_ts:
-                b.elapsed_seconds = round(now - self._started_at_ts[book_id], 1)
+        for _book_id, b in self.books.items():
             book_list.append(b)
         completed = sum(1 for b in book_list if b.status == BookJobStatus.COMPLETED)
         failed = sum(1 for b in book_list if b.status == BookJobStatus.FAILED)
@@ -151,6 +148,30 @@ class JobManager:
         with self._lock:
             self._dlq.clear()
 
+    def cancel_job(self, job_id: str) -> bool:
+        """Cancel a pending or in-progress job.
+
+        Sets the cancellation flag so that pending books are skipped.
+        Books already in-progress will finish naturally.
+        Returns True if the job was found and cancellable, False otherwise.
+        """
+        with self._lock:
+            state = self._jobs.get(job_id)
+            if state is None:
+                return False
+            if state.status not in (JobStatus.PENDING, JobStatus.IN_PROGRESS):
+                return False
+            state._cancelled = True
+            state.status = JobStatus.CANCELLED
+            state.updated_at = _now_utc()
+            # Mark all pending books as cancelled immediately
+            for book_result in state.books.values():
+                if book_result.status == BookJobStatus.PENDING:
+                    book_result.status = BookJobStatus.CANCELLED
+                    book_result.completed_at = _now_utc()
+        logger.info("Job cancelled", job_id=job_id)
+        return True
+
     # ------------------------------------------------------------------
     # Internal processing
     # ------------------------------------------------------------------
@@ -176,31 +197,39 @@ class JobManager:
 
         # Determine final job status
         with self._lock:
-            books = list(state.books.values())
-            completed = sum(1 for b in books if b.status == BookJobStatus.COMPLETED)
-            failed = sum(1 for b in books if b.status == BookJobStatus.FAILED)
-            total = len(books)
-
-            if completed == total:
-                state.status = JobStatus.COMPLETED
-            elif failed == total:
-                state.status = JobStatus.FAILED
+            # If already cancelled, keep that status
+            if state._cancelled:
+                state.status = JobStatus.CANCELLED
             else:
-                state.status = JobStatus.COMPLETED_WITH_ERRORS
+                books = list(state.books.values())
+                completed = sum(1 for b in books if b.status == BookJobStatus.COMPLETED)
+                failed = sum(1 for b in books if b.status == BookJobStatus.FAILED)
+                total = len(books)
+
+                if completed == total:
+                    state.status = JobStatus.COMPLETED
+                elif failed == total:
+                    state.status = JobStatus.FAILED
+                else:
+                    state.status = JobStatus.COMPLETED_WITH_ERRORS
             state.updated_at = _now_utc()
 
         logger.info(
             "Job finished",
             job_id=job_id,
             status=state.status.value,
-            completed=completed,
-            failed=failed,
         )
 
     def _export_single_book(self, job_id: str, book_id: int):
         with self._lock:
             state = self._jobs[job_id]
             book_result = state.books[book_id]
+            # Skip if job was cancelled while this book was queued
+            if state._cancelled and book_result.status != BookJobStatus.IN_PROGRESS:
+                if book_result.status == BookJobStatus.PENDING:
+                    book_result.status = BookJobStatus.CANCELLED
+                    book_result.completed_at = _now_utc()
+                return
             book_data = state.books_data[book_id]
             book_result.status = BookJobStatus.IN_PROGRESS
             book_result.started_at = _now_utc()

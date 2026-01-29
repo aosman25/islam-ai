@@ -1,7 +1,9 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useBooks, useExportedStatus } from '../hooks/useBooks'
 import { useExportBooks, useDeleteBooks } from '../hooks/useJobs'
 import { fetchFilteredBookIds } from '../api/client'
+import { useBookFilters } from '../contexts/BookFiltersContext'
 import FilterBar from '../components/FilterBar'
 import BookTable from '../components/BookTable'
 import Pagination from '../components/Pagination'
@@ -10,16 +12,16 @@ import ExportDialog from '../components/ExportDialog'
 const PAGE_SIZE = 50
 
 export default function BooksPage() {
-  const [search, setSearch] = useState('')
-  const [categoryId, setCategoryId] = useState<number | undefined>()
-  const [authorId, setAuthorId] = useState<number | undefined>()
-  const [authorName, setAuthorName] = useState('')
-  const [exported, setExported] = useState<boolean | undefined>()
-  const [offset, setOffset] = useState(0)
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const {
+    search, categoryId, authorId, authorName, exported, offset, selectedIds,
+    setSearch, setCategoryId, setAuthor, setExported, setOffset, setSelectedIds,
+  } = useBookFilters()
+
   const [showExport, setShowExport] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [selectingAll, setSelectingAll] = useState(false)
+
+  const navigate = useNavigate()
 
   const { data, isLoading, isFetching } = useBooks({
     q: search || undefined,
@@ -43,27 +45,6 @@ export default function BooksPage() {
     [exportedData]
   )
   const allSelected = books.length > 0 && books.every((b) => selectedIds.has(b.book_id))
-
-  const handleSearchChange = useCallback((q: string) => {
-    setSearch(q)
-    setOffset(0)
-  }, [])
-
-  const handleCategoryChange = useCallback((id: number | undefined) => {
-    setCategoryId(id)
-    setOffset(0)
-  }, [])
-
-  const handleAuthorChange = useCallback((id: number | undefined, name: string) => {
-    setAuthorId(id)
-    setAuthorName(name)
-    setOffset(0)
-  }, [])
-
-  const handleExportedChange = useCallback((value: boolean | undefined) => {
-    setExported(value)
-    setOffset(0)
-  }, [])
 
   function toggleBook(id: number) {
     setSelectedIds((prev) => {
@@ -122,9 +103,10 @@ export default function BooksPage() {
     exportMutation.mutate(
       Array.from(selectedIds),
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           setShowExport(false)
           setSelectedIds(new Set())
+          navigate(`/jobs?selected=${data.job_id}`)
         },
       }
     )
@@ -180,14 +162,15 @@ export default function BooksPage() {
       {/* Filters */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
         <FilterBar
-          onSearchChange={handleSearchChange}
-          onCategoryChange={handleCategoryChange}
-          onAuthorChange={handleAuthorChange}
-          onExportedChange={handleExportedChange}
+          onSearchChange={setSearch}
+          onCategoryChange={setCategoryId}
+          onAuthorChange={setAuthor}
+          onExportedChange={setExported}
           selectedCategoryId={categoryId}
           selectedAuthorId={authorId}
           selectedAuthorName={authorName}
           selectedExported={exported}
+          initialSearch={search}
         />
       </div>
 

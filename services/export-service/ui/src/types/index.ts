@@ -58,8 +58,9 @@ export type JobStatusType =
   | 'completed'
   | 'completed_with_errors'
   | 'failed'
+  | 'cancelled'
 
-export type BookJobStatusType = 'pending' | 'in_progress' | 'completed' | 'failed'
+export type BookJobStatusType = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled'
 
 export interface BookJobResult {
   book_id: number

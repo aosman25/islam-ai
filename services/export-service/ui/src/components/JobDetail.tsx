@@ -1,10 +1,13 @@
-import type { Job, BookJobStatusType } from '../types'
+import { useState, useEffect } from 'react'
+import type { Job, BookJobStatusType, BookJobResult } from '../types'
+import { useCancelJob } from '../hooks/useJobs'
 
 const bookStatusLabel: Record<BookJobStatusType, { label: string; color: string }> = {
   pending: { label: 'قيد الانتظار', color: 'text-yellow-600' },
   in_progress: { label: 'جاري', color: 'text-blue-600' },
   completed: { label: 'مكتمل', color: 'text-green-600' },
   failed: { label: 'فشل', color: 'text-red-600' },
+  cancelled: { label: 'ملغى', color: 'text-slate-500' },
 }
 
 const stepLabels: Record<string, string> = {
@@ -15,11 +18,24 @@ const stepLabels: Record<string, string> = {
   uploading: 'رفع إلى S3',
 }
 
-function formatElapsed(seconds: number | null): string {
-  if (seconds == null) return ''
+function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60)
   const s = Math.floor(seconds % 60)
   return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+function getElapsed(b: BookJobResult, now: number): string | null {
+  // For finished books, use the server's final elapsed_seconds
+  if (b.status !== 'in_progress') {
+    return b.elapsed_seconds != null ? formatElapsed(b.elapsed_seconds) : null
+  }
+  // For in-progress books, compute client-side from started_at
+  if (!b.started_at) return null
+  // Server sends "YYYY-MM-DD HH:MM:SS UTC" — normalize to ISO 8601 for reliable parsing
+  const startMs = new Date(b.started_at.replace(' UTC', 'Z').replace(' ', 'T')).getTime()
+  if (isNaN(startMs)) return null
+  const elapsed = Math.max(0, (now - startMs) / 1000)
+  return formatElapsed(elapsed)
 }
 
 interface Props {
@@ -27,11 +43,34 @@ interface Props {
 }
 
 export default function JobDetail({ job }: Props) {
+  const cancelMutation = useCancelJob()
+  const cancellable = job.status === 'pending' || job.status === 'in_progress'
+
+  const hasInProgress = job.books.some((b) => b.status === 'in_progress')
+  const [now, setNow] = useState(Date.now())
+
+  useEffect(() => {
+    if (!hasInProgress) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [hasInProgress])
+
   return (
     <div className="p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base font-bold text-slate-800">تفاصيل المهمة</h3>
-        <span className="font-mono text-xs text-slate-400">{job.job_id}</span>
+        <div className="flex items-center gap-2">
+          {cancellable && (
+            <button
+              onClick={() => cancelMutation.mutate(job.job_id)}
+              disabled={cancelMutation.isPending}
+              className="px-3 py-1.5 text-xs rounded-md bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50 transition-colors"
+            >
+              {cancelMutation.isPending ? 'جاري الإلغاء...' : 'إلغاء المهمة'}
+            </button>
+          )}
+          <span className="font-mono text-xs text-slate-400">{job.job_id}</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-5">
@@ -57,6 +96,7 @@ export default function JobDetail({ job }: Props) {
             b.total_chunks != null && b.total_chunks > 0 && b.chunks_embedded != null
               ? b.chunks_embedded / b.total_chunks
               : null
+          const elapsed = getElapsed(b, now)
 
           return (
             <div
@@ -71,9 +111,9 @@ export default function JobDetail({ job }: Props) {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {b.elapsed_seconds != null && (
+                  {elapsed != null && (
                     <span className="font-mono text-xs text-slate-400">
-                      {formatElapsed(b.elapsed_seconds)}
+                      {elapsed}
                     </span>
                   )}
                   <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>

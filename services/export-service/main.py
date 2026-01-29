@@ -938,6 +938,21 @@ async def get_job(job_id: str):
     return job
 
 
+@app.post("/jobs/{job_id}/cancel", tags=["Jobs"])
+async def cancel_job(job_id: str):
+    """Cancel a pending or in-progress job.
+
+    Books already being exported will finish, but pending books will be skipped.
+    """
+    success = job_manager.cancel_job(job_id)
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found or not cancellable (already completed/failed/cancelled)"
+        )
+    return {"message": "Job cancelled", "job_id": job_id}
+
+
 @app.post("/jobs/dlq/{index}/retry", response_model=JobSubmitResponse, status_code=status.HTTP_202_ACCEPTED, tags=["Jobs"])
 async def retry_dlq_entry(index: int):
     """Retry a failed export from the dead letter queue. Creates a new job."""

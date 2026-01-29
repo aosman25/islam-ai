@@ -86,6 +86,10 @@ export function exportBooks(bookIds: number[]) {
   })
 }
 
+export function cancelJob(jobId: string) {
+  return request<{ message: string; job_id: string }>(`/jobs/${jobId}/cancel`, { method: 'POST' })
+}
+
 export function fetchJobs(status?: string, limit = 50, offset = 0) {
   const sp = new URLSearchParams({ limit: String(limit), offset: String(offset) })
   if (status) sp.set('status', status)

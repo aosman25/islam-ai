@@ -1,15 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useJobs, useJob, useDLQ, useRetryDLQ, useClearDLQ } from '../hooks/useJobs'
 import JobList from '../components/JobList'
 import JobDetail from '../components/JobDetail'
 
 export default function JobsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const { data: jobsData, isLoading: jobsLoading } = useJobs()
   const { data: selectedJob } = useJob(selectedJobId)
   const { data: dlqData } = useDLQ()
   const retryMutation = useRetryDLQ()
   const clearMutation = useClearDLQ()
+
+  // Auto-select job from URL query param (e.g. ?selected=<job_id>)
+  useEffect(() => {
+    const id = searchParams.get('selected')
+    if (id) {
+      setSelectedJobId(id)
+      // Clean the param from the URL so it doesn't stick on refresh
+      searchParams.delete('selected')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const jobs = jobsData?.jobs ?? []
   const dlqEntries = dlqData?.entries ?? []
