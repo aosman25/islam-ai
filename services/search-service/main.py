@@ -220,17 +220,19 @@ async def process_embedding(
 ):
     """Process a single embedding with hybrid search"""
     try:
+        # Over-fetch to compensate for post-filtering short chunks
+        fetch_limit = k * 2
         search_param_1 = {
             "data": [embed.dense],
             "anns_field": "dense_vector",
             "param": embed.dense_params.model_dump(),
-            "limit": k,
+            "limit": fetch_limit,
         }
         search_param_2 = {
             "data": [embed.sparse],
             "anns_field": "sparse_vector",
             "param": embed.sparse_params.model_dump(),
-            "limit": k,
+            "limit": fetch_limit,
         }
 
         if request.filter:
@@ -245,7 +247,7 @@ async def process_embedding(
                 "reqs": reqs,
                 "ranker": reranker,
                 "output_fields": request.output_fields,
-                "limit": k,
+                "limit": fetch_limit,
                 "partition_names": request.partition_names,
             }
             return milvus_client.hybrid_search(**kwargs)
@@ -255,7 +257,10 @@ async def process_embedding(
         hits = []
         for hs in results:
             for h in hs:
-                hits.append({"distance": h["distance"], "id": h["id"], **h["entity"]})
+                hit = {"distance": h["distance"], "id": h["id"], **h["entity"]}
+                # Filter out short chunks (< 500 characters)
+                if len(hit.get("text", "")) >= 500:
+                    hits.append(hit)
 
         logger.info(
             "Embedding processed",
