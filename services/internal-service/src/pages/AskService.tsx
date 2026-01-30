@@ -28,15 +28,16 @@ export const AskService: React.FC = () => {
   const addSource = () => {
     const newSource: SourceData = {
       distance: 0.5,
-      id: `source_${Date.now()}`,
-      book_id: 'book_1',
+      id: Date.now(),
+      book_id: 1,
       book_name: 'Example Book',
       order: request.sources.length + 1,
       author: 'Author Name',
-      knowledge: 'Islamic Knowledge',
       category: 'Fiqh',
-      header_titles: ['Chapter 1'],
-      page_range: [1, 10],
+      part_title: 'Chapter 1',
+      start_page_id: 1,
+      page_offset: 0,
+      page_num_range: [1, 10],
       text: 'Enter source text here...',
     };
     setRequest({ ...request, sources: [...request.sources, newSource] });

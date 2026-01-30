@@ -14,15 +14,16 @@ export interface ErrorResponse {
 // Source data structure used across services
 export interface SourceData {
   distance: number;
-  id: string;
-  book_id: string;
+  id: number;
+  book_id: number;
   book_name: string;
   order: number;
   author: string;
-  knowledge: string;
   category: string;
-  header_titles: string[];
-  page_range: number[];
+  part_title: string;
+  start_page_id: number;
+  page_offset: number;
+  page_num_range: number[];
   text: string;
 }
 
@@ -92,15 +93,16 @@ export interface SearchRequest {
 
 export interface SearchResponse {
   distance: number;
-  id: string;
-  book_id: string;
+  id: number;
+  book_id: number;
   book_name: string;
   order: number;
   author: string;
-  knowledge: string;
   category: string;
-  header_titles: string[];
-  page_range: number[];
+  part_title: string;
+  start_page_id: number;
+  page_offset: number;
+  page_num_range: number[];
   text: string;
 }
 

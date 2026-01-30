@@ -43,10 +43,11 @@ class SearchRequest(BaseModel):
         "book_name",
         "order",
         "author",
-        "knowledge",
         "category",
-        "header_titles",
-        "page_range",
+        "part_title",
+        "start_page_id",
+        "page_offset",
+        "page_num_range",
         "text",
     ]
 
@@ -85,10 +86,11 @@ class SearchRequest(BaseModel):
                 "book_name",
                 "order",
                 "author",
-                "knowledge",
                 "category",
-                "header_titles",
-                "page_range",
+                "part_title",
+                "start_page_id",
+                "page_offset",
+                "page_num_range",
                 "text",
             ]
         )
@@ -103,15 +105,16 @@ class SearchRequest(BaseModel):
 
 class SearchResponse(BaseModel):
     distance: float
-    id: str
-    book_id: str
+    id: int
+    book_id: int
     book_name: str
     order: int
     author: str
-    knowledge: str
     category: str
-    header_titles: List[str]
-    page_range: List[int]
+    part_title: str
+    start_page_id: int
+    page_offset: int
+    page_num_range: List[int]
     text: str
 
 

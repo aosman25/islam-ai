@@ -19,9 +19,6 @@ version: '3.8'
 #   - embed-service (Port 4000) - Internal only
 #   - search-service (Port 3000) - Internal only
 #   - ask-service (Port 2000) - Internal only
-#   - books-db-service (Port 4001) - Book metadata and processing
-#   - split-service (Port 3000) - Internal only
-#   - match-service (Port 3000) - Internal only
 #
 # Security: Only gateway and internal-service are exposed to host.
 # Internal-service communicates with other services via Docker network.
@@ -121,8 +118,12 @@ services:
       - "3000"
     env_file:
       - .env
+    environment:
+      # Override Milvus address for container networking
+      - MILVUS_IP_ADDRESS=milvus-standalone
     networks:
       - rag-network
+      - storage-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()"]
@@ -151,75 +152,6 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # ===========================================================================
-  # SPLIT SERVICE - Semantic text chunking
-  # ===========================================================================
-  split-service:
-    build:
-      context: ./split-service
-      dockerfile: Dockerfile
-    container_name: split-service
-    expose:
-      - "3000"
-    env_file:
-      - .env
-    networks:
-      - rag-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # ===========================================================================
-  # MATCH SERVICE - Chunk to page range matching
-  # ===========================================================================
-  match-service:
-    build:
-      context: ./match-service
-      dockerfile: Dockerfile
-    container_name: match-service
-    expose:
-      - "3000"
-    env_file:
-      - .env
-    networks:
-      - rag-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # ===========================================================================
-  # BOOKS DB SERVICE - Book metadata and export
-  # ===========================================================================
-  books-db-service:
-    build:
-      context: ./books-db-service
-      dockerfile: Dockerfile
-    container_name: books-db-service
-    ports:
-      - "4001:4000"
-    env_file:
-      - .env
-    volumes:
-      # Mount shamela4 directory (12GB - too large to copy into image)
-      - ./books-db-service/shamela4:/app/shamela4:ro
-    networks:
-      - rag-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -265,3 +197,6 @@ networks:
   rag-network:
     driver: bridge
     name: rag-network
+  storage-network:
+    external: true
+    name: storage-network

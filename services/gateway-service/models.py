@@ -56,15 +56,16 @@ class SourceData(BaseModel):
     """Source data from search results"""
 
     distance: float
-    id: str
-    book_id: str
+    id: int
+    book_id: int
     book_name: str
     order: int
     author: str
-    knowledge: str
     category: str
-    header_titles: List[str]
-    page_range: List[int]
+    part_title: str
+    start_page_id: int
+    page_offset: int
+    page_num_range: List[int]
     text: str
 
 

@@ -30,10 +30,11 @@ for filename in os.listdir(source_dir):
                 book_name=row["book_name"],
                 order=int(row["order"]),
                 author=row["author"],
-                knowledge=row["knowledge"],
                 category=row["category"],
-                header_titles=literal_eval(row["header_titles"]),
-                page_range=literal_eval(row["page_range"]),
+                part_title=row["part_title"],
+                start_page_id=int(row["start_page_id"]),
+                page_offset=int(row["page_offset"]),
+                page_num_range=literal_eval(row["page_num_range"]),
                 text=row["text"]
             )
             for _, row in df.iterrows()
