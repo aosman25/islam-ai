@@ -74,9 +74,8 @@ class GatewayResponse(BaseModel):
 
     response: str
     sources: List[SourceData]
-    optimized_query: str
-    subqueries: Optional[List[str]] = Field(
-        default=[], description="Generated subqueries for the original query"
+    keywords: List[str] = Field(
+        description="Keywords used for fan-out retrieval"
     )
     request_id: str
 
@@ -86,15 +85,12 @@ class StreamMetadataChunk(BaseModel):
     First chunk in streaming response containing metadata.
 
     When stream=true, the response is newline-delimited JSON (NDJSON).
-    This is the first chunk sent, containing sources, optimized query, and subqueries.
+    This is the first chunk sent, containing sources and keywords.
     """
 
     type: Literal["metadata"] = "metadata"
     sources: List[SourceData] = Field(description="Retrieved source documents")
-    optimized_query: str = Field(description="Query after optimization")
-    subqueries: Optional[List[str]] = Field(
-        default=[], description="Generated subqueries for the original query"
-    )
+    keywords: List[str] = Field(description="Keywords used for fan-out retrieval")
     request_id: str = Field(description="Unique request identifier")
 
 

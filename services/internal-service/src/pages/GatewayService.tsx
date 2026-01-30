@@ -25,8 +25,7 @@ export const GatewayService: React.FC = () => {
   const [streamingText, setStreamingText] = usePersistedState<string>('gateway-streaming-text', '');
   const [streamMetadata, setStreamMetadata] = usePersistedState<{
     sources: SourceData[];
-    optimized_query: string;
-    subqueries: string[];
+    keywords: string[];
     request_id: string;
   } | null>('gateway-stream-metadata', null);
   const [loading, setLoading] = useState(false);
@@ -48,8 +47,7 @@ export const GatewayService: React.FC = () => {
           if (chunk.type === 'metadata') {
             setStreamMetadata({
               sources: chunk.sources || [],
-              optimized_query: chunk.optimized_query || '',
-              subqueries: chunk.subqueries || [],
+              keywords: chunk.keywords || [],
               request_id: chunk.request_id || '',
             });
           } else if (chunk.type === 'content' && chunk.delta) {
@@ -331,33 +329,22 @@ export const GatewayService: React.FC = () => {
 
             {activeTab === 'metadata' && (
               <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Optimized Query
-                  </h4>
-                  <p
-                    className="text-sm text-white bg-gray-50 dark:bg-gray-800 p-3 rounded-lg"
-                    style={getTextDirectionStyles(response?.optimized_query || streamMetadata?.optimized_query || '')}
-                  >
-                    {response?.optimized_query || streamMetadata?.optimized_query}
-                  </p>
-                </div>
-                {(response?.subqueries || streamMetadata?.subqueries || []).length > 0 && (
+                {(response?.keywords || streamMetadata?.keywords || []).length > 0 && (
                   <div>
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Sub-queries
+                      Keywords
                     </h4>
-                    <ul className="space-y-2">
-                      {(response?.subqueries || streamMetadata?.subqueries || []).map((subquery, idx) => (
-                        <li
+                    <div className="flex flex-wrap gap-2">
+                      {(response?.keywords || streamMetadata?.keywords || []).map((keyword, idx) => (
+                        <span
                           key={idx}
-                          className="text-sm text-white bg-gray-50 dark:bg-gray-800 p-3 rounded-lg"
-                          style={getTextDirectionStyles(subquery)}
+                          className="text-sm text-white bg-blue-600 dark:bg-blue-700 px-3 py-1 rounded-full"
+                          style={getTextDirectionStyles(keyword)}
                         >
-                          {idx + 1}. {subquery}
-                        </li>
+                          {keyword}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
                 <div>

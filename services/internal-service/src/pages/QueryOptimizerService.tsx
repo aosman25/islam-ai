@@ -54,13 +54,10 @@ export const QueryOptimizerService: React.FC = () => {
   const sendToEmbedService = () => {
     if (!response || response.results.length === 0) return;
 
-    // Get all optimized queries and flatten them with sub-queries
+    // Get all keywords from results
     const textsToEmbed: string[] = [];
     response.results.forEach(result => {
-      textsToEmbed.push(result.optimized_query);
-      if (result.sub_queries && result.sub_queries.length > 0) {
-        textsToEmbed.push(...result.sub_queries);
-      }
+      textsToEmbed.push(...result.keywords);
     });
 
     // Update embed service request in localStorage
@@ -188,34 +185,22 @@ export const QueryOptimizerService: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="mb-3">
-                  <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">
-                    Optimized Query:
-                  </h4>
-                  <p
-                    className={`text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800 text-white ${getTextDirection(result.optimized_query) === 'rtl' ? 'rtl' : ''}`}
-                    style={getTextDirectionStyles(result.optimized_query)}
-                  >
-                    {result.optimized_query}
-                  </p>
-                </div>
-
-                {result.sub_queries && result.sub_queries.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                      Sub-queries ({result.sub_queries.length}):
+                {result.keywords && result.keywords.length > 0 && (
+                  <div className="mb-3">
+                    <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">
+                      Keywords ({result.keywords.length}):
                     </h4>
-                    <ul className="space-y-2">
-                      {result.sub_queries.map((subQuery, subIdx) => (
-                        <li
-                          key={subIdx}
-                          className={`text-sm bg-blue-50 dark:bg-blue-900/20 p-3 rounded border border-blue-200 dark:border-blue-800 text-white ${getTextDirection(subQuery) === 'rtl' ? 'rtl' : ''}`}
-                          style={getTextDirectionStyles(subQuery)}
+                    <div className="flex flex-wrap gap-2" style={{ direction: 'rtl' }}>
+                      {result.keywords.map((keyword, kwIdx) => (
+                        <span
+                          key={kwIdx}
+                          className="text-sm bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full border border-green-200 dark:border-green-800 text-white"
+                          style={getTextDirectionStyles(keyword)}
                         >
-                          {subIdx + 1}. {subQuery}
-                        </li>
+                          {keyword}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
 
