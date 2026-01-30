@@ -37,6 +37,7 @@ class SearchRequest(BaseModel):
     )
     collection_name: str = "islamic_library"
     partition_names: List[str] = []
+    filter: str = Field(default="", description="Milvus filter expression")
     output_fields: List[str] = [
         "id",
         "book_id",

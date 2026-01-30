@@ -89,6 +89,7 @@ export interface SearchRequest {
   collection_name?: string;
   partition_names?: string[];
   output_fields?: string[];
+  filter?: string;
 }
 
 export interface SearchResponse {
@@ -143,6 +144,7 @@ export interface QueryRequest {
 export interface OptimizedQueryResponse {
   optimized_query: string;
   sub_queries?: string[];
+  categories?: string[];
 }
 
 export interface QueryResponse {

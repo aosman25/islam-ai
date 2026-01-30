@@ -301,10 +301,22 @@ async def process_query(request: GatewayRequest, http_request: Request):
             if optimize_data["results"]
             else []
         )
+        categories = (
+            optimize_data["results"][0].get("categories", [])
+            if optimize_data["results"]
+            else []
+        )
+        # Build Milvus filter expression from categories
+        category_filter = ""
+        if categories:
+            escaped = [cat.replace('"', '\\"') for cat in categories]
+            category_filter = 'category in [' + ', '.join(f'"{c}"' for c in escaped) + ']'
         logger.info(
             "Query optimized",
             optimized_query=optimized_query,
             subqueries_count=len(subqueries) if subqueries else 0,
+            categories=categories,
+            category_filter=category_filter,
             request_id=request_id,
         )
 
@@ -338,29 +350,33 @@ async def process_query(request: GatewayRequest, http_request: Request):
             }
         ]
 
+        search_payload = {
+            "k": request.top_k,
+            "embeddings": embeddings,
+            "reranker": request.reranker,
+            "reranker_params": request.reranker_params,
+            "collection_name": "islamic_library",
+            "partition_names": [],
+            "output_fields": [
+                "id",
+                "book_id",
+                "book_name",
+                "order",
+                "author",
+                "category",
+                "part_title",
+                "start_page_id",
+                "page_offset",
+                "page_num_range",
+                "text",
+            ],
+        }
+        if category_filter:
+            search_payload["filter"] = category_filter
+
         search_response = await http_client.post(
             f"{Config.SEARCH_SERVICE_URL}/search",
-            json={
-                "k": request.top_k,
-                "embeddings": embeddings,
-                "reranker": request.reranker,
-                "reranker_params": request.reranker_params,
-                "collection_name": "islamic_library",
-                "partition_names": [],
-                "output_fields": [
-                    "id",
-                    "book_id",
-                    "book_name",
-                    "order",
-                    "author",
-                    "category",
-                    "part_title",
-                    "start_page_id",
-                    "page_offset",
-                    "page_num_range",
-                    "text",
-                ],
-            },
+            json=search_payload,
             headers={"x-request-id": request_id},
         )
         search_response.raise_for_status()
