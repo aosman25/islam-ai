@@ -49,34 +49,27 @@ export const SourcesDisplay: React.FC<SourcesDisplayProps> = ({ sources }) => {
 
             <div className="flex items-center gap-2 text-sm flex-row-reverse justify-end">
               <span className="text-white">
-                {source.category} - {source.knowledge}
+                {source.category}
               </span>
               <Tag className="w-4 h-4 text-gray-500" />
             </div>
 
-            {source.page_range && source.page_range.length > 0 && (
+            {source.page_num_range && source.page_num_range.length > 0 && (
               <div className="flex items-center gap-2 text-sm text-white flex-row-reverse justify-end">
-                <span>الصفحات: {source.page_range.join('-')}</span>
+                <span>الصفحات: {source.page_num_range.join('-')}</span>
                 <FileText className="w-4 h-4 text-gray-500" />
               </div>
             )}
           </div>
 
-          {source.header_titles && source.header_titles.length > 0 && (
+          {source.part_title && (
             <div className="mb-3" style={{ direction: 'rtl' }}>
               <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-                المجلدات:
+                العنوان الفرعي:
               </div>
-              <div className="flex flex-wrap gap-1">
-                {source.header_titles.map((header, idx) => (
-                  <span
-                    key={idx}
-                    className="text-xs bg-gray-100 dark:bg-gray-700 text-white px-2 py-1 rounded"
-                  >
-                    {header}
-                  </span>
-                ))}
-              </div>
+              <span className="text-xs bg-gray-100 dark:bg-gray-700 text-white px-2 py-1 rounded">
+                {source.part_title}
+              </span>
             </div>
           )}
 

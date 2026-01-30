@@ -21,8 +21,8 @@ def format_sources(sources: List[SourceData]) -> str:
         f"""
         اسم الكتاب: {s.book_name}
         المؤلف: {s.author}
-        الصفحات: {s.page_range}
-        العناوين الفرعية: {", ".join(s.header_titles)}
+        الصفحات: {s.page_num_range}
+        العنوان الفرعي: {s.part_title}
         التصنيف: {s.category}
         النص:
         {s.text.strip()}
