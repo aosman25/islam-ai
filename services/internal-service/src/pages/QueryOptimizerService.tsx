@@ -218,6 +218,24 @@ export const QueryOptimizerService: React.FC = () => {
                     </ul>
                   </div>
                 )}
+
+                {result.categories && result.categories.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-2">
+                      Selected Categories ({result.categories.length}):
+                    </h4>
+                    <div className="flex flex-wrap gap-2" style={{ direction: 'rtl' }}>
+                      {result.categories.map((category, catIdx) => (
+                        <span
+                          key={catIdx}
+                          className="text-sm bg-purple-50 dark:bg-purple-900/20 px-3 py-1 rounded-full border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300"
+                        >
+                          {category}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

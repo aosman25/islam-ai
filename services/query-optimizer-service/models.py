@@ -8,6 +8,7 @@ MAX_QUERY_LENGTH = 1000
 class OptimizedQueryResponse(BaseModel):
     optimized_query: str = Field(..., min_length=1, max_length=1000)
     sub_queries: Optional[List[str]] = Field(None, max_items=5)
+    categories: Optional[List[str]] = Field(None)
 
 
 class QueryRequest(BaseModel):

@@ -19,7 +19,7 @@ from tenacity import (
     wait_exponential,
 )
 from dotenv import load_dotenv
-from utils import generate_prompt
+from utils import generate_prompt, resolve_categories
 from models import (
     OptimizedQueryResponse,
     QueryRequest,
@@ -227,7 +227,13 @@ async def call_gemini_api(query: str) -> List[OptimizedQueryResponse]:
             logger.warning("Empty response from Gemini API", query=query)
             return []
 
-        return response.parsed
+        # Resolve higher-order categories to actual Milvus category names
+        results = response.parsed
+        for result in results:
+            if result.categories:
+                result.categories = resolve_categories(result.categories)
+
+        return results
 
     except Exception as e:
         logger.error("Gemini API call failed", error=str(e), query=query)

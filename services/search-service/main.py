@@ -233,17 +233,22 @@ async def process_embedding(
             "limit": k,
         }
 
+        if request.filter:
+            search_param_1["expr"] = request.filter
+            search_param_2["expr"] = request.filter
+
         reqs = [AnnSearchRequest(**search_param_1), AnnSearchRequest(**search_param_2)]
 
         def hybrid_search_thread():
-            return milvus_client.hybrid_search(
-                collection_name=request.collection_name,
-                reqs=reqs,
-                ranker=reranker,
-                output_fields=request.output_fields,
-                limit=k,
-                partition_names=request.partition_names,
-            )
+            kwargs = {
+                "collection_name": request.collection_name,
+                "reqs": reqs,
+                "ranker": reranker,
+                "output_fields": request.output_fields,
+                "limit": k,
+                "partition_names": request.partition_names,
+            }
+            return milvus_client.hybrid_search(**kwargs)
 
         results = await asyncio.to_thread(hybrid_search_thread)
 
