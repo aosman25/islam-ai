@@ -25,6 +25,7 @@ export const GatewayService: React.FC = () => {
   const [streamingText, setStreamingText] = usePersistedState<string>('gateway-streaming-text', '');
   const [streamMetadata, setStreamMetadata] = usePersistedState<{
     sources: SourceData[];
+    hypothetical_passages: string[];
     keywords: string[];
     request_id: string;
   } | null>('gateway-stream-metadata', null);
@@ -47,6 +48,7 @@ export const GatewayService: React.FC = () => {
           if (chunk.type === 'metadata') {
             setStreamMetadata({
               sources: chunk.sources || [],
+              hypothetical_passages: chunk.hypothetical_passages || [],
               keywords: chunk.keywords || [],
               request_id: chunk.request_id || '',
             });
@@ -329,6 +331,24 @@ export const GatewayService: React.FC = () => {
 
             {activeTab === 'metadata' && (
               <div className="space-y-4">
+                {(response?.hypothetical_passages || streamMetadata?.hypothetical_passages || []).length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Hypothetical Passages (HyDE)
+                    </h4>
+                    <div className="space-y-2">
+                      {(response?.hypothetical_passages || streamMetadata?.hypothetical_passages || []).map((passage, idx) => (
+                        <p
+                          key={idx}
+                          className="text-sm bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg border border-blue-200 dark:border-blue-800 text-gray-900 dark:text-gray-100"
+                          style={getTextDirectionStyles(passage)}
+                        >
+                          {passage}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {(response?.keywords || streamMetadata?.keywords || []).length > 0 && (
                   <div>
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">

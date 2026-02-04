@@ -325,13 +325,15 @@ async def get_embedding(request: EmbeddingRequest, http_request: Request):
             request_id=request_id,
         )
 
-        # Call DeepInfra API
-        raw_response = await call_deepinfra_api(
-            request.input_text, request.dense, False, request.colbert
-        )
+        # Call DeepInfra API only when dense or colbert embeddings are needed
+        raw_response = None
+        if request.dense or request.colbert:
+            raw_response = await call_deepinfra_api(
+                request.input_text, request.dense, False, request.colbert
+            )
 
         # Process response
-        dense_embeddings = raw_response.get("embeddings", []) if request.dense else None
+        dense_embeddings = raw_response.get("embeddings", []) if request.dense and raw_response else None
         sparse_embeddings = None
         if request.sparse:
             bm25 = ArabicBM25S()
@@ -339,7 +341,7 @@ async def get_embedding(request: EmbeddingRequest, http_request: Request):
             sparse_vectors = bm25.encode_queries(request.input_text)
             sparse_embeddings = [sv.to_milvus() for sv in sparse_vectors]
         colbert_embeddings = (
-            raw_response.get("colbert", []) if request.colbert else None
+            raw_response.get("colbert", []) if request.colbert and raw_response else None
         )
 
         logger.info(

@@ -54,17 +54,19 @@ export const QueryOptimizerService: React.FC = () => {
   const sendToEmbedService = () => {
     if (!response || response.results.length === 0) return;
 
-    // Get all keywords from results
-    const textsToEmbed: string[] = [];
+    // Get hypothetical passages (for dense) and keywords (for sparse)
+    const passages: string[] = [];
+    const keywords: string[] = [];
     response.results.forEach(result => {
-      textsToEmbed.push(...result.keywords);
+      passages.push(...result.hypothetical_passages);
+      keywords.push(...result.keywords);
     });
 
-    // Update embed service request in localStorage
+    // Update embed service request in localStorage with passages for dense embedding
     const embedRequest = {
-      input_text: textsToEmbed,
+      input_text: passages,
       dense: true,
-      sparse: true,
+      sparse: false,
       colbert: false,
     };
     localStorage.setItem('embed-request', JSON.stringify(embedRequest));
@@ -184,6 +186,25 @@ export const QueryOptimizerService: React.FC = () => {
                     {request.queries[idx]}
                   </p>
                 </div>
+
+                {result.hypothetical_passages && result.hypothetical_passages.length > 0 && (
+                  <div className="mb-3">
+                    <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                      Hypothetical Passages ({result.hypothetical_passages.length}):
+                    </h4>
+                    <div className="space-y-2">
+                      {result.hypothetical_passages.map((passage, pIdx) => (
+                        <p
+                          key={pIdx}
+                          className="text-sm bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg border border-blue-200 dark:border-blue-800 text-gray-900 dark:text-gray-100"
+                          style={getTextDirectionStyles(passage)}
+                        >
+                          {passage}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {result.keywords && result.keywords.length > 0 && (
                   <div className="mb-3">

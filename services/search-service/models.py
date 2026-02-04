@@ -1,4 +1,4 @@
-from typing import List, Literal, Union
+from typing import List, Literal, Optional, Union
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -15,10 +15,16 @@ class SparseVectorParams(BaseModel):
 
 
 class EmbeddingObject(BaseModel):
-    dense: List[float]
-    sparse: dict[int, float]
-    dense_params: DenseVectorParams
-    sparse_params: SparseVectorParams
+    dense: Optional[List[float]] = None
+    sparse: Optional[dict[int, float]] = None
+    dense_params: DenseVectorParams = Field(default_factory=DenseVectorParams)
+    sparse_params: SparseVectorParams = Field(default_factory=SparseVectorParams)
+
+    @model_validator(mode="after")
+    def validate_at_least_one_vector(self):
+        if self.dense is None and self.sparse is None:
+            raise ValueError("At least one of 'dense' or 'sparse' must be provided")
+        return self
 
 
 class SearchRequest(BaseModel):
