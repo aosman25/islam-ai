@@ -41,6 +41,7 @@ export interface GatewayRequest {
 export interface GatewayResponse {
   response: string;
   sources: SourceData[];
+  hypothetical_passages: string[];
   keywords: string[];
   request_id: string;
 }
@@ -49,6 +50,7 @@ export interface GatewayStreamChunk {
   type: 'metadata' | 'content' | 'done';
   delta?: string;
   sources?: SourceData[];
+  hypothetical_passages?: string[];
   keywords?: string[];
   request_id?: string;
 }
@@ -140,6 +142,7 @@ export interface QueryRequest {
 }
 
 export interface OptimizedQueryResponse {
+  hypothetical_passages: string[];
   keywords: string[];
   categories?: string[];
 }

@@ -74,8 +74,11 @@ class GatewayResponse(BaseModel):
 
     response: str
     sources: List[SourceData]
+    hypothetical_passages: List[str] = Field(
+        description="HyDE passages used for dense retrieval"
+    )
     keywords: List[str] = Field(
-        description="Keywords used for fan-out retrieval"
+        description="Keywords used for sparse retrieval"
     )
     request_id: str
 
@@ -90,7 +93,8 @@ class StreamMetadataChunk(BaseModel):
 
     type: Literal["metadata"] = "metadata"
     sources: List[SourceData] = Field(description="Retrieved source documents")
-    keywords: List[str] = Field(description="Keywords used for fan-out retrieval")
+    hypothetical_passages: List[str] = Field(description="HyDE passages used for dense retrieval")
+    keywords: List[str] = Field(description="Keywords used for sparse retrieval")
     request_id: str = Field(description="Unique request identifier")
 
 

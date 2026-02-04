@@ -222,24 +222,29 @@ async def process_embedding(
     try:
         # Over-fetch to compensate for post-filtering short chunks
         fetch_limit = k * 2
-        search_param_1 = {
-            "data": [embed.dense],
-            "anns_field": "dense_vector",
-            "param": embed.dense_params.model_dump(),
-            "limit": fetch_limit,
-        }
-        search_param_2 = {
-            "data": [embed.sparse],
-            "anns_field": "sparse_vector",
-            "param": embed.sparse_params.model_dump(),
-            "limit": fetch_limit,
-        }
 
-        if request.filter:
-            search_param_1["expr"] = request.filter
-            search_param_2["expr"] = request.filter
+        reqs = []
+        if embed.dense is not None:
+            search_param_dense = {
+                "data": [embed.dense],
+                "anns_field": "dense_vector",
+                "param": embed.dense_params.model_dump(),
+                "limit": fetch_limit,
+            }
+            if request.filter:
+                search_param_dense["expr"] = request.filter
+            reqs.append(AnnSearchRequest(**search_param_dense))
 
-        reqs = [AnnSearchRequest(**search_param_1), AnnSearchRequest(**search_param_2)]
+        if embed.sparse is not None:
+            search_param_sparse = {
+                "data": [embed.sparse],
+                "anns_field": "sparse_vector",
+                "param": embed.sparse_params.model_dump(),
+                "limit": fetch_limit,
+            }
+            if request.filter:
+                search_param_sparse["expr"] = request.filter
+            reqs.append(AnnSearchRequest(**search_param_sparse))
 
         def hybrid_search_thread():
             kwargs = {

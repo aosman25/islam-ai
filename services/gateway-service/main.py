@@ -332,24 +332,20 @@ async def process_query(request: GatewayRequest, http_request: Request):
         optimize_response.raise_for_status()
         optimize_data = optimize_response.json()
 
-        # Extract keywords and categories
-        keywords = (
-            optimize_data["results"][0]["keywords"]
-            if optimize_data["results"]
-            else [request.query]
-        )
-        categories = (
-            optimize_data["results"][0].get("categories", [])
-            if optimize_data["results"]
-            else []
-        )
+        # Extract hypothetical passages, keywords, and categories
+        first_result = optimize_data["results"][0] if optimize_data["results"] else {}
+        hypothetical_passages = first_result.get("hypothetical_passages", [request.query])
+        keywords = first_result.get("keywords", [request.query])
+        categories = first_result.get("categories", [])
+
         # Build Milvus filter expression from categories
         category_filter = ""
         if categories:
             escaped = [cat.replace('"', '\\"') for cat in categories]
             category_filter = 'category in [' + ', '.join(f'"{c}"' for c in escaped) + ']'
         logger.info(
-            "Keywords extracted",
+            "Query optimized",
+            passage_count=len(hypothetical_passages),
             keywords=keywords,
             keywords_count=len(keywords),
             categories=categories,
@@ -357,12 +353,16 @@ async def process_query(request: GatewayRequest, http_request: Request):
             request_id=request_id,
         )
 
-        # Step 2: Embed all keywords in batch
-        logger.info("Step 2: Embedding keywords", keyword_count=len(keywords), request_id=request_id)
+        # Step 2: Embed hypothetical passages (dense + sparse)
+        logger.info(
+            "Step 2: Embedding passages",
+            passage_count=len(hypothetical_passages),
+            request_id=request_id,
+        )
         embed_response = await http_client.post(
             f"{Config.EMBED_SERVICE_URL}/embed",
             json={
-                "input_text": keywords,
+                "input_text": hypothetical_passages,
                 "dense": True,
                 "sparse": True,
                 "colbert": False,
@@ -372,7 +372,12 @@ async def process_query(request: GatewayRequest, http_request: Request):
         embed_response.raise_for_status()
         embed_data = embed_response.json()
 
-        logger.info("Embeddings generated", count=len(embed_data["dense"]), request_id=request_id)
+        logger.info(
+            "Embeddings generated",
+            dense_count=len(embed_data["dense"]),
+            sparse_count=len(embed_data["sparse"]),
+            request_id=request_id,
+        )
 
         # Step 3: Fan-out search — one request per keyword for per-keyword ranking
         logger.info("Step 3: Fan-out search across keywords", request_id=request_id)
@@ -400,8 +405,8 @@ async def process_query(request: GatewayRequest, http_request: Request):
         if category_filter:
             base_search_payload["filter"] = category_filter
 
-        # Fire parallel search requests, one per keyword embedding
-        async def search_keyword(idx):
+        # Fire parallel search requests: one hybrid search per hypothetical passage
+        async def search_passage(idx):
             payload = {
                 **base_search_payload,
                 "embeddings": [
@@ -421,16 +426,16 @@ async def process_query(request: GatewayRequest, http_request: Request):
             resp.raise_for_status()
             return resp.json()["results"]
 
-        keyword_results = await asyncio.gather(
-            *[search_keyword(i) for i in range(len(keywords))]
+        all_results = await asyncio.gather(
+            *[search_passage(i) for i in range(len(hypothetical_passages))],
         )
 
         # Step 3.5: Aggregate with cross-query RRF
-        sources = aggregate_results_rrf(keyword_results, top_k=request.top_k)
+        sources = aggregate_results_rrf(all_results, top_k=request.top_k)
         logger.info(
             "Search completed",
             sources_count=len(sources),
-            keyword_count=len(keywords),
+            passage_searches=len(hypothetical_passages),
             request_id=request_id,
         )
 
@@ -454,6 +459,7 @@ async def process_query(request: GatewayRequest, http_request: Request):
                 metadata_chunk = {
                     "type": "metadata",
                     "sources": sources,
+                    "hypothetical_passages": hypothetical_passages,
                     "keywords": keywords,
                     "request_id": request_id
                 }
@@ -502,6 +508,7 @@ async def process_query(request: GatewayRequest, http_request: Request):
             return GatewayResponse(
                 response=ask_data["response"],
                 sources=sources,
+                hypothetical_passages=hypothetical_passages,
                 keywords=keywords,
                 request_id=request_id,
             )
