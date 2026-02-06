@@ -1,0 +1,3 @@
+[submodule "services/export-service"]
+	path = services/export-service
+	url = git@github.com:aosman25/export-shamela.git
