@@ -7,7 +7,6 @@ MAX_QUERY_LENGTH = 1000
 
 class OptimizedQueryResponse(BaseModel):
     hypothetical_passages: List[str] = Field(..., min_items=1, max_items=5)
-    keywords: List[str] = Field(..., min_items=1, max_items=20)
     categories: Optional[List[str]] = Field(None)
 
 

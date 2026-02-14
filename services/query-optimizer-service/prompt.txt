@@ -30,7 +30,7 @@ Step 3: Select Relevant Categories
 
     - Be selective — choose only categories where relevant results would likely be found.
 
-    - If the query is general or could span many domains, select up to 3-5 most relevant categories.
+    - If the query is general or could span many domains, select up to 2 most relevant categories.
 
     - If unsure, do not select any categories (return empty list) to avoid filtering out relevant results.
 
