@@ -27,7 +27,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - /mnt/books-data/db:/var/lib/postgresql
+      - /mnt/books-data/db:/var/lib/postgresql/data
     networks:
       - storage-network
 
