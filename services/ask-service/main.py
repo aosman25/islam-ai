@@ -319,6 +319,9 @@ async def ask(request: AskRequest, http_request: Request):
                             temperature=request.temperature,
                             system_instruction=system_instruction,
                             max_output_tokens=request.max_tokens,
+                            thinking_config=types.ThinkingConfig(
+                                thinking_budget=0,
+                            ),
                         ),
                     )
 
@@ -395,6 +398,9 @@ async def ask(request: AskRequest, http_request: Request):
                         temperature=request.temperature,
                         system_instruction=system_instruction,
                         max_output_tokens=request.max_tokens,
+                        thinking_config=types.ThinkingConfig(
+                            thinking_budget=0,
+                        ),
                     ),
                 )
 

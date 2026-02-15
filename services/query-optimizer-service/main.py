@@ -91,7 +91,7 @@ async def lifespan(app: FastAPI):
         Config.validate()
 
         # Initialize Gemini client
-        gemini_client = genai.Client(api_key=Config.GEMINI_API_KEY)
+        gemini_client = genai.Client(api_key=Config.GEMINI_API_KEY )
 
         # Test client connection
         await test_gemini_connection()
@@ -220,6 +220,7 @@ async def call_gemini_api(query: str) -> List[OptimizedQueryResponse]:
             config={
                 "response_mime_type": "application/json",
                 "response_schema": list[OptimizedQueryResponse],
+                "thinking_config": {"thinking_budget": 0},
             },
         )
 
