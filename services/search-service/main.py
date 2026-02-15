@@ -88,8 +88,13 @@ async def lifespan(app: FastAPI):
         logger.info("Starting Search Service")
         Config.validate()
 
-        # Note: Milvus client is initialized lazily on first request
-        # to avoid blocking startup when Milvus is temporarily unavailable
+        # Initialize Milvus client eagerly at startup
+        milvus_client = MilvusClient(
+            uri=f"http://{Config.MILVUS_IP_ADDRESS}:19530",
+            token=Config.MILVUS_TOKEN
+        )
+        logger.info("Milvus client initialized successfully")
+
         logger.info("Service started successfully")
         yield
 
@@ -220,8 +225,7 @@ async def process_embedding(
 ):
     """Process a single embedding with hybrid search"""
     try:
-        # Over-fetch to compensate for post-filtering short chunks
-        fetch_limit = k * 2
+        fetch_limit = k
 
         reqs = []
         if embed.dense is not None:
@@ -263,9 +267,7 @@ async def process_embedding(
         for hs in results:
             for h in hs:
                 hit = {"distance": h["distance"], "id": h["id"], **h["entity"]}
-                # Filter out short chunks (< 500 characters)
-                if len(hit.get("text", "")) >= 500:
-                    hits.append(hit)
+                hits.append(hit)
 
         logger.info(
             "Embedding processed",
@@ -436,6 +438,7 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=3000,
+        workers=4,
         log_config=None,  # Use our custom logging
         access_log=False,  # Handled by middleware
     )

@@ -91,7 +91,6 @@ services:
     build:
       context: ./embed-service
       dockerfile: Dockerfile
-    container_name: embed-service
     expose:
       - "4000"
     env_file:
@@ -99,6 +98,8 @@ services:
     networks:
       - rag-network
     restart: unless-stopped
+    deploy:
+      replicas: 2
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
       interval: 30s
@@ -113,7 +114,6 @@ services:
     build:
       context: ./search-service
       dockerfile: Dockerfile
-    container_name: search-service
     expose:
       - "3000"
     env_file:
@@ -125,6 +125,8 @@ services:
       - rag-network
       - storage-network
     restart: unless-stopped
+    deploy:
+      replicas: 2
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()"]
       interval: 30s

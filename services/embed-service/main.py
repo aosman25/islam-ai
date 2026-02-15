@@ -385,6 +385,7 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=4000,
+        workers=4,
         log_config=None,  # Use our custom logging
         access_log=False,  # Handled by middleware
     )
