@@ -8,7 +8,7 @@ services:
       - "9650:9001"
       - "9600:9000"
     volumes:
-      - /mnt/books-data/bucket:/data
+      - /var/lib/books-data/bucket:/data
     command: minio server /data --console-address ":9001"
     networks:
       - storage-network
@@ -27,7 +27,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - /mnt/books-data/db:/var/lib/postgresql/data
+      - /var/lib/books-data/db:/var/lib/postgresql/data
     networks:
       - storage-network
 
@@ -41,7 +41,7 @@ services:
     ports:
       - "5500:80"
     volumes:
-      - /mnt/books-data/pgadmin:/var/lib/pgadmin
+      - /var/lib/books-data/pgadmin:/var/lib/pgadmin
     depends_on:
       - postgres
     networks:
@@ -60,7 +60,7 @@ services:
       - ETCD_QUOTA_BACKEND_BYTES=4294967296
       - ETCD_SNAPSHOT_COUNT=50000
     volumes:
-      - /mnt/books-data/etcd:/etcd
+      - /var/lib/books-data/etcd:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     networks:
       - storage-network
@@ -79,7 +79,7 @@ services:
       - "9001:9001"
       - "9000:9000"
     volumes:
-      - /mnt/books-data/minio:/minio_data
+      - /var/lib/books-data/minio:/minio_data
     command: minio server /minio_data --console-address ":9001"
     networks:
       - storage-network
@@ -102,7 +102,7 @@ services:
       MINIO_ADDRESS: milvus-minio:9000
     volumes:
       - ./milvus.yaml:/milvus/configs/milvus.yaml
-      - /mnt/books-data/milvus:/var/lib/milvus
+      - /var/lib/books-data/milvus:/var/lib/milvus
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s
