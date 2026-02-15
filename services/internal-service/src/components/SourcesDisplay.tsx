@@ -8,76 +8,70 @@ interface SourcesDisplayProps {
 export const SourcesDisplay: React.FC<SourcesDisplayProps> = ({ sources }) => {
   if (sources.length === 0) {
     return (
-      <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+      <div className="text-sm text-slate-500 text-center py-8">
         No sources available
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {sources.map((source, index) => (
         <div
           key={source.id}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
+          className="bg-slate-800/40 border border-slate-700/30 rounded-xl p-4 card-glow transition-all duration-200"
         >
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
-                Source {index + 1}
+              <span className="text-xs font-semibold bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                #{index + 1}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                Score: {source.distance.toFixed(4)}
+              <span className="text-xs text-slate-500 font-mono">
+                {source.distance.toFixed(4)}
               </span>
             </div>
           </div>
 
-          <div className="space-y-2 mb-3" style={{ direction: 'rtl' }}>
+          <div className="space-y-1.5 mb-3" style={{ direction: 'rtl' }}>
             <div className="flex items-center gap-2 text-sm flex-row-reverse justify-end">
-              <span className="font-semibold text-white">
+              <span className="font-semibold text-slate-200">
                 {source.book_name}
               </span>
-              <Book className="w-4 h-4 text-gray-500" />
+              <Book className="w-3.5 h-3.5 text-emerald-500/60" />
             </div>
 
             <div className="flex items-center gap-2 text-sm flex-row-reverse justify-end">
-              <span className="text-white">
+              <span className="text-slate-400">
                 {source.author}
               </span>
-              <User className="w-4 h-4 text-gray-500" />
+              <User className="w-3.5 h-3.5 text-slate-600" />
             </div>
 
             <div className="flex items-center gap-2 text-sm flex-row-reverse justify-end">
-              <span className="text-white">
+              <span className="text-slate-400">
                 {source.category}
               </span>
-              <Tag className="w-4 h-4 text-gray-500" />
+              <Tag className="w-3.5 h-3.5 text-slate-600" />
             </div>
 
             {source.page_num_range && source.page_num_range.length > 0 && (
-              <div className="flex items-center gap-2 text-sm text-white flex-row-reverse justify-end">
-                <span>الصفحات: {source.page_num_range.join('-')}</span>
-                <FileText className="w-4 h-4 text-gray-500" />
+              <div className="flex items-center gap-2 text-sm text-slate-400 flex-row-reverse justify-end">
+                <span>{source.page_num_range.join('-')}</span>
+                <FileText className="w-3.5 h-3.5 text-slate-600" />
               </div>
             )}
           </div>
 
           {source.part_title && (
             <div className="mb-3" style={{ direction: 'rtl' }}>
-              <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-                العنوان الفرعي:
-              </div>
-              <span className="text-xs bg-gray-100 dark:bg-gray-700 text-white px-2 py-1 rounded">
+              <span className="text-xs bg-slate-700/50 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-600/30">
                 {source.part_title}
               </span>
             </div>
           )}
 
-          <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded p-3" style={{ direction: 'rtl' }}>
-            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
-              النص:
-            </div>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap text-white">
+          <div className="bg-slate-900/50 border border-slate-700/30 rounded-lg p-3" style={{ direction: 'rtl' }}>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap text-slate-300">
               {source.text}
             </p>
           </div>

@@ -5,7 +5,7 @@ import { MarkdownRenderer } from '../components/MarkdownRenderer';
 import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
-import { Play, Square, Plus, Trash2 } from 'lucide-react';
+import { Play, Square, Plus, Trash2, MessageSquare } from 'lucide-react';
 import { getTextDirectionStyles } from '../utils/textDirection';
 import { usePersistedState } from '../hooks/usePersistedState';
 
@@ -13,7 +13,7 @@ export const AskService: React.FC = () => {
   const [request, setRequest] = usePersistedState<AskRequest>('ask-request', {
     query: '',
     sources: [],
-    temperature: 0.2,
+    temperature: 1,
     max_tokens: 12000,
     stream: true,
   });
@@ -94,39 +94,41 @@ export const AskService: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Ask Service
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Test LLM response generation using Google Gemini with provided sources.
-        </p>
+      {/* Page Header */}
+      <div className="flex items-start gap-3">
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex-shrink-0">
+          <MessageSquare className="w-5 h-5 text-cyan-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-100 tracking-tight">
+            Ask Service
+          </h2>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Test LLM response generation using Google Gemini with provided sources.
+          </p>
+        </div>
       </div>
 
       {/* Request Form */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Request Configuration</h3>
+      <div className="bg-slate-900/50 rounded-xl border border-slate-700/30 p-5">
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Request Configuration</h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Query
-            </label>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Query</label>
             <textarea
               value={request.query}
               onChange={(e) => setRequest({ ...request, query: e.target.value })}
               placeholder="What are the pillars of Islam?"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-3.5 py-2.5 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 placeholder-slate-600 transition-all duration-200"
               style={getTextDirectionStyles(request.query)}
               rows={3}
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Temperature (0.0-2.0)
-              </label>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">Temperature</label>
               <input
                 type="number"
                 value={request.temperature}
@@ -134,82 +136,78 @@ export const AskService: React.FC = () => {
                 min={0}
                 max={2}
                 step={0.1}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 text-sm"
               />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Max Tokens (1-65536)
-              </label>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">Max Tokens</label>
               <input
                 type="number"
                 value={request.max_tokens}
                 onChange={(e) => setRequest({ ...request, max_tokens: parseInt(e.target.value) })}
                 min={1}
                 max={65536}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 text-sm"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2.5 cursor-pointer group">
             <input
               type="checkbox"
-              id="stream"
               checked={request.stream}
               onChange={(e) => setRequest({ ...request, stream: e.target.checked })}
-              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500/30"
             />
-            <label htmlFor="stream" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">
               Enable Streaming
-            </label>
-          </div>
+            </span>
+          </label>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Sources ({request.sources.length})
+              <label className="text-xs font-medium text-slate-400">
+                Sources <span className="text-slate-600">({request.sources.length})</span>
               </label>
               <button
                 onClick={addSource}
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 Add Source
               </button>
             </div>
 
-            <div className="space-y-3 max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-900">
+            <div className="space-y-2 max-h-96 overflow-y-auto border border-slate-700/30 rounded-xl p-3 bg-slate-800/20">
               {request.sources.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                <p className="text-xs text-slate-600 text-center py-6">
                   No sources added yet. Click "Add Source" to add one.
                 </p>
               ) : (
                 request.sources.map((source, idx) => (
-                  <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <div className="flex justify-between items-start mb-3">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Source {idx + 1}</span>
+                  <div key={idx} className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/30">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-xs font-medium text-slate-400">Source {idx + 1}</span>
                       <button
                         onClick={() => removeSource(idx)}
-                        className="text-red-600 hover:text-red-700 dark:text-red-400"
+                        className="text-rose-400/60 hover:text-rose-400 transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2">
                       <input
                         placeholder="Book Name"
                         value={source.book_name}
                         onChange={(e) => updateSource(idx, 'book_name', e.target.value)}
-                        className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        className="px-2.5 py-1.5 text-xs border border-slate-700/50 rounded-lg bg-slate-900/50 text-slate-200 placeholder-slate-600"
                         style={getTextDirectionStyles(source.book_name)}
                       />
                       <input
                         placeholder="Author"
                         value={source.author}
                         onChange={(e) => updateSource(idx, 'author', e.target.value)}
-                        className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                        className="px-2.5 py-1.5 text-xs border border-slate-700/50 rounded-lg bg-slate-900/50 text-slate-200 placeholder-slate-600"
                         style={getTextDirectionStyles(source.author)}
                       />
                     </div>
@@ -217,7 +215,7 @@ export const AskService: React.FC = () => {
                       placeholder="Source text content..."
                       value={source.text}
                       onChange={(e) => updateSource(idx, 'text', e.target.value)}
-                      className="w-full mt-2 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      className="w-full mt-2 px-2.5 py-1.5 text-xs border border-slate-700/50 rounded-lg bg-slate-900/50 text-slate-200 placeholder-slate-600"
                       style={getTextDirectionStyles(source.text)}
                       rows={3}
                     />
@@ -230,10 +228,10 @@ export const AskService: React.FC = () => {
           <button
             onClick={streaming ? handleStop : handleSubmit}
             disabled={loading || !request.query.trim()}
-            className={`w-full px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
+            className={`w-full px-4 py-2.5 rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-200 text-sm ${
               streaming
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed'
+                ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30'
+                : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none'
             }`}
           >
             {loading ? (
@@ -259,17 +257,17 @@ export const AskService: React.FC = () => {
       {error && <ErrorDisplay error={error} />}
 
       {(response || streaming || streamingText) && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-          <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-slate-900/50 rounded-xl border border-slate-700/30 overflow-hidden">
+          <div className="border-b border-slate-700/30">
             <div className="flex gap-1 p-2">
               {['response', 'raw'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab as typeof activeTab)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                     activeTab === tab
-                      ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                      : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40 border border-transparent'
                   }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -278,19 +276,25 @@ export const AskService: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-5">
             {activeTab === 'response' && (
               <div>
                 {streaming && !streamingText && (
-                  <div className="mb-4 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                  <div className="mb-4 flex items-center gap-2 text-sm shimmer-bg rounded-lg px-3 py-2">
                     <LoadingSpinner size="sm" />
-                    <span>Generating response from {request.sources.length} sources...</span>
+                    <span className="text-cyan-400">Generating response from {request.sources.length} sources...</span>
                   </div>
                 )}
                 {streaming && streamingText && (
-                  <div className="mb-2 text-sm text-blue-600 dark:text-blue-400">Streaming...</div>
+                  <div className="mb-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                    Streaming...
+                  </div>
                 )}
-                <MarkdownRenderer content={response?.response || streamingText} />
+                <MarkdownRenderer
+                  content={response?.response || streamingText}
+                  isStreaming={streaming && !!streamingText}
+                />
               </div>
             )}
 

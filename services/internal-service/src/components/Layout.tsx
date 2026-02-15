@@ -7,8 +7,8 @@ import {
   Braces,
   Sparkles,
   Activity,
-  Menu,
-  X
+  PanelLeft,
+  Zap
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -17,85 +17,156 @@ interface LayoutProps {
 }
 
 const navItems = [
-  { path: '/', icon: Database, label: 'Gateway Service', description: 'RAG Pipeline' },
-  { path: '/ask', icon: MessageSquare, label: 'Ask Service', description: 'LLM Generation' },
-  { path: '/search', icon: Search, label: 'Search Service', description: 'Vector Search' },
-  { path: '/embed', icon: Braces, label: 'Embed Service', description: 'Embeddings' },
-  { path: '/optimizer', icon: Sparkles, label: 'Query Optimizer', description: 'Query Enhancement' },
-  { path: '/health', icon: Activity, label: 'Health Check', description: 'All Services' },
+  { path: '/', icon: Database, label: 'Gateway', description: 'RAG Pipeline', color: 'emerald' },
+  { path: '/ask', icon: MessageSquare, label: 'Ask', description: 'LLM Generation', color: 'cyan' },
+  { path: '/search', icon: Search, label: 'Search', description: 'Vector Search', color: 'violet' },
+  { path: '/embed', icon: Braces, label: 'Embed', description: 'Embeddings', color: 'amber' },
+  { path: '/optimizer', icon: Sparkles, label: 'Optimizer', description: 'Query Enhancement', color: 'rose' },
+  { path: '/health', icon: Activity, label: 'Health', description: 'All Services', color: 'blue' },
 ];
+
+const colorMap: Record<string, { active: string; icon: string; dot: string }> = {
+  emerald: {
+    active: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/50',
+    icon: 'text-emerald-400',
+    dot: 'bg-emerald-400',
+  },
+  cyan: {
+    active: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/50',
+    icon: 'text-cyan-400',
+    dot: 'bg-cyan-400',
+  },
+  violet: {
+    active: 'text-violet-400 bg-violet-500/10 border-violet-500/50',
+    icon: 'text-violet-400',
+    dot: 'bg-violet-400',
+  },
+  amber: {
+    active: 'text-amber-400 bg-amber-500/10 border-amber-500/50',
+    icon: 'text-amber-400',
+    dot: 'bg-amber-400',
+  },
+  rose: {
+    active: 'text-rose-400 bg-rose-500/10 border-rose-500/50',
+    icon: 'text-rose-400',
+    dot: 'bg-rose-400',
+  },
+  blue: {
+    active: 'text-blue-400 bg-blue-500/10 border-blue-500/50',
+    icon: 'text-blue-400',
+    dot: 'bg-blue-400',
+  },
+};
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-slate-950">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-20">
-        <div className="px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center gap-2 sm:gap-4">
+      <header className="glass sticky top-0 z-20">
+        <div className="accent-line" />
+        <div className="px-3 sm:px-5 py-3 sm:py-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-900 dark:text-white flex-shrink-0"
+              className="p-2 hover:bg-slate-800/60 rounded-lg transition-colors text-slate-400 hover:text-slate-200 flex-shrink-0"
+              title={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
             >
-              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <PanelLeft className={`w-5 h-5 transition-transform duration-300 ${sidebarOpen ? 'rotate-180' : ''}`} />
             </button>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-                Islamic AI Services Internal Tool
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-                Testing interface for all microservices
-              </p>
+
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex-shrink-0">
+                <Zap className="w-4 h-4 text-white" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg font-bold text-slate-100 truncate tracking-tight">
+                  Athars <span className="gradient-text">AI</span>
+                </h1>
+                <p className="text-xs text-slate-500 hidden sm:block">
+                  Internal Testing Dashboard
+                </p>
+              </div>
+            </div>
+
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Dev Mode
+              </span>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="flex relative">
+      <div className="relative">
         {/* Mobile Overlay */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         {/* Sidebar */}
         <aside
-          className={`${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-          } fixed lg:sticky top-[57px] sm:top-[73px] left-0 w-64 h-[calc(100vh-57px)] sm:h-[calc(100vh-73px)] lg:h-[calc(100vh-73px)] transition-transform duration-300 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-40 lg:z-0 overflow-y-auto`}
+          className={`fixed top-[53px] sm:top-[65px] left-0 w-60 h-[calc(100vh-53px)] sm:h-[calc(100vh-65px)] z-40 overflow-y-auto border-r border-slate-800/60 bg-slate-950/95 backdrop-blur-xl transition-transform duration-300 ease-out ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
         >
-          <nav className="p-4 space-y-1">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-start gap-3 px-3 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`
-                }
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm">{item.label}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    {item.description}
-                  </div>
-                </div>
-              </NavLink>
-            ))}
+          <nav className="p-3 space-y-1">
+            <div className="px-3 py-2 mb-2">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-600">
+                Services
+              </p>
+            </div>
+
+            {navItems.map((item) => {
+              const colors = colorMap[item.color];
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setSidebarOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group border border-transparent ${
+                      isActive
+                        ? colors.active
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <item.icon className={`w-4 h-4 flex-shrink-0 transition-colors ${isActive ? colors.icon : 'text-slate-500 group-hover:text-slate-300'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium">{item.label}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5 group-hover:text-slate-400 transition-colors">
+                          {item.description}
+                        </div>
+                      </div>
+                      {isActive && (
+                        <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              );
+            })}
           </nav>
+
+          {/* Sidebar footer */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800/40">
+            <div className="text-[10px] text-slate-600 text-center">
+              Pipeline: Optimizer &rarr; Embed &rarr; Search &rarr; Ask
+            </div>
+          </div>
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 p-3 sm:p-6 overflow-auto w-full lg:w-auto">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 p-3 sm:p-6 overflow-auto w-full min-h-[calc(100vh-65px)]">
+          <div className="max-w-7xl mx-auto animate-fade-in">
             {children}
           </div>
         </main>

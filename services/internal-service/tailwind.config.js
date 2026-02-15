@@ -4,15 +4,9 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'media',
+  darkMode: 'class',
   theme: {
-    extend: {
-      colors: {
-        background: 'rgb(var(--background) / <alpha-value>)',
-        foreground: 'rgb(var(--foreground) / <alpha-value>)',
-        border: 'rgb(var(--border) / <alpha-value>)',
-      },
-    },
+    extend: {},
   },
   plugins: [
     require('@tailwindcss/typography'),

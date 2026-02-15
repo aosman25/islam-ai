@@ -8,16 +8,16 @@ import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  isStreaming?: boolean;
 }
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '' }) => {
-  // Detect text direction based on content
+export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '', isStreaming = false }) => {
   const textDir = useMemo(() => getTextDirection(content), [content]);
   const dirStyles = useMemo(() => getTextDirectionStyles(content), [content]);
 
   return (
     <div
-      className={`markdown-content ${textDir === 'rtl' ? 'rtl' : ''} ${className}`}
+      className={`markdown-content ${textDir === 'rtl' ? 'rtl' : ''} ${isStreaming ? 'typing-cursor' : ''} ${className}`}
       style={dirStyles}
     >
       <ReactMarkdown

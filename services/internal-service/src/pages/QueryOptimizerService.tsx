@@ -5,7 +5,7 @@ import type { QueryRequest, QueryResponse } from '../types/services';
 import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
-import { Play, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { Play, Plus, Trash2, ArrowRight, Sparkles } from 'lucide-react';
 import { getTextDirection, getTextDirectionStyles } from '../utils/textDirection';
 import { usePersistedState } from '../hooks/usePersistedState';
 
@@ -54,15 +54,11 @@ export const QueryOptimizerService: React.FC = () => {
   const sendToEmbedService = () => {
     if (!response || response.results.length === 0) return;
 
-    // Get hypothetical passages (for dense) and keywords (for sparse)
     const passages: string[] = [];
-    const keywords: string[] = [];
     response.results.forEach(result => {
       passages.push(...result.hypothetical_passages);
-      keywords.push(...result.keywords);
     });
 
-    // Update embed service request in localStorage with passages for dense embedding
     const embedRequest = {
       input_text: passages,
       dense: true,
@@ -70,42 +66,46 @@ export const QueryOptimizerService: React.FC = () => {
       colbert: false,
     };
     localStorage.setItem('embed-request', JSON.stringify(embedRequest));
-
-    // Navigate to embed service
     navigate('/embed');
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Query Optimizer Service
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Optimize queries and generate sub-queries using Google Gemini for better search coverage.
-        </p>
+      {/* Page Header */}
+      <div className="flex items-start gap-3">
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex-shrink-0">
+          <Sparkles className="w-5 h-5 text-rose-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-100 tracking-tight">
+            Query Optimizer
+          </h2>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Optimize queries and generate sub-queries using Google Gemini for better search coverage.
+          </p>
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Request Configuration</h3>
+      <div className="bg-slate-900/50 rounded-xl border border-slate-700/30 p-5">
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Request Configuration</h3>
 
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Queries (1-10 queries, max 1000 chars each)
+              <label className="text-xs font-medium text-slate-400">
+                Queries <span className="text-slate-600">(1-10, max 1000 chars)</span>
               </label>
               <button
                 onClick={addQuery}
                 disabled={request.queries.length >= 10}
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 Add Query
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {request.queries.map((query, idx) => (
                 <div key={idx} className="flex gap-2">
                   <div className="flex-1">
@@ -113,21 +113,21 @@ export const QueryOptimizerService: React.FC = () => {
                       value={query}
                       onChange={(e) => updateQuery(idx, e.target.value)}
                       placeholder={idx === 0 ? "What are the pillars of Islam?" : `Query ${idx + 1}...`}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className="w-full px-3.5 py-2.5 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 placeholder-slate-600 transition-all duration-200 text-sm"
                       style={getTextDirectionStyles(query)}
                       rows={2}
                       maxLength={1000}
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {query.length}/1000 characters
+                    <p className="text-[10px] text-slate-600 mt-1">
+                      {query.length}/1000
                     </p>
                   </div>
                   {request.queries.length > 1 && (
                     <button
                       onClick={() => removeQuery(idx)}
-                      className="text-red-600 hover:text-red-700 dark:text-red-400 p-2"
+                      className="text-rose-400/60 hover:text-rose-400 transition-colors p-2"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
@@ -138,7 +138,7 @@ export const QueryOptimizerService: React.FC = () => {
           <button
             onClick={handleSubmit}
             disabled={loading || request.queries.some(q => !q.trim())}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="w-full px-4 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-200 text-sm shadow-lg shadow-rose-500/20 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
           >
             {loading ? (
               <>
@@ -158,29 +158,29 @@ export const QueryOptimizerService: React.FC = () => {
       {error && <ErrorDisplay error={error} />}
 
       {response && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Optimization Results ({response.processed_count} queries)
+        <div className="bg-slate-900/50 rounded-xl border border-slate-700/30 p-5">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              Results ({response.processed_count} queries)
             </h3>
             <button
               onClick={sendToEmbedService}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+              className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-lg font-medium flex items-center gap-1.5 transition-all duration-200 text-xs border border-amber-500/20"
             >
-              <span>Send to Embed Service</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Send to Embed</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {response.results.map((result, idx) => (
-              <div key={idx} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div key={idx} className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/30">
                 <div className="mb-3">
-                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Original Query {idx + 1}:
+                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Original Query {idx + 1}
                   </h4>
                   <p
-                    className={`text-sm bg-white dark:bg-gray-900 p-3 rounded border border-gray-200 dark:border-gray-700 text-white ${getTextDirection(request.queries[idx]) === 'rtl' ? 'rtl' : ''}`}
+                    className={`text-sm bg-slate-900/60 border border-slate-700/30 p-3 rounded-xl text-slate-300 ${getTextDirection(request.queries[idx]) === 'rtl' ? 'rtl' : ''}`}
                     style={getTextDirectionStyles(request.queries[idx])}
                   >
                     {request.queries[idx]}
@@ -189,14 +189,14 @@ export const QueryOptimizerService: React.FC = () => {
 
                 {result.hypothetical_passages && result.hypothetical_passages.length > 0 && (
                   <div className="mb-3">
-                    <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                      Hypothetical Passages ({result.hypothetical_passages.length}):
+                    <h4 className="text-xs font-semibold text-blue-400 mb-2">
+                      Hypothetical Passages ({result.hypothetical_passages.length})
                     </h4>
                     <div className="space-y-2">
                       {result.hypothetical_passages.map((passage, pIdx) => (
                         <p
                           key={pIdx}
-                          className="text-sm bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg border border-blue-200 dark:border-blue-800 text-gray-900 dark:text-gray-100"
+                          className="text-sm bg-blue-500/5 border border-blue-500/15 px-4 py-2.5 rounded-xl text-slate-300"
                           style={getTextDirectionStyles(passage)}
                         >
                           {passage}
@@ -206,35 +206,16 @@ export const QueryOptimizerService: React.FC = () => {
                   </div>
                 )}
 
-                {result.keywords && result.keywords.length > 0 && (
-                  <div className="mb-3">
-                    <h4 className="text-sm font-semibold text-green-700 dark:text-green-300 mb-2">
-                      Keywords ({result.keywords.length}):
-                    </h4>
-                    <div className="flex flex-wrap gap-2" style={{ direction: 'rtl' }}>
-                      {result.keywords.map((keyword, kwIdx) => (
-                        <span
-                          key={kwIdx}
-                          className="text-sm bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full border border-green-200 dark:border-green-800 text-white"
-                          style={getTextDirectionStyles(keyword)}
-                        >
-                          {keyword}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {result.categories && result.categories.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-purple-700 dark:text-purple-300 mb-2">
-                      Selected Categories ({result.categories.length}):
+                    <h4 className="text-xs font-semibold text-purple-400 mb-2">
+                      Categories ({result.categories.length})
                     </h4>
-                    <div className="flex flex-wrap gap-2" style={{ direction: 'rtl' }}>
+                    <div className="flex flex-wrap gap-1.5" style={{ direction: 'rtl' }}>
                       {result.categories.map((category, catIdx) => (
                         <span
                           key={catIdx}
-                          className="text-sm bg-purple-50 dark:bg-purple-900/20 px-3 py-1 rounded-full border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300"
+                          className="text-xs bg-purple-500/10 text-purple-400 px-2.5 py-1 rounded-full border border-purple-500/20"
                         >
                           {category}
                         </span>
@@ -246,7 +227,7 @@ export const QueryOptimizerService: React.FC = () => {
             ))}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-5">
             <JsonViewer data={response} title="Raw Response" />
           </div>
         </div>

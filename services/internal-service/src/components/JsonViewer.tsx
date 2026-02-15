@@ -16,25 +16,31 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({ data, title }) => {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+    <div className="bg-slate-900/60 rounded-xl border border-slate-700/40 overflow-hidden">
       {title && (
-        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{title}</h3>
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-700/40">
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{title}</h3>
           <button
             onClick={handleCopy}
-            className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:bg-slate-700/40 text-slate-400 hover:text-slate-200"
             title="Copy JSON"
           >
             {copied ? (
-              <Check className="w-4 h-4 text-green-600" />
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-400">Copied</span>
+              </>
             ) : (
-              <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copy</span>
+              </>
             )}
           </button>
         </div>
       )}
-      <pre className="p-4 overflow-x-auto text-sm">
-        <code className="text-gray-800 dark:text-gray-200">
+      <pre className="p-4 overflow-x-auto text-sm leading-relaxed">
+        <code className="text-slate-300 font-mono text-xs">
           {JSON.stringify(data, null, 2)}
         </code>
       </pre>

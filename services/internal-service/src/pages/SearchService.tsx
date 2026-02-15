@@ -6,14 +6,14 @@ import { JsonViewer } from '../components/JsonViewer';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorDisplay } from '../components/ErrorDisplay';
 import { SourcesDisplay } from '../components/SourcesDisplay';
-import { Play, ArrowRight } from 'lucide-react';
+import { Play, ArrowRight, Search } from 'lucide-react';
 import { usePersistedState } from '../hooks/usePersistedState';
 
 export const SearchService: React.FC = () => {
   const navigate = useNavigate();
   const [partitions, setPartitions] = useState<string[]>([]);
   const [request, setRequest] = usePersistedState<SearchRequest>('search-request', {
-    k: 50,
+    k: 20,
     embeddings: [{
       dense: [],
       sparse: {},
@@ -33,7 +33,6 @@ export const SearchService: React.FC = () => {
   const [activeTab, setActiveTab] = usePersistedState<'results' | 'raw'>('search-active-tab', 'results');
 
   useEffect(() => {
-    // Load available partitions
     const loadPartitions = async () => {
       try {
         const result = await apiService.searchPartitions();
@@ -64,11 +63,9 @@ export const SearchService: React.FC = () => {
   const sendToAskService = () => {
     if (!response || response.results.length === 0) return;
 
-    // Retrieve the original query text from localStorage (stored by EmbedService)
     const queryText = localStorage.getItem('search-query-text');
     const query = queryText || 'Please provide a detailed answer based on these sources';
 
-    // Update ask service request in localStorage
     const askRequest = {
       query,
       sources: response.results,
@@ -77,29 +74,33 @@ export const SearchService: React.FC = () => {
       stream: true,
     };
     localStorage.setItem('ask-request', JSON.stringify(askRequest));
-
-    // Navigate to ask service
     navigate('/ask');
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Search Service
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Test hybrid vector search using Milvus database with dense and sparse embeddings.
-        </p>
+      {/* Page Header */}
+      <div className="flex items-start gap-3">
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex-shrink-0">
+          <Search className="w-5 h-5 text-violet-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-100 tracking-tight">
+            Search Service
+          </h2>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Hybrid vector search using Milvus database with dense and sparse embeddings.
+          </p>
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Request Configuration</h3>
+      <div className="bg-slate-900/50 rounded-xl border border-slate-700/30 p-5">
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Request Configuration</h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              K (Top results to retrieve: 1-100)
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              K <span className="text-slate-600">(Top results: 1-100)</span>
             </label>
             <input
               type="number"
@@ -107,13 +108,13 @@ export const SearchService: React.FC = () => {
               onChange={(e) => setRequest({ ...request, k: parseInt(e.target.value) })}
               min={1}
               max={100}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Dense Embedding (comma-separated float values)
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              Dense Embedding <span className="text-slate-600">(comma-separated floats)</span>
             </label>
             <textarea
               placeholder="0.1, 0.2, 0.3, ..."
@@ -124,17 +125,17 @@ export const SearchService: React.FC = () => {
                 newEmbeddings[0] = { ...newEmbeddings[0], dense };
                 setRequest({ ...request, embeddings: newEmbeddings });
               }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-xs"
+              className="w-full px-3.5 py-2.5 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 placeholder-slate-600 font-mono text-xs"
               rows={3}
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Current dimension: {request.embeddings[0]?.dense.length || 0}
+            <p className="text-[10px] text-slate-600 mt-1">
+              Dimension: {request.embeddings[0]?.dense.length || 0}
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Sparse Embedding (JSON format: {'{'}index: value{'}'})
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              Sparse Embedding <span className="text-slate-600">(JSON: {'{'}index: value{'}'})</span>
             </label>
             <textarea
               placeholder='{"0": 0.5, "10": 0.3, "25": 0.8}'
@@ -153,16 +154,14 @@ export const SearchService: React.FC = () => {
                   // Invalid JSON, ignore
                 }
               }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-xs"
+              className="w-full px-3.5 py-2.5 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 placeholder-slate-600 font-mono text-xs"
               rows={3}
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Reranker
-              </label>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">Reranker</label>
               <select
                 value={request.reranker}
                 onChange={(e) => {
@@ -173,33 +172,28 @@ export const SearchService: React.FC = () => {
                     reranker_params: newReranker === 'RRF' ? [60] : [1.0, 1.0]
                   });
                 }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 text-sm"
               >
                 <option value="Weighted">Weighted</option>
                 <option value="RRF">RRF</option>
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Collection Name
-              </label>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">Collection</label>
               <input
                 type="text"
                 value={request.collection_name}
                 onChange={(e) => setRequest({ ...request, collection_name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 text-sm"
               />
             </div>
           </div>
 
           {/* Dynamic Reranker Params */}
           {request.reranker === 'Weighted' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Dense Weight (0.0-1.0)
-                </label>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Dense Weight</label>
                 <input
                   type="number"
                   value={Array.isArray(request.reranker_params) ? (request.reranker_params[0] ?? 1.0) : 1.0}
@@ -212,13 +206,11 @@ export const SearchService: React.FC = () => {
                   min={0}
                   max={1}
                   step={0.1}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Sparse Weight (0.0-1.0)
-                </label>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Sparse Weight</label>
                 <input
                   type="number"
                   value={Array.isArray(request.reranker_params) ? (request.reranker_params[1] ?? 1.0) : 1.0}
@@ -231,15 +223,13 @@ export const SearchService: React.FC = () => {
                   min={0}
                   max={1}
                   step={0.1}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full px-3 py-2 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 text-sm"
                 />
               </div>
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                RRF K Value (1-16384)
-              </label>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">RRF K Value</label>
               <input
                 type="number"
                 value={Array.isArray(request.reranker_params) ? (request.reranker_params[0] ?? 60) : 60}
@@ -248,14 +238,14 @@ export const SearchService: React.FC = () => {
                 }}
                 min={1}
                 max={16384}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 text-sm"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Partitions (optional - select multiple)
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              Partitions <span className="text-slate-600">(optional)</span>
             </label>
             <select
               multiple
@@ -264,22 +254,22 @@ export const SearchService: React.FC = () => {
                 const selected = Array.from(e.target.selectedOptions, option => option.value);
                 setRequest({ ...request, partition_names: selected });
               }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-slate-700/50 rounded-xl bg-slate-800/50 text-slate-200 text-sm"
               size={Math.min(5, partitions.length)}
             >
               {partitions.map(partition => (
                 <option key={partition} value={partition}>{partition}</option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Hold Ctrl/Cmd to select multiple partitions
+            <p className="text-[10px] text-slate-600 mt-1">
+              Hold Ctrl/Cmd to select multiple
             </p>
           </div>
 
           <button
             onClick={handleSubmit}
             disabled={loading || request.embeddings[0]?.dense.length === 0}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="w-full px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-200 text-sm shadow-lg shadow-violet-500/20 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
           >
             {loading ? (
               <>
@@ -299,18 +289,18 @@ export const SearchService: React.FC = () => {
       {error && <ErrorDisplay error={error} />}
 
       {response && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-          <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-slate-900/50 rounded-xl border border-slate-700/30 overflow-hidden">
+          <div className="border-b border-slate-700/30">
             <div className="flex items-center justify-between p-2">
               <div className="flex gap-1">
                 {['results', 'raw'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab as typeof activeTab)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                       activeTab === tab
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                        : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/40 border border-transparent'
                     }`}
                   >
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -319,18 +309,18 @@ export const SearchService: React.FC = () => {
               </div>
               <button
                 onClick={sendToAskService}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors text-sm"
+                className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg font-medium flex items-center gap-1.5 transition-all duration-200 text-xs border border-emerald-500/20"
               >
-                <span>Send to Ask Service</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Send to Ask</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-5">
             {activeTab === 'results' && (
               <div>
-                <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="mb-3 text-xs text-slate-500">
                   Found {response.processed_count} results
                 </div>
                 <SourcesDisplay sources={response.results} />
