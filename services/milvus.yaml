@@ -213,8 +213,8 @@ rocksmq:
   path: /var/lib/milvus/rdb_data
   lrucacheratio: 0.06 # rocksdb cache memory ratio
   rocksmqPageSize: 67108864 # The maximum size of messages in each page in RocksMQ. Messages in RocksMQ are checked and cleared (when expired) in batch based on this parameters. Unit: Byte.
-  retentionTimeInMinutes: 4320 # The maximum retention time of acked messages in RocksMQ. Acked messages in RocksMQ are retained for the specified period of time and then cleared. Unit: Minute.
-  retentionSizeInMB: 8192 # The maximum retention size of acked messages of each topic in RocksMQ. Acked messages in each topic are cleared if their size exceed this parameter. Unit: MB.
+  retentionTimeInMinutes: 1440 # The maximum retention time of acked messages in RocksMQ. Acked messages in RocksMQ are retained for the specified period of time and then cleared. Unit: Minute.
+  retentionSizeInMB: 2048 # The maximum retention size of acked messages of each topic in RocksMQ. Acked messages in each topic are cleared if their size exceed this parameter. Unit: MB.
   compactionInterval: 86400 # Time interval to trigger rocksdb compaction to remove deleted data. Unit: Second
   compressionTypes: 0,0,7,7,7 # compaction compression type, only support use 0,7. 0 means not compress, 7 will use zstd. Length of types means num of rocksdb level.
 
@@ -241,7 +241,7 @@ natsmq:
 
 # Related configuration of rootCoord, used to handle data definition language (DDL) and data control language (DCL) requests
 rootCoord:
-  dmlChannelNum: 16 # The number of DML-Channels to create at the root coord startup.
+  dmlChannelNum: 1 # The number of DML-Channels to create at the root coord startup.
   # The maximum number of partitions in each collection.
   # New partitions cannot be created if this parameter is set as 0 or 1.
   # Range: [0, INT64MAX]
@@ -410,10 +410,10 @@ queryNode:
     # 2. If set to "disable" original vector data will only be loaded into the chunk cache during search/query.
     warmup: disable
   mmap:
-    vectorField: false # Enable mmap for loading vector data
-    vectorIndex: false # Enable mmap for loading vector index
-    scalarField: false # Enable mmap for loading scalar data
-    scalarIndex: false # Enable mmap for loading scalar index
+    vectorField: false # Enable mmap for loading vector data (overridden by QUERYNODE_MMAP_VECTORFIELD env var)
+    vectorIndex: false # Enable mmap for loading vector index (overridden by QUERYNODE_MMAP_VECTORINDEX env var)
+    scalarField: false # Enable mmap for loading scalar data (overridden by QUERYNODE_MMAP_SCALARFIELD env var)
+    scalarIndex: false # Enable mmap for loading scalar index (overridden by QUERYNODE_MMAP_SCALARINDEX env var)
     # Enable memory mapping (mmap) to optimize the handling of growing raw data.
     # By activating this feature, the memory overhead associated with newly added or modified data will be significantly minimized.
     # However, this optimization may come at the cost of a slight decrease in query latency for the affected data segments.

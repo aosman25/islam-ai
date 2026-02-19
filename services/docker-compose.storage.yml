@@ -100,6 +100,10 @@ services:
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: milvus-minio:9000
+      QUERYNODE_MMAP_VECTORFIELD: ${MILVUS_MMAP_VECTOR_FIELD:-true}
+      QUERYNODE_MMAP_VECTORINDEX: ${MILVUS_MMAP_VECTOR_INDEX:-true}
+      QUERYNODE_MMAP_SCALARFIELD: ${MILVUS_MMAP_SCALAR_FIELD:-true}
+      QUERYNODE_MMAP_SCALARINDEX: ${MILVUS_MMAP_SCALAR_INDEX:-true}
     volumes:
       - ./milvus.yaml:/milvus/configs/milvus.yaml
       - /var/lib/books-data/milvus:/var/lib/milvus
