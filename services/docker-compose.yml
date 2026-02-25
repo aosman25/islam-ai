@@ -160,6 +160,33 @@ services:
       start_period: 10s
 
   # ===========================================================================
+  # SERVER - Client-facing Master API
+  # ===========================================================================
+  server:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: master-server
+    ports:
+      - "8200:3000"
+    env_file:
+      - .env.storage
+    environment:
+      - DB_HOST=books-db
+      - DB_PORT=5432
+      - DB_DATABASE=islamic-library-db
+    networks:
+      - rag-network
+      - storage-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/api/docs', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ===========================================================================
   # INTERNAL SERVICE - Testing UI
   # ===========================================================================
   internal-service:
