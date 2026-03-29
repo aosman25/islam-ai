@@ -12,14 +12,15 @@ export class PagesService {
   ) {}
 
   async findByBook(bookId: number, query: PaginationQueryDto) {
-    const { page, limit } = query;
+    const { page, limit, offset } = query;
+    const skip = offset != null ? offset : (page - 1) * limit;
     const [data, total] = await this.pageRepository.findAndCount({
       where: { book_id: bookId },
       order: { page_id: 'ASC' },
-      skip: (page - 1) * limit,
+      skip,
       take: limit,
     });
 
-    return { data, total, page, limit };
+    return { data, total, page, limit, offset: skip };
   }
 }

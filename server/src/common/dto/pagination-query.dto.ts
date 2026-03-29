@@ -17,4 +17,11 @@ export class PaginationQueryDto {
   @Min(1)
   @Max(100)
   limit: number = 20;
+
+  @ApiPropertyOptional({ description: 'Direct offset (skip). When provided, overrides page-based offset.' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  offset?: number;
 }

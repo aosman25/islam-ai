@@ -1,32 +1,13 @@
 version: '3.8'
 
 # =============================================================================
-# RAG Pipeline Docker Compose Configuration - LOCAL DEVELOPMENT
+# RAG Pipeline Docker Compose - DEVELOPMENT
 # =============================================================================
-# This compose file is for local development with volume mounts for live reload
-# All services share the same .env file located in the services folder
+# Standalone dev compose with hot-reload for all services.
 #
 # Usage:
-#   1. Copy .env.example to .env and fill in your values
-#   2. Run: docker-compose -f docker-compose.dev.yml up
-#   3. Access gateway at http://localhost:8100
-#   4. Access internal testing UI at http://localhost:3001
-#   5. Edit code locally and changes will reflect in containers
+#   docker compose -f docker-compose.dev.yml up
 #
-# Services (all accessible from host for debugging):
-#   - gateway-service (Port 8100) - Main entry point
-#   - query-optimizer-service (Port 5000) - Query optimization
-#   - embed-service (Port 4000) - Embedding generation
-#   - search-service (Port 3000) - Vector search
-#   - ask-service (Port 2000) - Response generation
-#   - internal-service (Port 5173) - Internal testing UI
-#
-# Development Features:
-#   - Volume mounts for live code reloading
-#   - Source code mounted from local directories
-#   - No need to rebuild containers after code changes
-#   - For internal-service: npm run dev with hot reload
-#   - Same port numbers as production for consistency
 # =============================================================================
 
 services:
@@ -37,27 +18,20 @@ services:
     build:
       context: ./gateway-service
       dockerfile: Dockerfile
-    container_name: gateway-service-dev
+    container_name: gateway-service
     ports:
       - "8100:8000"
     env_file:
       - .env
     environment:
-      # Override service URLs for container networking
       - QUERY_OPTIMIZER_URL=http://query-optimizer:5000
       - EMBED_SERVICE_URL=http://embed-service:4000
       - SEARCH_SERVICE_URL=http://search-service:3000
       - ASK_SERVICE_URL=http://ask-service:2000
-      # Enable development mode for hot reloading
-      - PYTHONUNBUFFERED=1
-      # Force polling for file changes (required for Windows Docker mounts)
-      - WATCHFILES_FORCE_POLLING=true
+      - LOG_LEVEL=debug
     volumes:
-      # Mount source code for live reloading
-      - ./gateway-service/main.py:/app/main.py
-      - ./gateway-service/models.py:/app/models.py
-      # Add any additional Python files here
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      - ./gateway-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
     depends_on:
       query-optimizer:
         condition: service_started
@@ -70,12 +44,6 @@ services:
     networks:
       - rag-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
   # ===========================================================================
   # QUERY OPTIMIZER SERVICE
@@ -84,31 +52,19 @@ services:
     build:
       context: ./query-optimizer-service
       dockerfile: Dockerfile
-    container_name: query-optimizer-service-dev
-    ports:
-      - "5000:5000"
+    container_name: query-optimizer-service
+    expose:
+      - "5000"
     env_file:
       - .env
     environment:
-      - PYTHONUNBUFFERED=1
-      # Force polling for file changes (required for Windows Docker mounts)
-      - WATCHFILES_FORCE_POLLING=true
+      - LOG_LEVEL=debug
     volumes:
-      # Mount source code for live reloading
-      - ./query-optimizer-service/main.py:/app/main.py
-      - ./query-optimizer-service/models.py:/app/models.py
-      - ./query-optimizer-service/utils.py:/app/utils.py
-      - ./query-optimizer-service/prompt.txt:/app/prompt.txt:ro
-    command: uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+      - ./query-optimizer-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 5000 --reload --reload-dir /app
     networks:
       - rag-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
   # ===========================================================================
   # EMBED SERVICE
@@ -117,30 +73,18 @@ services:
     build:
       context: ./embed-service
       dockerfile: Dockerfile
-    container_name: embed-service-dev
-    ports:
-      - "4000:4000"
+    expose:
+      - "4000"
     env_file:
       - .env
     environment:
-      - PYTHONUNBUFFERED=1
-      # Force polling for file changes (required for Windows Docker mounts)
-      - WATCHFILES_FORCE_POLLING=true
+      - LOG_LEVEL=debug
     volumes:
-      # Mount source code for live reloading
-      - ./embed-service/main.py:/app/main.py
-      - ./embed-service/models.py:/app/models.py
-      - ./embed-service/utils.py:/app/utils.py
-    command: uvicorn main:app --host 0.0.0.0 --port 4000 --reload
+      - ./embed-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 4000 --reload --reload-dir /app
     networks:
       - rag-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
   # ===========================================================================
   # SEARCH SERVICE
@@ -149,32 +93,20 @@ services:
     build:
       context: ./search-service
       dockerfile: Dockerfile
-    container_name: search-service-dev
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     env_file:
       - .env
     environment:
-      - PYTHONUNBUFFERED=1
-      # Force polling for file changes (required for Windows Docker mounts)
-      - WATCHFILES_FORCE_POLLING=true
-      # Override Milvus address for container networking
       - MILVUS_IP_ADDRESS=milvus-standalone
+      - LOG_LEVEL=debug
     volumes:
-      # Mount source code for live reloading
-      - ./search-service/main.py:/app/main.py
-      - ./search-service/models.py:/app/models.py
-    command: uvicorn main:app --host 0.0.0.0 --port 3000 --reload
+      - ./search-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 3000 --reload --reload-dir /app
     networks:
       - rag-network
       - storage-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   # ===========================================================================
   # ASK SERVICE
@@ -183,59 +115,66 @@ services:
     build:
       context: ./ask-service
       dockerfile: Dockerfile
-    container_name: ask-service-dev
-    ports:
-      - "2000:2000"
+    container_name: ask-service
+    expose:
+      - "2000"
     env_file:
       - .env
     environment:
-      - PYTHONUNBUFFERED=1
-      # Force polling for file changes (required for Windows Docker mounts)
-      - WATCHFILES_FORCE_POLLING=true
+      - LOG_LEVEL=debug
     volumes:
-      # Mount source code for live reloading
-      - ./ask-service/main.py:/app/main.py
-      - ./ask-service/models.py:/app/models.py
-      - ./ask-service/utils.py:/app/utils.py
-      - ./ask-service/generate_ask_request.py:/app/generate_ask_request.py
-      # Mount system instruction file (read-only)
-      - ./ask-service/system_instruction.txt:/app/system_instruction.txt:ro
-      - ./ask-service/prompt.txt:/app/prompt.txt:ro
-    command: uvicorn main:app --host 0.0.0.0 --port 2000 --reload
+      - ./ask-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 2000 --reload --reload-dir /app
     networks:
       - rag-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2000/health').read()"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
   # ===========================================================================
-  # INTERNAL SERVICE - Testing UI (Development Mode)
+  # SERVER - Client-facing Master API
+  # ===========================================================================
+  server:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: master-server
+    ports:
+      - "8200:3000"
+    env_file:
+      - .env.storage
+    environment:
+      - DB_HOST=books-db
+      - DB_PORT=5432
+      - DB_DATABASE=islamic-library-db
+      - NODE_ENV=development
+    volumes:
+      - ../server:/app
+      - /app/node_modules
+    command: npm run start:dev
+    networks:
+      - rag-network
+      - storage-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # INTERNAL SERVICE - Testing UI
   # ===========================================================================
   internal-service:
     build:
       context: ./internal-service
-      dockerfile: Dockerfile.dev
-    container_name: internal-service-dev
+      dockerfile: Dockerfile
+    container_name: internal-service
     ports:
-      - "5173:5173"
+      - "3001:5173"
+    environment:
+      - DOCKER_ENV=true
+      - NODE_ENV=development
     volumes:
-      # Mount source code for hot reloading
-      - ./internal-service/src:/app/src
-      - ./internal-service/public:/app/public
-      - ./internal-service/index.html:/app/index.html
-      - ./internal-service/vite.config.ts:/app/vite.config.ts
-      - ./internal-service/tailwind.config.js:/app/tailwind.config.js
-      - ./internal-service/postcss.config.js:/app/postcss.config.js
-      - ./internal-service/tsconfig.json:/app/tsconfig.json
-      - ./internal-service/tsconfig.app.json:/app/tsconfig.app.json
-      # Exclude node_modules to use container's dependencies
+      - ./internal-service:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 5173
     depends_on:
       gateway:
-        condition: service_healthy
+        condition: service_started
       query-optimizer:
         condition: service_started
       embed-service:
@@ -247,12 +186,6 @@ services:
     networks:
       - rag-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5173', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
 
 # =============================================================================
 # NETWORKS
@@ -260,7 +193,7 @@ services:
 networks:
   rag-network:
     driver: bridge
-    name: rag-network-dev
+    name: rag-network
   storage-network:
     external: true
     name: storage-network

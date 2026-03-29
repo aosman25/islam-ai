@@ -32,6 +32,18 @@ const SourceCard: React.FC<{
         <FileText className="w-3.5 h-3.5 text-slate-600" />
       </div>
     )}
+    {source.book_id && (
+      <div className="flex items-center gap-2 text-sm flex-row-reverse justify-end">
+        <span className="text-slate-400">Book ID: {source.book_id}</span>
+        <Book className="w-3.5 h-3.5 text-slate-600" />
+      </div>
+    )}
+    {source.start_page_id && (
+      <div className="flex items-center gap-2 text-sm flex-row-reverse justify-end">
+        <span className="text-slate-400">Page ID: {source.start_page_id}</span>
+        <FileText className="w-3.5 h-3.5 text-slate-600" />
+      </div>
+    )}
     {source.part_title && (
       <div>
         <span className="text-xs bg-slate-700/50 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-600/30">
@@ -70,7 +82,7 @@ const CitationGroupBadge: React.FC<CitationGroupBadgeProps> = ({ sources }) => {
     navigate(`/books/${source.book_id}`, {
       state: {
         scrollToPageId: source.start_page_id,
-        scrollToPageNum: source.page_num_range?.[0],
+        pageOffset: source.start_page_id - 1,
       },
     });
   };

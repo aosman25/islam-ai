@@ -334,18 +334,22 @@ class ApiService {
 
   async getBookPages(
     bookId: number,
-    page = 1,
-    limit = 20
-  ): Promise<PaginatedResponse<BookPage>> {
+    opts: { page?: number; offset?: number; limit?: number } = {}
+  ): Promise<PaginatedResponse<BookPage> & { offset: number }> {
+    const { page = 1, offset, limit = 20 } = opts;
     try {
-      const response = await this.clients.master.get<PaginatedResponse<BookPage>>(
-        `/books/${bookId}/pages?page=${page}&limit=${limit}`
+      const params = new URLSearchParams({ limit: String(limit) });
+      if (offset != null) params.set('offset', String(offset));
+      else params.set('page', String(page));
+      const response = await this.clients.master.get<PaginatedResponse<BookPage> & { offset: number }>(
+        `/books/${bookId}/pages?${params}`
       );
       return response.data;
     } catch (error) {
       return this.handleError(error);
     }
   }
+
 
   async getAuthors(): Promise<Author[]> {
     try {

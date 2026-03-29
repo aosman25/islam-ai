@@ -228,11 +228,10 @@ export const BookViewer: React.FC = () => {
   const location = useLocation();
   const bookId = Number(id);
 
-  // Compute initial batch from deep-link navigation state
-  const scrollState = (location.state as { scrollToPageId?: number; scrollToPageNum?: number } | null);
+  // Deep-link navigation state from citation
+  const scrollState = (location.state as { scrollToPageId?: number; pageOffset?: number } | null);
   const initialScrollPageId = scrollState?.scrollToPageId ?? null;
-  const initialScrollPageNum = scrollState?.scrollToPageNum ?? null;
-  const initialBatch = initialScrollPageNum ? Math.ceil(initialScrollPageNum / PAGE_LIMIT) : 1;
+  const initialPageOffset = scrollState?.pageOffset ?? null;
 
   const [book, setBook] = useState<Book | null>(null);
   const [bookLoading, setBookLoading] = useState(true);
@@ -241,9 +240,9 @@ export const BookViewer: React.FC = () => {
 
   const [pages, setPages] = useState<BookPage[]>([]);
   const [pagesTotal, setPagesTotal] = useState(0);
-  // nextBatch: next batch to append (downward); prevBatch: next batch to prepend (upward)
-  const [nextBatch, setNextBatch] = useState(initialBatch);
-  const [prevBatch, setPrevBatch] = useState(initialBatch - 1);
+  // Offset cursors for infinite scroll: next loads forward, prev loads backward
+  const [nextOffset, setNextOffset] = useState(initialPageOffset ?? 0);
+  const [prevOffset, setPrevOffset] = useState(initialPageOffset != null ? initialPageOffset - PAGE_LIMIT : -1);
   const [loadingNext, setLoadingNext] = useState(false);
   const [loadingPrev, setLoadingPrev] = useState(false);
   const [allNextLoaded, setAllNextLoaded] = useState(false);
@@ -307,37 +306,39 @@ export const BookViewer: React.FC = () => {
     if (loadingNext || allNextLoaded) return;
     setLoadingNext(true);
     try {
-      const result = await apiService.getBookPages(bookId, nextBatch, PAGE_LIMIT);
+      const result = await apiService.getBookPages(bookId, { offset: nextOffset, limit: PAGE_LIMIT });
       const newPages = result.data.filter(p => !loadedPageIds.current.has(p.page_id));
       newPages.forEach(p => loadedPageIds.current.add(p.page_id));
       setPages(prev => [...prev, ...newPages]);
       setPagesTotal(result.total);
-      if (nextBatch * PAGE_LIMIT >= result.total) setAllNextLoaded(true);
-      else setNextBatch(b => b + 1);
+      const newNextOffset = nextOffset + PAGE_LIMIT;
+      if (newNextOffset >= result.total) setAllNextLoaded(true);
+      else setNextOffset(newNextOffset);
     } catch { /* retry on next intersection */ }
     finally { setLoadingNext(false); }
-  }, [bookId, nextBatch, loadingNext, allNextLoaded]);
+  }, [bookId, nextOffset, loadingNext, allNextLoaded]);
 
   // ── Fetch prev batch (upward prepend) ──────────────────────────────────
   const fetchPrevBatch = useCallback(async () => {
-    if (loadingPrev || prevBatch < 1) return;
+    if (loadingPrev || prevOffset < 0) return;
     setLoadingPrev(true);
     try {
-      const result = await apiService.getBookPages(bookId, prevBatch, PAGE_LIMIT);
+      const actualOffset = Math.max(0, prevOffset);
+      const limit = prevOffset >= 0 ? PAGE_LIMIT : PAGE_LIMIT + prevOffset;
+      const result = await apiService.getBookPages(bookId, { offset: actualOffset, limit });
       const newPages = result.data.filter(p => !loadedPageIds.current.has(p.page_id));
       newPages.forEach(p => loadedPageIds.current.add(p.page_id));
       if (newPages.length > 0) {
-        // Capture scroll state before prepend — restored in useLayoutEffect
         prependScrollRef.current = {
           scrollHeight: readerRef.current?.scrollHeight ?? 0,
           scrollTop: readerRef.current?.scrollTop ?? 0,
         };
         setPages(prev => [...newPages, ...prev]);
       }
-      setPrevBatch(b => b - 1);
+      setPrevOffset(prevOffset - PAGE_LIMIT);
     } catch { /* retry on next intersection */ }
     finally { setLoadingPrev(false); }
-  }, [bookId, prevBatch, loadingPrev]);
+  }, [bookId, prevOffset, loadingPrev]);
 
   // ── Bottom sentinel IntersectionObserver (infinite scroll down) ─────────
   useEffect(() => {
@@ -354,14 +355,14 @@ export const BookViewer: React.FC = () => {
   // ── Top sentinel IntersectionObserver (infinite scroll up) ─────────────
   useEffect(() => {
     const el = topSentinelRef.current;
-    if (!el || prevBatch < 1) return;
+    if (!el || prevOffset < 0) return;
     const obs = new IntersectionObserver(
       entries => { if (entries[0].isIntersecting) fetchPrevBatch(); },
       { root: readerRef.current, rootMargin: '300px' }
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [fetchPrevBatch, prevBatch]);
+  }, [fetchPrevBatch, prevOffset]);
 
   // ── Restore scroll position after prepend (runs before paint) ───────────
   useLayoutEffect(() => {
@@ -381,15 +382,14 @@ export const BookViewer: React.FC = () => {
       el.scrollIntoView({ block: 'start' });
       pendingScrollRef.current = null;
       setSeekingPage(false);
-    } else if (!allNextLoaded) {
-      // Not found yet — push to bottom (hidden behind overlay) to trigger next batch
-      readerRef.current.scrollTop = readerRef.current.scrollHeight;
+    } else if (pages.length === 0) {
+      // Still loading — wait for pages
     } else {
-      // All batches loaded but page still not found — give up
+      // Pages loaded but target not found — give up
       pendingScrollRef.current = null;
       setSeekingPage(false);
     }
-  }, [pages, allNextLoaded]);
+  }, [pages]);
 
   // ── Track active page via scroll ─────────────────────────────────────────
   useEffect(() => {
