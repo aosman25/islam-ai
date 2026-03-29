@@ -398,6 +398,7 @@ export const GatewayService: React.FC = () => {
                 <MarkdownRenderer
                   content={response?.response || streamingText}
                   isStreaming={streaming && !!streamingText}
+                  sources={response?.sources || streamMetadata?.sources}
                 />
               </div>
             )}
@@ -494,6 +495,7 @@ export const GatewayService: React.FC = () => {
               <MarkdownRenderer
                 content={response?.response || streamingText}
                 isStreaming={streaming && !!streamingText}
+                sources={response?.sources || streamMetadata?.sources}
               />
             </div>
           </div>

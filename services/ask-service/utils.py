@@ -19,11 +19,9 @@ def format_sources(sources: List[SourceData]) -> str:
     """
     return "\n\n".join([
         f"""
+        معرف المصدر: [{s.id}]
         اسم الكتاب: {s.book_name}
         المؤلف: {s.author}
-        الصفحات: {s.page_num_range}
-        العنوان الفرعي: {s.part_title}
-        التصنيف: {s.category}
         النص:
         {s.text.strip()}
         """ for i, s in enumerate(sources)

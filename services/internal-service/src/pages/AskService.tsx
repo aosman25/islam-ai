@@ -294,6 +294,7 @@ export const AskService: React.FC = () => {
                 <MarkdownRenderer
                   content={response?.response || streamingText}
                   isStreaming={streaming && !!streamingText}
+                  sources={request.sources}
                 />
               </div>
             )}
