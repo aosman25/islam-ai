@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -10,6 +11,7 @@ import {
   BookOpen,
   Menu,
   X,
+  LogIn,
 } from "lucide-react";
 
 const NAV_LINKS = [
@@ -27,26 +29,23 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-      {/* Gold accent line */}
       <div className="accent-line" />
 
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-page">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative">
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-gold-500 to-gold-700 flex items-center justify-center shadow-soft group-hover:shadow-glow transition-shadow duration-300">
-              <span className="text-white font-display text-lg font-bold leading-none">
-                A
-              </span>
-            </div>
-          </div>
-          <span className="font-display text-xl font-semibold tracking-tight text-ink-900">
-            Athars
-          </span>
+      <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-page">
+        {/* Logo - left */}
+        <Link href="/" className="flex items-center gap-1 flex-shrink-0">
+          <Image
+            src="/logos/logo_en.png"
+            alt="Athars"
+            width={120}
+            height={40}
+            className="h-8 w-auto dark:invert"
+            priority
+          />
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-1">
+        {/* Desktop Nav - absolutely centered to viewport */}
+        <nav className="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           {NAV_LINKS.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
@@ -64,18 +63,16 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Right Side */}
-        <div className="flex items-center gap-3">
-          {/* CTA Button - Desktop */}
+        {/* Right side - Sign In + mobile toggle */}
+        <div className="flex items-center gap-3 flex-shrink-0">
           <Link
-            href="/chat"
-            className="hidden md:inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-gold-600 to-gold-700 text-white text-sm font-medium shadow-soft hover:shadow-glow transition-all duration-300 hover:brightness-110"
+            href="/signin"
+            className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border/60 text-sm font-medium text-ink-600 hover:text-ink-800 hover:bg-parchment-100 transition-all duration-200"
           >
-            <MessageSquare size={15} />
-            Ask a Question
+            <LogIn size={15} />
+            Sign In / Sign Up
           </Link>
 
-          {/* Mobile Toggle */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden p-2 rounded-lg hover:bg-parchment-100 text-ink-600 transition-colors"
@@ -108,12 +105,12 @@ export function Navbar() {
             ))}
             <div className="pt-3 border-t border-border/60 mt-3">
               <Link
-                href="/chat"
+                href="/signin"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-gradient-to-r from-gold-600 to-gold-700 text-white text-sm font-medium"
+                className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg border border-border/60 text-sm font-medium text-ink-600"
               >
-                <MessageSquare size={15} />
-                Ask a Question
+                <LogIn size={15} />
+                Sign In / Sign Up
               </Link>
             </div>
           </nav>

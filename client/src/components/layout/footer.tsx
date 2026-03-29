@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { BookOpen, MessageSquare, Search } from "lucide-react";
 
 const FOOTER_LINKS = [
@@ -27,16 +28,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {/* Brand Column */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-gold-500 to-gold-700 flex items-center justify-center">
-                <span className="text-white font-display text-lg font-bold leading-none">
-                  A
-                </span>
-              </div>
-              <span className="font-display text-xl font-semibold text-ink-900">
-                Athars
-              </span>
-            </div>
+            <Image
+              src="/logos/logo_en.png"
+              alt="Athars"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+            />
             <p className="text-sm text-ink-500 leading-relaxed max-w-xs">
               Tracing the paths of Islamic knowledge through AI-powered
               research. Explore centuries of scholarship with modern tools.

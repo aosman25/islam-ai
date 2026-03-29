@@ -10,7 +10,6 @@ import {
   ArrowRight,
   BookOpen,
   MessageSquare,
-  Sparkles,
   Library,
   GraduationCap,
   Scroll,
@@ -103,17 +102,9 @@ export default function HomePage() {
           </svg>
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-page pt-24 pb-20 md:pt-32 md:pb-28">
-          {/* Badge */}
-          <div className="flex justify-center mb-8 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-50 border border-gold-200/60 text-gold-700 text-xs font-medium">
-              <Sparkles size={13} />
-              AI-Powered Islamic Research Platform
-            </div>
-          </div>
-
+        <div className="relative mx-auto max-w-7xl px-page pt-10 pb-14 md:pt-14 md:pb-20">
           {/* Heading */}
-          <div className="text-center max-w-3xl mx-auto mb-10">
+          <div className="text-center max-w-3xl mx-auto mb-7">
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold text-ink-900 leading-[1.1] tracking-tight mb-6 animate-slide-up">
               Trace the Paths of
               <span className="block mt-1">
@@ -295,11 +286,10 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/chat"
+              href="/signin"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-gold-600 to-gold-700 text-white font-medium shadow-md hover:shadow-glow transition-all duration-300 hover:brightness-110"
             >
-              <MessageSquare size={18} />
-              Start a Conversation
+              Sign In / Sign Up
             </Link>
             <Link
               href="/books"
