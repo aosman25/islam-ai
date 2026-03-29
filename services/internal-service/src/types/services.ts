@@ -172,6 +172,7 @@ const SERVICE_PORTS = {
   search: 3000,
   embed: 4000,
   queryOptimizer: 5000,
+  master: 8200,
 };
 
 const getServiceUrl = (serviceName: keyof typeof SERVICE_PORTS): string => {
@@ -215,5 +216,67 @@ export const SERVICES: Record<string, ServiceConfig> = {
     baseUrl: getServiceUrl('queryOptimizer'),
     port: 5000,
     description: 'Query optimization and sub-query generation'
+  },
+  master: {
+    name: 'Master Server',
+    baseUrl: getServiceUrl('master'),
+    port: 8200,
+    description: 'Islamic Books REST API'
   }
 };
+
+// ============================================================
+// Books / Pages types (master NestJS server)
+// ============================================================
+
+export interface Author {
+  id: number;
+  name: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+}
+
+export interface Book {
+  book_id: number;
+  book_name: string;
+  author_id: number;
+  category_id: number;
+  editor: string | null;
+  edition: string | null;
+  publisher: string | null;
+  num_volumes: string | null;
+  num_pages: string | null;
+  shamela_pub_date: string | null;
+  author_full: string | null;
+  parts: unknown;
+  table_of_contents: unknown;
+  author?: Author;
+  category?: Category;
+}
+
+export interface BookPage {
+  book_id: number;
+  page_id: number;
+  part_title: string;
+  page_num: number;
+  display_elem: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface BooksQuery {
+  page?: number;
+  limit?: number;
+  include_toc?: boolean;
+  category_ids?: number[];
+  author_ids?: number[];
+  search?: string;
+}

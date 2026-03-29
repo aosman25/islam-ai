@@ -21,6 +21,7 @@ const SERVICES = {
   queryOptimizer: IS_DOCKER
     ? "http://query-optimizer:5000"
     : "http://localhost:5000",
+  master: IS_DOCKER ? "http://master-server:3000" : "http://localhost:8200",
 };
 
 console.log("🚀 Starting Internal Service Proxy Server");
@@ -107,6 +108,15 @@ app.use(
     ...proxyOptions,
     target: SERVICES.queryOptimizer,
     pathRewrite: { "^/api/query-optimizer": "" },
+  })
+);
+
+app.use(
+  "/api/master",
+  createProxyMiddleware({
+    ...proxyOptions,
+    target: SERVICES.master,
+    pathRewrite: { "^/api/master": "" },
   })
 );
 

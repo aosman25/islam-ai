@@ -1,13 +1,18 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { SourceData } from '../types/services';
-import { Book, User, Tag, FileText, X } from 'lucide-react';
+import { Book, User, Tag, FileText, X, ExternalLink } from 'lucide-react';
 
 interface CitationGroupBadgeProps {
   ids: number[];
   sources: SourceData[];
 }
 
-const SourceCard: React.FC<{ source: SourceData; hasDivider: boolean }> = ({ source, hasDivider }) => (
+const SourceCard: React.FC<{
+  source: SourceData;
+  hasDivider: boolean;
+  onOpenInViewer: () => void;
+}> = ({ source, hasDivider, onOpenInViewer }) => (
   <div className={`space-y-3 ${hasDivider ? 'pt-3 border-t border-slate-700/30' : ''}`} style={{ direction: 'rtl' }}>
     <div className="flex items-center gap-2 text-sm flex-row-reverse justify-end">
       <span className="font-semibold text-slate-200">{source.book_name}</span>
@@ -39,15 +44,36 @@ const SourceCard: React.FC<{ source: SourceData; hasDivider: boolean }> = ({ sou
         {source.text}
       </p>
     </div>
+    <button
+      onClick={onOpenInViewer}
+      className="flex items-center gap-2 w-full justify-center py-1.5 rounded-lg
+                 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20
+                 text-emerald-400 text-xs font-medium transition-colors"
+      style={{ direction: 'ltr' }}
+    >
+      <ExternalLink className="w-3.5 h-3.5" />
+      Open in Book Viewer
+    </button>
   </div>
 );
 
 const CitationGroupBadge: React.FC<CitationGroupBadgeProps> = ({ sources }) => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const label = sources.length > 0
     ? [...new Set(sources.map((s) => s.book_name))].join('، ')
     : '';
+
+  const openInViewer = (source: SourceData) => {
+    setOpen(false);
+    navigate(`/books/${source.book_id}`, {
+      state: {
+        scrollToPageId: source.start_page_id,
+        scrollToPageNum: source.page_num_range?.[0],
+      },
+    });
+  };
 
   return (
     <>
@@ -80,7 +106,12 @@ const CitationGroupBadge: React.FC<CitationGroupBadgeProps> = ({ sources }) => {
             </div>
             <div className="p-4 space-y-3 overflow-y-auto">
               {sources.map((source, i) => (
-                <SourceCard key={source.id} source={source} hasDivider={i > 0} />
+                <SourceCard
+                  key={source.id}
+                  source={source}
+                  hasDivider={i > 0}
+                  onOpenInViewer={() => openInViewer(source)}
+                />
               ))}
             </div>
           </div>

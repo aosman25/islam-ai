@@ -12,7 +12,7 @@ export class BooksService {
   ) {}
 
   async findAll(query: BooksQueryDto) {
-    const { page, limit, include_toc, category_id, author_id } = query;
+    const { page, limit, include_toc, category_ids, author_ids, search } = query;
 
     const qb = this.bookRepository
       .createQueryBuilder('book')
@@ -41,12 +41,16 @@ export class BooksService {
       ]);
     }
 
-    if (category_id) {
-      qb.andWhere('book.category_id = :category_id', { category_id });
+    if (category_ids?.length) {
+      qb.andWhere('book.category_id IN (:...category_ids)', { category_ids });
     }
 
-    if (author_id) {
-      qb.andWhere('book.author_id = :author_id', { author_id });
+    if (author_ids?.length) {
+      qb.andWhere('book.author_id IN (:...author_ids)', { author_ids });
+    }
+
+    if (search) {
+      qb.andWhere('book.book_name ILIKE :search', { search: `%${search}%` });
     }
 
     qb.orderBy('book.book_name', 'ASC')

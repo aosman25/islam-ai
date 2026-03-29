@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   Database,
   MessageSquare,
@@ -8,7 +8,8 @@ import {
   Sparkles,
   Activity,
   PanelLeft,
-  Zap
+  Zap,
+  BookOpen,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -23,6 +24,7 @@ const navItems = [
   { path: '/embed', icon: Braces, label: 'Embed', description: 'Embeddings', color: 'amber' },
   { path: '/optimizer', icon: Sparkles, label: 'Optimizer', description: 'Query Enhancement', color: 'rose' },
   { path: '/health', icon: Activity, label: 'Health', description: 'All Services', color: 'blue' },
+  { path: '/books', icon: BookOpen, label: 'Books', description: 'Islamic Library', color: 'teal' },
 ];
 
 const colorMap: Record<string, { active: string; icon: string; dot: string }> = {
@@ -56,10 +58,18 @@ const colorMap: Record<string, { active: string; icon: string; dot: string }> = 
     icon: 'text-blue-400',
     dot: 'bg-blue-400',
   },
+  teal: {
+    active: 'text-teal-400 bg-teal-500/10 border-teal-500/50',
+    icon: 'text-teal-400',
+    dot: 'bg-teal-400',
+  },
 };
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+  // Routes that manage their own scroll and need no padding / max-width
+  const isFullscreen = /^\/books\/.+/.test(location.pathname);
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -165,8 +175,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 p-3 sm:p-6 overflow-auto w-full min-h-[calc(100vh-65px)]">
-          <div className="max-w-7xl mx-auto animate-fade-in">
+        <main className={`w-full ${isFullscreen
+          ? 'overflow-hidden h-[calc(100vh-53px)] sm:h-[calc(100vh-65px)]'
+          : 'flex-1 p-3 sm:p-6 overflow-auto min-h-[calc(100vh-65px)]'}`}>
+          <div className={isFullscreen ? 'h-full' : 'max-w-7xl mx-auto animate-fade-in'}>
             {children}
           </div>
         </main>

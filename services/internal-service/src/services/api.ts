@@ -13,6 +13,12 @@ import type {
   HealthResponse,
   PartitionsResponse,
   GatewayStreamChunk,
+  Book,
+  BookPage,
+  BooksQuery,
+  PaginatedResponse,
+  Author,
+  Category,
 } from '../types/services';
 import { SERVICES } from '../types/services';
 
@@ -292,6 +298,69 @@ class ApiService {
   async queryOptimizerReady(): Promise<HealthResponse> {
     try {
       const response = await this.clients.queryOptimizer.get<HealthResponse>('/ready');
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  // Master Server - Books & Pages
+  async getBooks(query: BooksQuery = {}): Promise<PaginatedResponse<Book>> {
+    const params = new URLSearchParams();
+    if (query.page) params.set('page', String(query.page));
+    if (query.limit) params.set('limit', String(query.limit));
+    if (query.include_toc) params.set('include_toc', 'true');
+    if (query.author_ids?.length) params.set('author_ids', query.author_ids.join(','));
+    if (query.category_ids?.length) params.set('category_ids', query.category_ids.join(','));
+    if (query.search) params.set('search', query.search);
+    try {
+      const response = await this.clients.master.get<PaginatedResponse<Book>>(
+        `/books?${params.toString()}`
+      );
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async getBook(id: number): Promise<Book> {
+    try {
+      const response = await this.clients.master.get<Book>(`/books/${id}?include_toc=true`);
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async getBookPages(
+    bookId: number,
+    page = 1,
+    limit = 20
+  ): Promise<PaginatedResponse<BookPage>> {
+    try {
+      const response = await this.clients.master.get<PaginatedResponse<BookPage>>(
+        `/books/${bookId}/pages?page=${page}&limit=${limit}`
+      );
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async getAuthors(): Promise<Author[]> {
+    try {
+      const response = await this.clients.master.get<PaginatedResponse<Author>>(
+        '/authors?limit=1000'
+      );
+      return response.data.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async getCategories(): Promise<Category[]> {
+    try {
+      const response = await this.clients.master.get<Category[]>('/categories');
       return response.data;
     } catch (error) {
       return this.handleError(error);
