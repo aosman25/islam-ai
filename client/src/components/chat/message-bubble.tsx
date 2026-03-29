@@ -1,83 +1,138 @@
 "use client";
 
+import { useMemo } from "react";
 import type { ChatMessage } from "@/types";
+import type { SourceData } from "@/types";
 import { cn, detectDirection } from "@/lib/utils";
 import { User, Bot } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { CitationRenderer, SourcesPanel } from "./citation-renderer";
+import {
+  stripIncompleteCitation,
+  CitationRenderer,
+  SourcesPanel,
+} from "./citation-renderer";
 
 interface MessageBubbleProps {
   message: ChatMessage;
+}
+
+function processChildren(
+  children: React.ReactNode,
+  sources: SourceData[],
+  isStreaming: boolean
+): React.ReactNode {
+  if (!Array.isArray(children)) {
+    if (typeof children === "string") {
+      return (
+        <CitationRenderer
+          text={children}
+          sources={sources}
+          isStreaming={isStreaming}
+        />
+      );
+    }
+    return children;
+  }
+
+  return children.map((child, i) => {
+    if (typeof child === "string") {
+      return (
+        <CitationRenderer
+          key={i}
+          text={child}
+          sources={sources}
+          isStreaming={isStreaming}
+        />
+      );
+    }
+    return child;
+  });
 }
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const dir = detectDirection(message.content);
 
-  return (
-    <div
-      className={cn(
-        "flex gap-3 animate-slide-up",
-        isUser ? "justify-end" : "justify-start"
-      )}
-    >
-      {/* Assistant avatar */}
-      {!isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-gold-700 flex items-center justify-center shadow-soft mt-1">
-          <Bot size={16} className="text-white" />
-        </div>
-      )}
+  const displayContent = useMemo(() => {
+    if (message.isStreaming) {
+      return stripIncompleteCitation(message.content);
+    }
+    return message.content;
+  }, [message.content, message.isStreaming]);
 
-      {/* Message content */}
-      <div
-        className={cn(
-          "max-w-[80%] md:max-w-[70%] rounded-2xl px-5 py-4",
-          isUser
-            ? "bg-gradient-to-br from-gold-600 to-gold-700 text-white rounded-tr-md shadow-md"
-            : "bg-card border border-border/50 text-ink-800 rounded-tl-md shadow-soft"
-        )}
-      >
-        {isUser ? (
-          <p
-            className="text-sm leading-relaxed whitespace-pre-wrap"
-            dir={dir}
-            style={{ textAlign: dir === "rtl" ? "right" : "left" }}
-          >
+  const hasCitations =
+    !isUser && message.sources && message.sources.length > 0;
+  const isStreaming = !!message.isStreaming;
+
+  // User message: right-aligned, compact grey bubble
+  if (isUser) {
+    return (
+      <div className="flex justify-end animate-slide-up">
+        <bdi
+          className="flex flex-col gap-1 bg-muted text-foreground rounded-3xl px-4 py-2 font-medium max-w-[80%] md:max-w-[70%]"
+          dir={dir}
+        >
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">
             {message.content}
           </p>
-        ) : (
-          <div className="chat-markdown text-sm">
-            {message.sources && message.sources.length > 0 ? (
-              <CitationRenderer
-                content={message.content}
-                sources={message.sources}
-              />
-            ) : (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {message.content}
-              </ReactMarkdown>
-            )}
+        </bdi>
+      </div>
+    );
+  }
 
-            {/* Streaming cursor */}
-            {message.isStreaming && (
-              <span className="inline-block w-2 h-4 bg-gold-500 ml-0.5 animate-pulse-gentle rounded-sm" />
-            )}
-          </div>
-        )}
-
-        {/* Sources */}
-        {!isUser && message.sources && message.sources.length > 0 && (
-          <SourcesPanel sources={message.sources} />
-        )}
+  // Assistant message: full-width, no bubble
+  return (
+    <div className="flex gap-3 animate-slide-up">
+      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-gold-700 flex items-center justify-center shadow-soft mt-1">
+        <Bot size={16} className="text-white" />
       </div>
 
-      {/* User avatar */}
-      {isUser && (
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-parchment-200 flex items-center justify-center mt-1">
-          <User size={16} className="text-ink-500" />
+      <div className="flex-1 min-w-0 pt-1">
+        <div
+          className="chat-markdown text-sm text-ink-800"
+          style={{
+            direction: dir,
+            textAlign: dir === "rtl" ? "right" : "left",
+          }}
+        >
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={
+              hasCitations
+                ? {
+                    p: ({ children }) => (
+                      <p>
+                        {processChildren(
+                          children,
+                          message.sources!,
+                          isStreaming
+                        )}
+                      </p>
+                    ),
+                    li: ({ children }) => (
+                      <li>
+                        {processChildren(
+                          children,
+                          message.sources!,
+                          isStreaming
+                        )}
+                      </li>
+                    ),
+                  }
+                : undefined
+            }
+          >
+            {displayContent}
+          </ReactMarkdown>
+
+          {message.isStreaming && (
+            <span className="inline-block w-2 h-4 bg-gold-500 ml-0.5 animate-pulse-gentle rounded-sm" />
+          )}
         </div>
-      )}
+
+        {hasCitations && <SourcesPanel sources={message.sources!} />}
+      </div>
     </div>
   );
 }
@@ -88,8 +143,8 @@ export function TypingIndicator() {
       <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-gold-700 flex items-center justify-center shadow-soft">
         <Bot size={16} className="text-white" />
       </div>
-      <div className="bg-card border border-border/50 rounded-2xl rounded-tl-md px-5 py-4 shadow-soft">
-        <div className="flex items-center gap-1.5">
+      <div className="pt-1">
+        <div className="flex items-center gap-1.5 py-2">
           <span className="typing-dot" />
           <span className="typing-dot" />
           <span className="typing-dot" />

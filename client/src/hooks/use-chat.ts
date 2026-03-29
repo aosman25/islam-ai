@@ -72,9 +72,11 @@ export function useChat() {
         {
           query: content.trim(),
           stream: true,
-          top_k: 10,
-          temperature: 0.7,
-          max_tokens: 4096,
+          top_k: 20,
+          temperature: 1,
+          max_tokens: 65536,
+          reranker: "RRF",
+          reranker_params: [60],
         },
         // onChunk
         (chunk: GatewayStreamChunk) => {

@@ -68,9 +68,14 @@ function ChatPageInner() {
     }
   }, [initialQuery, sendMessage]);
 
-  // Auto-scroll to bottom
+  // Scroll to bottom only when user sends a new message, not during streaming
+  const prevMsgCount = useRef(0);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const userMsgCount = messages.filter((m) => m.role === "user").length;
+    if (userMsgCount > prevMsgCount.current) {
+      prevMsgCount.current = userMsgCount;
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   // Auto-resize textarea
