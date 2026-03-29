@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
+import { flushSync } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
 import type { Book, BookPage } from '../types/services';
@@ -149,7 +150,7 @@ interface TocNodeProps {
   node: TocEntry;
   depth: number;
   activeTocId: number;
-  onNavigate: (pageId: number) => void;
+  onNavigate: (pageId: number, tocId: number) => void;
 }
 
 const TocNode: React.FC<TocNodeProps> = ({ node, depth, activeTocId, onNavigate }) => {
@@ -162,7 +163,7 @@ const TocNode: React.FC<TocNodeProps> = ({ node, depth, activeTocId, onNavigate 
       <button
         onClick={() => {
           if (hasChildren) setOpen(o => !o);
-          onNavigate(node.page_id);
+          onNavigate(node.page_id, node.id);
         }}
         className={`w-full flex items-start gap-1.5 rounded-md px-2 py-1.5 text-right transition-colors duration-150 group
           ${isActive
@@ -229,9 +230,8 @@ export const BookViewer: React.FC = () => {
   const bookId = Number(id);
 
   // Deep-link navigation state from citation
-  const scrollState = (location.state as { scrollToPageId?: number; pageOffset?: number } | null);
+  const scrollState = (location.state as { scrollToPageId?: number } | null);
   const initialScrollPageId = scrollState?.scrollToPageId ?? null;
-  const initialPageOffset = scrollState?.pageOffset ?? null;
 
   const [book, setBook] = useState<Book | null>(null);
   const [bookLoading, setBookLoading] = useState(true);
@@ -240,19 +240,22 @@ export const BookViewer: React.FC = () => {
 
   const [pages, setPages] = useState<BookPage[]>([]);
   const [pagesTotal, setPagesTotal] = useState(0);
-  // Offset cursors for infinite scroll: next loads forward, prev loads backward
-  const [nextOffset, setNextOffset] = useState(initialPageOffset ?? 0);
-  const [prevOffset, setPrevOffset] = useState(initialPageOffset != null ? initialPageOffset - PAGE_LIMIT : -1);
+  const [nextOffset, setNextOffset] = useState(0);
+  const [prevOffset, setPrevOffset] = useState(-1);
   const [loadingNext, setLoadingNext] = useState(false);
   const [loadingPrev, setLoadingPrev] = useState(false);
   const [allNextLoaded, setAllNextLoaded] = useState(false);
   const [seekingPage, setSeekingPage] = useState(initialScrollPageId !== null);
+  const navigatingRef = useRef(false);
 
   const [tocTree, setTocTree] = useState<TocEntry[]>([]);
   const [flatToc, setFlatToc] = useState<Omit<TocEntry, 'children'>[]>([]);
   const [activePageId, setActivePageId] = useState(0);
 
-  // Single active TOC entry: highest page_id entry whose page_id ≤ current visible page
+  const [clickedTocId, setClickedTocId] = useState(0);
+
+  // Active TOC entry: highest page_id ≤ current visible page.
+  // When multiple entries share the same page_id, prefer the one the user clicked.
   const activeTocId = useMemo(() => {
     if (!activePageId || !flatToc.length) return 0;
     let bestId = 0;
@@ -263,14 +266,20 @@ export const BookViewer: React.FC = () => {
         bestId = e.id;
       }
     }
+    // If the user clicked a TOC entry on the same page, prefer it
+    if (clickedTocId) {
+      const clicked = flatToc.find(e => e.id === clickedTocId);
+      if (clicked && clicked.page_id === bestPageId) {
+        bestId = clickedTocId;
+      }
+    }
     return bestId;
-  }, [activePageId, flatToc]);
+  }, [activePageId, flatToc, clickedTocId]);
 
   const [tocWidth, setTocWidth] = useState(256);
   const [isDragging, setIsDragging] = useState(false);
 
-  // pendingScrollRef is seeded directly from location state (no extra effect needed)
-  const pendingScrollRef = useRef<number | null>(initialScrollPageId);
+  const initialNavDone = useRef(false);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
   const readerRef = useRef<HTMLDivElement>(null);
@@ -303,10 +312,11 @@ export const BookViewer: React.FC = () => {
 
   // ── Fetch next batch (downward append) ─────────────────────────────────
   const fetchNextBatch = useCallback(async () => {
-    if (loadingNext || allNextLoaded) return;
+    if (navigatingRef.current || loadingNext || allNextLoaded) return;
     setLoadingNext(true);
     try {
       const result = await apiService.getBookPages(bookId, { offset: nextOffset, limit: PAGE_LIMIT });
+      if (navigatingRef.current) return;
       const newPages = result.data.filter(p => !loadedPageIds.current.has(p.page_id));
       newPages.forEach(p => loadedPageIds.current.add(p.page_id));
       setPages(prev => [...prev, ...newPages]);
@@ -320,12 +330,13 @@ export const BookViewer: React.FC = () => {
 
   // ── Fetch prev batch (upward prepend) ──────────────────────────────────
   const fetchPrevBatch = useCallback(async () => {
-    if (loadingPrev || prevOffset < 0) return;
+    if (navigatingRef.current || loadingPrev || prevOffset < 0) return;
     setLoadingPrev(true);
     try {
       const actualOffset = Math.max(0, prevOffset);
       const limit = prevOffset >= 0 ? PAGE_LIMIT : PAGE_LIMIT + prevOffset;
       const result = await apiService.getBookPages(bookId, { offset: actualOffset, limit });
+      if (navigatingRef.current) return;
       const newPages = result.data.filter(p => !loadedPageIds.current.has(p.page_id));
       newPages.forEach(p => loadedPageIds.current.add(p.page_id));
       if (newPages.length > 0) {
@@ -373,24 +384,6 @@ export const BookViewer: React.FC = () => {
     prependScrollRef.current = null;
   }, [pages]);
 
-  // ── After pages update: resolve pending deep-link scroll ────────────────
-  useEffect(() => {
-    const target = pendingScrollRef.current;
-    if (target === null || !readerRef.current) return;
-    const el = readerRef.current.querySelector(`#page-${target}`) as HTMLElement | null;
-    if (el) {
-      el.scrollIntoView({ block: 'start' });
-      pendingScrollRef.current = null;
-      setSeekingPage(false);
-    } else if (pages.length === 0) {
-      // Still loading — wait for pages
-    } else {
-      // Pages loaded but target not found — give up
-      pendingScrollRef.current = null;
-      setSeekingPage(false);
-    }
-  }, [pages]);
-
   // ── Track active page via scroll ─────────────────────────────────────────
   useEffect(() => {
     const reader = readerRef.current;
@@ -404,7 +397,12 @@ export const BookViewer: React.FC = () => {
         if (relTop <= 80) activeId = Number(anchor.getAttribute('data-page-id'));
         else break;
       }
-      if (activeId) setActivePageId(activeId);
+      if (activeId) {
+        setActivePageId(prev => {
+          if (prev !== activeId) setClickedTocId(0);
+          return activeId;
+        });
+      }
     };
     reader.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
@@ -412,16 +410,40 @@ export const BookViewer: React.FC = () => {
   }, [pages]);
 
   // ── Navigate from TOC click ─────────────────────────────────────────────
-  const navigateToPage = useCallback((pageId: number) => {
+  const navigateToPage = useCallback(async (pageId: number) => {
     if (!readerRef.current) return;
     const el = readerRef.current.querySelector(`#page-${pageId}`) as HTMLElement | null;
     if (el) {
       el.scrollIntoView({ block: 'start' });
-    } else {
-      pendingScrollRef.current = pageId;
-      bottomSentinelRef.current?.scrollIntoView({ block: 'end' });
+      return;
     }
-  }, []);
+    navigatingRef.current = true;
+    setSeekingPage(true);
+    try {
+      const result = await apiService.getBookPages(bookId, { startPageId: pageId, limit: PAGE_LIMIT });
+      loadedPageIds.current.clear();
+      result.data.forEach(p => loadedPageIds.current.add(p.page_id));
+      const offset = result.offset;
+      flushSync(() => {
+        setPages(result.data);
+        setPagesTotal(result.total);
+        setNextOffset(offset + PAGE_LIMIT);
+        setPrevOffset(offset - PAGE_LIMIT);
+        setAllNextLoaded(offset + PAGE_LIMIT >= result.total);
+        setSeekingPage(false);
+      });
+      const target = readerRef.current?.querySelector(`#page-${pageId}`) as HTMLElement | null;
+      target?.scrollIntoView({ block: 'start' });
+    } catch { /* ignore */ }
+    finally { requestAnimationFrame(() => { navigatingRef.current = false; }); }
+  }, [bookId]);
+
+  // ── Initial deep-link navigation (citation) ─────────────────────────────
+  useEffect(() => {
+    if (!initialScrollPageId || initialNavDone.current) return;
+    initialNavDone.current = true;
+    navigateToPage(initialScrollPageId);
+  }, [initialScrollPageId, navigateToPage]);
 
   // ── Resize handler ──────────────────────────────────────────────────────
   const onResizeMouseDown = useCallback((e: React.MouseEvent) => {
@@ -600,7 +622,7 @@ export const BookViewer: React.FC = () => {
                   node={root}
                   depth={0}
                   activeTocId={activeTocId}
-                  onNavigate={navigateToPage}
+                  onNavigate={(pageId, tocId) => { setClickedTocId(tocId); navigateToPage(pageId); }}
                 />
               ))}
             </div>

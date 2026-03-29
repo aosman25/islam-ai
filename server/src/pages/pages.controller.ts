@@ -13,7 +13,11 @@ export class PagesController {
   async findByBook(
     @Param('bookId', ParseIntPipe) bookId: number,
     @Query() query: PaginationQueryDto,
+    @Query('start_page_id') startPageId?: string,
   ) {
+    if (startPageId) {
+      return this.pagesService.findByBookFromPageId(bookId, parseInt(startPageId, 10), query.limit);
+    }
     return this.pagesService.findByBook(bookId, query);
   }
 }

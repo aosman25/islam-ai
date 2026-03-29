@@ -82,7 +82,6 @@ const CitationGroupBadge: React.FC<CitationGroupBadgeProps> = ({ sources }) => {
     navigate(`/books/${source.book_id}`, {
       state: {
         scrollToPageId: source.start_page_id,
-        pageOffset: source.start_page_id - 1,
       },
     });
   };
