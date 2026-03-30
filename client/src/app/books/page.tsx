@@ -7,6 +7,8 @@ import { Footer } from "@/components/layout/footer";
 import { Spinner } from "@/components/ui/spinner";
 import { cn, detectDirection } from "@/lib/utils";
 import { getBooks, getAuthors, getCategories } from "@/lib/api";
+import { FilterSearchInput } from "@/components/ui/filter-search-input";
+import { GeometricPattern } from "@/components/ui/geometric-pattern";
 import type { Book, Author, Category } from "@/types";
 import {
   Search,
@@ -126,10 +128,15 @@ export default function BooksPage() {
   const [selectedAuthors, setSelectedAuthors] = useState<number[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [authorSearch, setAuthorSearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
   const [view, setView] = useState<"list" | "grid">("list");
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const limit = 20;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [page]);
 
   const loadBooks = useCallback(async () => {
     setLoading(true);
@@ -175,6 +182,10 @@ export default function BooksPage() {
     a.name.toLowerCase().includes(authorSearch.toLowerCase())
   );
 
+  const filteredCategories = categories.filter((c) =>
+    c.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
   const filtersContent = (
     <>
       {/* Categories */}
@@ -183,12 +194,18 @@ export default function BooksPage() {
         icon={Tag}
         onClear={() => {
           setSelectedCategories([]);
+          setCategorySearch("");
           setPage(1);
         }}
         showClear={selectedCategories.length > 0}
       >
+        <FilterSearchInput
+          value={categorySearch}
+          onChange={setCategorySearch}
+          placeholder="Search categories..."
+        />
         <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-          {categories.map((c) => (
+          {(categorySearch ? filteredCategories : categories).map((c) => (
             <label
               key={c.id}
               className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/60 cursor-pointer transition-colors"
@@ -204,7 +221,7 @@ export default function BooksPage() {
                   );
                   setPage(1);
                 }}
-                className="rounded border-border text-primary focus:ring-primary h-4 w-4"
+                className="rounded border-border text-primary focus:ring-0 focus:ring-offset-0 h-4 w-4"
               />
               <span
                 className="text-sm text-foreground truncate flex-1"
@@ -214,6 +231,11 @@ export default function BooksPage() {
               </span>
             </label>
           ))}
+          {categorySearch && filteredCategories.length === 0 && (
+            <p className="text-xs text-muted-foreground px-2 py-2">
+              No categories found
+            </p>
+          )}
         </div>
       </FilterSection>
 
@@ -228,51 +250,12 @@ export default function BooksPage() {
         }}
         showClear={selectedAuthors.length > 0}
       >
-        {/* Author search input */}
-        <div className="relative mb-3">
-          <Search
-            size={13}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-          <input
-            type="text"
-            value={authorSearch}
-            onChange={(e) => setAuthorSearch(e.target.value)}
-            placeholder="Search authors..."
-            dir={detectDirection(authorSearch)}
-            className="w-full pl-8 pr-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/30 transition-all"
-          />
-        </div>
+        <FilterSearchInput
+          value={authorSearch}
+          onChange={setAuthorSearch}
+          placeholder="Search authors..."
+        />
 
-        {/* Selected authors chips */}
-        {selectedAuthors.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {selectedAuthors.map((authorId) => {
-              const author = authors.find((a) => a.id === authorId);
-              if (!author) return null;
-              return (
-                <span
-                  key={authorId}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-primary text-xs font-medium"
-                  dir={detectDirection(author.name)}
-                >
-                  {author.name}
-                  <button
-                    onClick={() => {
-                      setSelectedAuthors((prev) =>
-                        prev.filter((id) => id !== authorId)
-                      );
-                      setPage(1);
-                    }}
-                    className="hover:text-destructive"
-                  >
-                    <X size={10} />
-                  </button>
-                </span>
-              );
-            })}
-          </div>
-        )}
 
         {/* Author list */}
         <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
@@ -292,7 +275,7 @@ export default function BooksPage() {
                   );
                   setPage(1);
                 }}
-                className="rounded border-border text-primary focus:ring-primary h-4 w-4"
+                className="rounded border-border text-primary focus:ring-0 focus:ring-offset-0 h-4 w-4"
               />
               <span
                 className="text-sm text-foreground truncate flex-1"
@@ -318,14 +301,17 @@ export default function BooksPage() {
 
       <main className="flex-1">
         {/* Header */}
-        <div className="bg-muted/40 border-b border-border">
-          <div className="mx-auto max-w-7xl px-page py-10 md:py-14">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+        <div className="relative overflow-hidden border-b border-border bg-gradient-to-b from-muted/60 via-muted/30 to-background">
+          <div className="absolute inset-0 opacity-[0.05]">
+            <GeometricPattern />
+          </div>
+
+          <div className="relative mx-auto max-w-7xl px-page py-12 md:py-16">
+            <h1 className="text-3xl md:text-4xl font-heading font-bold text-foreground">
               Islamic Library
             </h1>
-            <p className="text-muted-foreground mt-2">
-              Browse {total > 0 ? total.toLocaleString() : ""} scholarly works
-              across centuries of Islamic scholarship.
+            <p className="text-muted-foreground mt-2 max-w-lg">
+              Browse 2,500+ scholarly works across centuries of Islamic scholarship.
             </p>
           </div>
         </div>
@@ -354,7 +340,7 @@ export default function BooksPage() {
                     onChange={(e) => setSearchInput(e.target.value)}
                     placeholder="Search books by title..."
                     dir={detectDirection(searchInput)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/30 focus:shadow-sm transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border-none bg-card text-sm text-foreground placeholder:text-muted-foreground !outline-none !ring-0 focus:shadow-md transition-all"
                   />
                 </div>
 
@@ -388,26 +374,6 @@ export default function BooksPage() {
                 </button>
               </div>
 
-              {/* Active filters summary */}
-              {activeFilters > 0 && (
-                <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground">
-                  <span>
-                    {activeFilters} filter{activeFilters !== 1 ? "s" : ""} active
-                  </span>
-                  <button
-                    onClick={() => {
-                      setSelectedAuthors([]);
-                      setSelectedCategories([]);
-                      setAuthorSearch("");
-                      setPage(1);
-                    }}
-                    className="text-destructive hover:text-destructive/80 flex items-center gap-1"
-                  >
-                    <X size={10} />
-                    Clear all
-                  </button>
-                </div>
-              )}
 
               {/* Results */}
               {loading ? (
@@ -716,7 +682,7 @@ function BookGridCard({ book }: { book: Book }) {
       href={`/books/${book.book_id}`}
       className="group relative block w-full"
     >
-      <div className="transition-transform duration-300 group-hover:scale-[1.02] group-hover:shadow-lg rounded-md">
+      <div className="transition-all duration-300 group-hover:scale-[1.02] rounded-md p-1 group-hover:bg-muted">
         <BookCover book={book} />
       </div>
     </Link>
@@ -734,7 +700,7 @@ function BookListCard({ book }: { book: Book }) {
   return (
     <Link
       href={`/books/${book.book_id}`}
-      className="group w-full border-b border-border bg-transparent px-2 py-4 transition-colors hover:bg-secondary/50 dark:hover:bg-secondary/20 sm:px-3"
+      className="group w-full border-b border-border bg-transparent px-2 py-4 transition-colors hover:bg-muted sm:px-3"
     >
         {/* Title */}
         <h3

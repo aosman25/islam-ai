@@ -264,7 +264,6 @@
   }
   html {
     font-size: 14px;
-    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -273,7 +272,11 @@
 *:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
 }
 
 ::selection {
