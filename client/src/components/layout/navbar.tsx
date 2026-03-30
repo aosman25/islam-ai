@@ -6,7 +6,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  Search,
   MessageSquare,
   BookOpen,
   Menu,
@@ -17,7 +16,6 @@ import {
 const NAV_LINKS = [
   { href: "/chat", label: "Chat", icon: MessageSquare },
   { href: "/books", label: "Library", icon: BookOpen },
-  { href: "/search", label: "Search", icon: Search },
 ];
 
 export function Navbar() {
