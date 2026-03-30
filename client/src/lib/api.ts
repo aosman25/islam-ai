@@ -138,11 +138,18 @@ export async function getBookPages(
 }
 
 export async function getAuthors(): Promise<Author[]> {
-  const res = await apiFetch<PaginatedResponse<Author>>(
-    MASTER_BASE,
-    "/authors?limit=1000"
-  );
-  return res.data;
+  const all: Author[] = [];
+  let page = 1;
+  while (true) {
+    const res = await apiFetch<PaginatedResponse<Author>>(
+      MASTER_BASE,
+      `/authors?limit=100&page=${page}`
+    );
+    all.push(...res.data);
+    if (all.length >= res.total) break;
+    page++;
+  }
+  return all;
 }
 
 export async function getCategories(): Promise<Category[]> {

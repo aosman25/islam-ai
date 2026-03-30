@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
@@ -36,65 +36,227 @@ const CATEGORIES = [
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Islamic 8-fold geometric SVG for hero backdrop                     */
+/*  Islamic geometric pattern — interlocking stars & arabesques        */
 /* ------------------------------------------------------------------ */
 function GeometricPattern() {
+  // Tile size for the repeating unit
+  const S = 120;
+  const H = S / 2; // 60 — center
+  // Points for an 8-pointed star (two overlapping squares rotated 45°)
+  const r1 = S * 0.42; // outer star radius
+  const r2 = S * 0.18; // inner notch radius
+  const starPoints: string[] = [];
+  for (let i = 0; i < 8; i++) {
+    const angle = (Math.PI / 4) * i - Math.PI / 2;
+    const r = i % 2 === 0 ? r1 : r2;
+    starPoints.push(`${H + r * Math.cos(angle)},${H + r * Math.sin(angle)}`);
+  }
+  const starPath = `M${starPoints.join("L")}Z`;
+
+  // Inner rosette petals (8 arcs radiating from center)
+  const petalR = S * 0.13;
+  const petalPaths: string[] = [];
+  for (let i = 0; i < 8; i++) {
+    const a1 = (Math.PI / 4) * i - Math.PI / 8;
+    const a2 = (Math.PI / 4) * i + Math.PI / 8;
+    const x1 = H + petalR * 1.8 * Math.cos(a1);
+    const y1 = H + petalR * 1.8 * Math.sin(a1);
+    const x2 = H + petalR * 1.8 * Math.cos(a2);
+    const y2 = H + petalR * 1.8 * Math.sin(a2);
+    petalPaths.push(`M${H},${H} L${x1},${y1} A${petalR},${petalR} 0 0,1 ${x2},${y2} Z`);
+  }
+
   return (
     <svg
       className="absolute inset-0 w-full h-full"
-      viewBox="0 0 800 800"
+      viewBox="0 0 960 960"
       preserveAspectRatio="xMidYMid slice"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
-          {/* 8-pointed star at each intersection */}
-          <path
-            d="M50 10 L58 30 L78 22 L70 42 L90 50 L70 58 L78 78 L58 70 L50 90 L42 70 L22 78 L30 58 L10 50 L30 42 L22 22 L42 30 Z"
+        <pattern id="islamic-geo" width={S} height={S} patternUnits="userSpaceOnUse">
+          {/* 8-pointed star outline */}
+          <polygon
+            points={starPoints.join(" ")}
             stroke="currentColor"
-            strokeWidth="0.5"
+            strokeWidth="0.6"
             fill="none"
           />
-          {/* Inner octagon */}
-          <path
-            d="M50 25 L65 35 L75 50 L65 65 L50 75 L35 65 L25 50 L35 35 Z"
+          {/* Second star layer rotated 22.5° for complexity */}
+          <polygon
+            points={starPoints.join(" ")}
             stroke="currentColor"
             strokeWidth="0.3"
             fill="none"
+            transform={`rotate(22.5 ${H} ${H})`}
           />
-          {/* Connecting lines */}
-          <line x1="50" y1="0" x2="50" y2="10" stroke="currentColor" strokeWidth="0.3" />
-          <line x1="50" y1="90" x2="50" y2="100" stroke="currentColor" strokeWidth="0.3" />
-          <line x1="0" y1="50" x2="10" y2="50" stroke="currentColor" strokeWidth="0.3" />
-          <line x1="90" y1="50" x2="100" y2="50" stroke="currentColor" strokeWidth="0.3" />
+          {/* Inner rosette petals */}
+          {petalPaths.map((d, i) => (
+            <path key={i} d={d} stroke="currentColor" strokeWidth="0.35" fill="none" />
+          ))}
+          {/* Central circle */}
+          <circle cx={H} cy={H} r={S * 0.05} stroke="currentColor" strokeWidth="0.5" fill="none" />
+          {/* Outer interlocking circle */}
+          <circle cx={H} cy={H} r={S * 0.38} stroke="currentColor" strokeWidth="0.25" fill="none" strokeDasharray="3 5" />
+          {/* Corner connectors — lines from tile edges toward center star */}
+          <line x1={0} y1={0} x2={H - r1 * 0.7} y2={H - r1 * 0.7} stroke="currentColor" strokeWidth="0.25" />
+          <line x1={S} y1={0} x2={H + r1 * 0.7} y2={H - r1 * 0.7} stroke="currentColor" strokeWidth="0.25" />
+          <line x1={0} y1={S} x2={H - r1 * 0.7} y2={H + r1 * 0.7} stroke="currentColor" strokeWidth="0.25" />
+          <line x1={S} y1={S} x2={H + r1 * 0.7} y2={H + r1 * 0.7} stroke="currentColor" strokeWidth="0.25" />
+          {/* Edge midpoint connectors */}
+          <line x1={H} y1={0} x2={H} y2={H - r1} stroke="currentColor" strokeWidth="0.3" />
+          <line x1={H} y1={S} x2={H} y2={H + r1} stroke="currentColor" strokeWidth="0.3" />
+          <line x1={0} y1={H} x2={H - r1} y2={H} stroke="currentColor" strokeWidth="0.3" />
+          <line x1={S} y1={H} x2={H + r1} y2={H} stroke="currentColor" strokeWidth="0.3" />
         </pattern>
+        {/* Radial fade so pattern is strongest at center */}
+        <radialGradient id="geo-fade" cx="50%" cy="50%" r="70%">
+          <stop offset="0%" stopColor="white" stopOpacity="1" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </radialGradient>
+        <mask id="geo-mask">
+          <rect width="960" height="960" fill="url(#geo-fade)" />
+        </mask>
       </defs>
-      <rect width="800" height="800" fill="url(#grid)" className="text-primary" />
+      <rect
+        width="960"
+        height="960"
+        fill="url(#islamic-geo)"
+        className="text-primary"
+        mask="url(#geo-mask)"
+      />
     </svg>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Floating decorative arcs                                           */
+/*  Animated hero background — drifting geometric particle mesh        */
 /* ------------------------------------------------------------------ */
-function FloatingArcs() {
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;          // base radius
+  phase: number;      // for pulsing
+  speed: number;      // pulse speed
+}
+
+function AnimatedHeroBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particles = useRef<Particle[]>([]);
+  const raf = useRef<number>(0);
+  const dpr = useRef(1);
+
+  const initParticles = useCallback((w: number, h: number) => {
+    const count = Math.min(Math.floor((w * h) / 16000), 70);
+    const arr: Particle[] = [];
+    for (let i = 0; i < count; i++) {
+      arr.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: (Math.random() - 0.5) * 0.6,
+        r: Math.random() * 2 + 1.2,
+        phase: Math.random() * Math.PI * 2,
+        speed: Math.random() * 0.6 + 0.4,
+      });
+    }
+    particles.current = arr;
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    dpr.current = window.devicePixelRatio || 1;
+
+    const resize = () => {
+      const rect = canvas.parentElement!.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      canvas.width = w * dpr.current;
+      canvas.height = h * dpr.current;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr.current, 0, 0, dpr.current, 0, 0);
+      initParticles(w, h);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    // Green that matches the primary theme color
+    const dotColor = "rgba(56,142,60,";
+    const lineColor = "rgba(56,142,60,";
+    const CONNECTION_DIST = 180;
+
+    const draw = (t: number) => {
+      const w = canvas.width / dpr.current;
+      const h = canvas.height / dpr.current;
+      ctx.clearRect(0, 0, w, h);
+
+      const pts = particles.current;
+
+      // Update positions
+      for (const p of pts) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < -10) p.x = w + 10;
+        if (p.x > w + 10) p.x = -10;
+        if (p.y < -10) p.y = h + 10;
+        if (p.y > h + 10) p.y = -10;
+      }
+
+      // Draw connections
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const dx = pts[i].x - pts[j].x;
+          const dy = pts[i].y - pts[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < CONNECTION_DIST) {
+            const alpha = (1 - dist / CONNECTION_DIST) * 0.35;
+            ctx.strokeStyle = `${lineColor}${alpha})`;
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x, pts[i].y);
+            ctx.lineTo(pts[j].x, pts[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw dots
+      for (const p of pts) {
+        const pulse = Math.sin(t * 0.001 * p.speed + p.phase) * 0.3 + 0.7;
+        const alpha = 0.55 * pulse;
+        ctx.fillStyle = `${dotColor}${alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * (0.8 + pulse * 0.4), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      raf.current = requestAnimationFrame(draw);
+    };
+
+    raf.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(raf.current);
+      window.removeEventListener("resize", resize);
+    };
+  }, [initParticles]);
+
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-      {/* Top-right arc cluster */}
-      <svg
-        className="absolute -top-20 -right-20 w-[500px] h-[500px] text-primary/[0.06] animate-spin-slow"
-        viewBox="0 0 400 400"
-        fill="none"
-      >
-        <circle cx="200" cy="200" r="180" stroke="currentColor" strokeWidth="0.8" />
-        <circle cx="200" cy="200" r="150" stroke="currentColor" strokeWidth="0.5" strokeDasharray="8 12" />
-        <circle cx="200" cy="200" r="120" stroke="currentColor" strokeWidth="0.5" />
-      </svg>
-      {/* Bottom-left glow */}
-      <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/[0.04] blur-[100px]" />
-      {/* Top accent glow */}
-      <div className="absolute -top-20 left-1/3 w-[400px] h-[300px] rounded-full bg-secondary/[0.05] blur-[80px]" />
+    <div className="absolute inset-0 pointer-events-none" aria-hidden>
+      <canvas ref={canvasRef} className="absolute inset-0" />
+      {/* Ambient glows */}
+      <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/[0.08] blur-[100px] animate-[float_8s_ease-in-out_infinite]" />
+      <div className="absolute -top-20 right-1/4 w-[400px] h-[300px] rounded-full bg-secondary/[0.10] blur-[80px] animate-[float_10s_ease-in-out_2s_infinite]" />
+      <div className="absolute top-1/3 left-1/2 w-[300px] h-[300px] rounded-full bg-primary/[0.06] blur-[120px] animate-[float_12s_ease-in-out_4s_infinite]" />
     </div>
   );
 }
@@ -511,10 +673,10 @@ export default function HomePage() {
       <section className="relative overflow-hidden min-h-[calc(100vh-5rem)] flex items-center">
         {/* Layered background */}
         <div className="absolute inset-0 bg-gradient-to-b from-muted/80 via-background to-background" />
-        <div className="absolute inset-0 opacity-[0.035]">
+        <div className="absolute inset-0 opacity-[0.07]">
           <GeometricPattern />
         </div>
-        <FloatingArcs />
+        <AnimatedHeroBackground />
 
         {/* Grain texture overlay */}
         <div className="absolute inset-0 opacity-[0.015] mix-blend-multiply" style={{
