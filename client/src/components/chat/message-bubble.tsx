@@ -89,49 +89,61 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       </div>
 
       <div className="flex-1 min-w-0 pt-1">
-        <div
-          className="chat-markdown text-sm text-foreground"
-          style={{
-            direction: dir,
-            textAlign: dir === "rtl" ? "right" : "left",
-          }}
-        >
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={
-              hasCitations
-                ? {
-                    p: ({ children }) => (
-                      <p>
-                        {processChildren(
-                          children,
-                          message.sources!,
-                          isStreaming
-                        )}
-                      </p>
-                    ),
-                    li: ({ children }) => (
-                      <li>
-                        {processChildren(
-                          children,
-                          message.sources!,
-                          isStreaming
-                        )}
-                      </li>
-                    ),
-                  }
-                : undefined
-            }
-          >
-            {displayContent}
-          </ReactMarkdown>
+        {isStreaming && !displayContent.trim() ? (
+          <div className="pt-0.5">
+            <span className="text-sm italic bg-gradient-to-r from-muted-foreground via-foreground to-muted-foreground bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
+              {hasCitations ? "Generating answer..." : "Searching sources..."}
+            </span>
+          </div>
+        ) : (
+          <>
+            <div
+              className="chat-markdown text-sm text-foreground"
+              style={{
+                direction: dir,
+                textAlign: dir === "rtl" ? "right" : "left",
+              }}
+            >
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={
+                  hasCitations
+                    ? {
+                        p: ({ children }) => (
+                          <p>
+                            {processChildren(
+                              children,
+                              message.sources!,
+                              isStreaming
+                            )}
+                          </p>
+                        ),
+                        li: ({ children }) => (
+                          <li>
+                            {processChildren(
+                              children,
+                              message.sources!,
+                              isStreaming
+                            )}
+                          </li>
+                        ),
+                      }
+                    : undefined
+                }
+              >
+                {displayContent}
+              </ReactMarkdown>
 
-          {message.isStreaming && (
-            <span className="inline-block w-2 h-4 bg-primary ml-0.5 animate-pulse-gentle rounded-sm" />
-          )}
-        </div>
+              {message.isStreaming && (
+                <span className="inline-block w-2 h-4 bg-primary ml-0.5 animate-pulse-gentle rounded-sm" />
+              )}
+            </div>
 
-        {hasCitations && <SourcesPanel sources={message.sources!} />}
+            {hasCitations && !isStreaming && (
+              <SourcesPanel sources={message.sources!} content={message.content} />
+            )}
+          </>
+        )}
       </div>
     </div>
   );

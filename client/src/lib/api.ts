@@ -43,13 +43,15 @@ export async function gatewayQuery(
   request: GatewayRequest,
   onChunk: (chunk: GatewayStreamChunk) => void,
   onError: (error: Error) => void,
-  onComplete: () => void
+  onComplete: () => void,
+  signal?: AbortSignal
 ): Promise<void> {
   try {
     const res = await fetch(`${API_BASE}/query`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...request, stream: true }),
+      signal,
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);

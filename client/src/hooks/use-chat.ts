@@ -64,6 +64,9 @@ export function useChat() {
       setIsLoading(true);
       setIsThinking(true);
 
+      const abortController = new AbortController();
+      abortRef.current = abortController;
+
       let accumulatedContent = "";
       let sources: SourceData[] = [];
       let categories: string[] = [];
@@ -109,6 +112,7 @@ export function useChat() {
         },
         // onError
         (error: Error) => {
+          if (error.name === "AbortError") return;
           updateMessage(chatId!, assistantMsgId, {
             content:
               accumulatedContent ||
@@ -123,7 +127,9 @@ export function useChat() {
         () => {
           setIsLoading(false);
           setIsThinking(false);
-        }
+          abortRef.current = null;
+        },
+        abortController.signal
       );
     },
     [
@@ -139,9 +145,22 @@ export function useChat() {
 
   const stopGeneration = useCallback(() => {
     abortRef.current?.abort();
+    abortRef.current = null;
     setIsLoading(false);
     setIsThinking(false);
-  }, []);
+
+    // Finalize any streaming message
+    const chat = getActiveChat();
+    if (chat) {
+      const streamingMsg = chat.messages.find((m) => m.isStreaming);
+      if (streamingMsg) {
+        updateMessage(chat.id, streamingMsg.id, {
+          isStreaming: false,
+          content: streamingMsg.content || "*Answer generation was stopped.*",
+        });
+      }
+    }
+  }, [getActiveChat, updateMessage]);
 
   const startNewChat = useCallback(() => {
     setActiveChat(null);

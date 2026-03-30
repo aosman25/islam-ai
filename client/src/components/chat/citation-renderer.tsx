@@ -1,11 +1,34 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, createContext, useContext, useCallback } from "react";
 import { createPortal } from "react-dom";
 import type { SourceData } from "@/types";
 import { cn } from "@/lib/utils";
 import { BookOpen, X, ExternalLink } from "lucide-react";
 import Link from "next/link";
+
+// ============================================================
+// Overlay context — survives re-renders during streaming
+// ============================================================
+
+const OverlayContext = createContext<{
+  open: (sources: SourceData[]) => void;
+}>({ open: () => {} });
+
+export function CitationOverlayProvider({ children }: { children: React.ReactNode }) {
+  const [sources, setSources] = useState<SourceData[] | null>(null);
+  const open = useCallback((s: SourceData[]) => setSources(s), []);
+  const close = useCallback(() => setSources(null), []);
+
+  return (
+    <OverlayContext.Provider value={{ open }}>
+      {children}
+      {sources && sources.length > 0 && (
+        <CitationOverlay sources={sources} onClose={close} />
+      )}
+    </OverlayContext.Provider>
+  );
+}
 
 // ============================================================
 // Regex patterns
@@ -133,7 +156,7 @@ export function CitationGroupBadge({
   ids: number[];
   sources: SourceData[];
 }) {
-  const [open, setOpen] = useState(false);
+  const { open } = useContext(OverlayContext);
 
   const label =
     sources.length > 0
@@ -141,20 +164,14 @@ export function CitationGroupBadge({
       : "";
 
   return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 h-5 max-w-[10rem] px-1.5 mx-0.5 text-[10px] font-medium rounded-md bg-accent text-accent-foreground border border-accent hover:bg-accent/80 transition-colors cursor-pointer align-middle"
-      >
-        <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-          {label}
-        </span>
-      </button>
-
-      {open && sources.length > 0 && (
-        <CitationOverlay sources={sources} onClose={() => setOpen(false)} />
-      )}
-    </>
+    <button
+      onClick={() => open(sources)}
+      className="inline-flex items-center gap-1 h-5 max-w-[10rem] px-1.5 mx-0.5 text-[10px] font-medium rounded-md bg-accent text-accent-foreground border border-accent hover:bg-accent/80 transition-colors cursor-pointer align-middle"
+    >
+      <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+        {label}
+      </span>
+    </button>
   );
 }
 
@@ -243,67 +260,75 @@ export function CitationRenderer({
 // Sources panel shown below a message
 // ============================================================
 
-export function SourcesPanel({ sources }: { sources: SourceData[] }) {
+function extractCitedIds(content: string): Set<number> {
+  const ids = new Set<number>();
+  for (const match of content.matchAll(CITATION_REGEX)) {
+    for (const s of match[1].split(/[,،]/)) {
+      const n = parseInt(s.trim(), 10);
+      if (!isNaN(n)) ids.add(n);
+    }
+  }
+  return ids;
+}
+
+export function SourcesPanel({ sources, content }: { sources: SourceData[]; content: string }) {
   const [expanded, setExpanded] = useState(false);
-  const [selectedSources, setSelectedSources] = useState<SourceData[] | null>(
-    null
-  );
+  const { open } = useContext(OverlayContext);
 
-  if (sources.length === 0) return null;
+  const citedSources = useMemo(() => {
+    const citedIds = extractCitedIds(content);
+    return sources.filter((s) => citedIds.has(s.id));
+  }, [sources, content]);
 
-  const shown = expanded ? sources : sources.slice(0, 3);
+  if (citedSources.length === 0) return null;
+
+  const shown = expanded ? citedSources : citedSources.slice(0, 3);
+  const hasMore = citedSources.length > 3;
 
   return (
-    <>
-      <div className="mt-4 pt-4 border-t border-border">
+    <div className="mt-4 pt-4 border-t border-border">
+      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-3">
+        <BookOpen size={13} />
+        {citedSources.length} Source{citedSources.length !== 1 ? "s" : ""} cited
+      </div>
+      <div className="space-y-2">
+        {shown.map((source, i) => (
+          <button
+            key={source.id}
+            onClick={() => open([source])}
+            className={cn(
+              "w-full text-left flex items-start gap-3 p-3 rounded-lg border border-border bg-background/50",
+              "hover:border-accent hover:bg-accent/30 transition-all duration-200 group"
+            )}
+          >
+            <span className="flex-shrink-0 w-6 h-6 rounded bg-accent text-accent-foreground text-xs font-bold flex items-center justify-center mt-0.5">
+              {i + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground truncate">
+                {source.book_name}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {source.author}
+                {source.page_num_range.length > 0 &&
+                  ` · p. ${source.page_num_range.join("-")}`}
+              </p>
+            </div>
+            <ExternalLink
+              size={12}
+              className="flex-shrink-0 text-border group-hover:text-primary mt-1 transition-colors"
+            />
+          </button>
+        ))}
+      </div>
+      {hasMore && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors mb-3"
+          className="mt-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
         >
-          <BookOpen size={13} />
-          {sources.length} Source{sources.length !== 1 ? "s" : ""}
-          {!expanded && sources.length > 3 && (
-            <span className="text-muted-foreground">&middot; Show all</span>
-          )}
+          {expanded ? "Show less" : `Show all ${citedSources.length} sources`}
         </button>
-        <div className="space-y-2">
-          {shown.map((source, i) => (
-            <button
-              key={source.id}
-              onClick={() => setSelectedSources([source])}
-              className={cn(
-                "w-full text-left flex items-start gap-3 p-3 rounded-lg border border-border bg-background/50",
-                "hover:border-accent hover:bg-accent/30 transition-all duration-200 group"
-              )}
-            >
-              <span className="flex-shrink-0 w-6 h-6 rounded bg-accent text-accent-foreground text-xs font-bold flex items-center justify-center mt-0.5">
-                {i + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {source.book_name}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {source.author}
-                  {source.page_num_range.length > 0 &&
-                    ` · p. ${source.page_num_range.join("-")}`}
-                </p>
-              </div>
-              <ExternalLink
-                size={12}
-                className="flex-shrink-0 text-border group-hover:text-primary mt-1 transition-colors"
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {selectedSources && (
-        <CitationOverlay
-          sources={selectedSources}
-          onClose={() => setSelectedSources(null)}
-        />
       )}
-    </>
+    </div>
   );
 }
