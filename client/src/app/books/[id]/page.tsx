@@ -47,7 +47,6 @@ function BookViewerInner() {
   const readerRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
-  // Load book metadata
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -57,7 +56,6 @@ function BookViewerInner() {
       })
       .catch(console.error);
 
-    // Load initial pages
     const opts = startPageParam
       ? { startPageId: Number(startPageParam), limit: 20 }
       : { page: 1, limit: 20 };
@@ -81,7 +79,6 @@ function BookViewerInner() {
     };
   }, [bookId, startPageParam]);
 
-  // Infinite scroll - load more pages
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -97,7 +94,6 @@ function BookViewerInner() {
     }
   }, [bookId, offset, loadingMore, hasMore]);
 
-  // IntersectionObserver for infinite scroll
   useEffect(() => {
     if (!bottomSentinelRef.current) return;
     const observer = new IntersectionObserver(
@@ -110,7 +106,6 @@ function BookViewerInner() {
     return () => observer.disconnect();
   }, [loadMore]);
 
-  // Navigate to a specific page (from TOC)
   const navigateToPage = useCallback(
     async (pageId: number) => {
       setSeeking(true);
@@ -137,7 +132,7 @@ function BookViewerInner() {
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Spinner size="lg" />
-          <p className="text-sm text-ink-500 mt-4">Loading book...</p>
+          <p className="text-sm text-muted-foreground mt-4">Loading book...</p>
         </div>
       </div>
     );
@@ -147,9 +142,9 @@ function BookViewerInner() {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <BookOpen size={40} className="mx-auto text-parchment-400 mb-4" />
-          <p className="text-ink-600 font-medium">Book not found</p>
-          <Link href="/books" className="text-sm text-gold-600 hover:underline mt-2 inline-block">
+          <BookOpen size={40} className="mx-auto text-border mb-4" />
+          <p className="text-foreground font-medium">Book not found</p>
+          <Link href="/books" className="text-sm text-primary hover:underline mt-2 inline-block">
             Back to Library
           </Link>
         </div>
@@ -160,25 +155,25 @@ function BookViewerInner() {
   const tocEntries = (book.table_of_contents as TocEntry[] | null) ?? [];
 
   return (
-    <div className="h-screen flex flex-col bg-parchment-50">
+    <div className="h-screen flex flex-col bg-background">
       {/* Top Bar */}
-      <header className="flex items-center justify-between h-14 px-4 border-b border-border/60 bg-card/90 backdrop-blur-lg z-10 flex-shrink-0">
+      <header className="flex items-center justify-between h-14 px-4 border-b border-border bg-card/90 backdrop-blur-lg z-10 flex-shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/books"
-            className="p-1.5 rounded-lg text-ink-500 hover:text-ink-800 hover:bg-parchment-100 transition-colors flex-shrink-0"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
           >
             <ArrowLeft size={18} />
           </Link>
           <div className="min-w-0">
             <h1
-              className="text-sm font-semibold text-ink-900 truncate"
+              className="text-sm font-semibold text-foreground truncate"
               dir={detectDirection(book.book_name)}
             >
               {book.book_name}
             </h1>
             {book.author_full && (
-              <p className="text-[11px] text-ink-500 truncate">
+              <p className="text-[11px] text-muted-foreground truncate">
                 {book.author_full}
               </p>
             )}
@@ -186,7 +181,7 @@ function BookViewerInner() {
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-1.5 rounded-lg text-ink-500 hover:bg-parchment-100 transition-colors"
+          className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
         >
           {sidebarOpen ? (
             <PanelRightClose size={18} />
@@ -211,28 +206,25 @@ function BookViewerInner() {
           <div className="max-w-3xl mx-auto px-6 md:px-12 py-8">
             {pages.map((p, i) => (
               <div key={`${p.book_id}-${p.page_id}`} id={`page-${p.page_id}`}>
-                {/* Page separator */}
                 {i > 0 && (
                   <div className="flex items-center gap-3 my-8 select-none">
-                    <div className="flex-1 h-px bg-parchment-300" />
-                    <span className="text-[10px] font-medium text-ink-400 bg-parchment-50 px-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] font-medium text-muted-foreground bg-background px-2">
                       {p.page_num}
                     </span>
-                    <div className="flex-1 h-px bg-parchment-300" />
+                    <div className="flex-1 h-px bg-border" />
                   </div>
                 )}
 
-                {/* Part title */}
                 {p.part_title && (i === 0 || p.part_title !== pages[i - 1]?.part_title) && (
                   <h2
-                    className="font-display text-xl font-bold text-ink-800 mb-6 text-center"
+                    className="text-xl font-bold text-foreground mb-6 text-center"
                     dir={detectDirection(p.part_title)}
                   >
                     {p.part_title}
                   </h2>
                 )}
 
-                {/* Page content */}
                 <div
                   className="prose-arabic"
                   dangerouslySetInnerHTML={{ __html: p.display_elem }}
@@ -240,7 +232,6 @@ function BookViewerInner() {
               </div>
             ))}
 
-            {/* Bottom sentinel for infinite scroll */}
             <div ref={bottomSentinelRef} className="h-4" />
 
             {loadingMore && (
@@ -254,7 +245,7 @@ function BookViewerInner() {
                 <div className="divider-diamond max-w-xs mx-auto mb-4">
                   <div className="diamond" />
                 </div>
-                <p className="text-xs text-ink-400">End of text</p>
+                <p className="text-xs text-muted-foreground">End of text</p>
               </div>
             )}
           </div>
@@ -262,9 +253,8 @@ function BookViewerInner() {
 
         {/* Sidebar */}
         {sidebarOpen && (
-          <aside className="w-72 lg:w-80 border-l border-border/60 bg-card flex flex-col flex-shrink-0 overflow-hidden">
-            {/* Tabs */}
-            <div className="flex border-b border-border/60">
+          <aside className="w-72 lg:w-80 border-l border-border bg-card flex flex-col flex-shrink-0 overflow-hidden">
+            <div className="flex border-b border-border">
               {[
                 { key: "toc" as const, label: "Contents", icon: List },
                 { key: "info" as const, label: "Details", icon: Info },
@@ -275,8 +265,8 @@ function BookViewerInner() {
                   className={cn(
                     "flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2",
                     sidebarTab === key
-                      ? "border-gold-500 text-gold-700 bg-gold-50/50"
-                      : "border-transparent text-ink-500 hover:text-ink-700 hover:bg-parchment-50"
+                      ? "border-primary text-primary bg-accent/50"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
                   <Icon size={14} />
@@ -285,7 +275,6 @@ function BookViewerInner() {
               ))}
             </div>
 
-            {/* Tab Content */}
             <div className="flex-1 overflow-y-auto">
               {sidebarTab === "toc" ? (
                 <TocPanel entries={tocEntries} onNavigate={navigateToPage} />
@@ -300,10 +289,6 @@ function BookViewerInner() {
   );
 }
 
-// ============================================================
-// TOC Panel
-// ============================================================
-
 function TocPanel({
   entries,
   onNavigate,
@@ -314,13 +299,12 @@ function TocPanel({
   if (entries.length === 0) {
     return (
       <div className="p-6 text-center">
-        <List size={24} className="mx-auto text-parchment-400 mb-3" />
-        <p className="text-xs text-ink-400">No table of contents available</p>
+        <List size={24} className="mx-auto text-border mb-3" />
+        <p className="text-xs text-muted-foreground">No table of contents available</p>
       </div>
     );
   }
 
-  // Build tree from flat list
   const roots = entries.filter((e) => !e.parent_id);
 
   return (
@@ -362,14 +346,14 @@ function TocItem({
           onNavigate(entry.page_id);
         }}
         className={cn(
-          "w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-parchment-50 transition-colors text-sm",
+          "w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-muted transition-colors text-sm",
           depth > 0 && "text-xs"
         )}
         style={{ paddingLeft: `${12 + depth * 16}px` }}
         dir={dir}
       >
         {hasChildren && (
-          <span className="flex-shrink-0 mt-0.5 text-ink-400">
+          <span className="flex-shrink-0 mt-0.5 text-muted-foreground">
             {expanded ? (
               <ChevronDown size={12} />
             ) : (
@@ -381,8 +365,8 @@ function TocItem({
           className={cn(
             "flex-1 leading-relaxed",
             depth === 0
-              ? "font-medium text-ink-800"
-              : "text-ink-600"
+              ? "font-medium text-foreground"
+              : "text-muted-foreground"
           )}
         >
           {entry.title}
@@ -405,10 +389,6 @@ function TocItem({
   );
 }
 
-// ============================================================
-// Info Panel
-// ============================================================
-
 function InfoPanel({ book }: { book: Book }) {
   const fields = [
     { label: "Author", value: book.author_full },
@@ -423,7 +403,7 @@ function InfoPanel({ book }: { book: Book }) {
   return (
     <div className="p-5 space-y-4">
       <h3
-        className="font-display text-lg font-semibold text-ink-900 leading-snug"
+        className="text-lg font-semibold text-foreground leading-snug"
         dir={detectDirection(book.book_name)}
       >
         {book.book_name}
@@ -434,11 +414,11 @@ function InfoPanel({ book }: { book: Book }) {
       <dl className="space-y-3">
         {fields.map(({ label, value }) => (
           <div key={label}>
-            <dt className="text-[10px] font-medium text-ink-400 uppercase tracking-wider">
+            <dt className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
               {label}
             </dt>
             <dd
-              className="text-sm text-ink-700 mt-0.5"
+              className="text-sm text-foreground mt-0.5"
               dir={detectDirection(String(value))}
             >
               {value}

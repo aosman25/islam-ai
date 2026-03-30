@@ -1,0 +1,199 @@
+
+:root {
+  /* Mapped from IslamQA [data-theme=green] & [data-color-scheme=green] tokens */
+  --background: oklch(1 0 0);                            /* --b1 */
+  --foreground: oklch(0.2000 0 0);                       /* --bc */
+  --card: oklch(0.9800 0.0100 95);                       /* --paper-1: #fbf8ef */
+  --card-foreground: oklch(0.2000 0 0);                  /* --bc */
+  --popover: oklch(1 0 0);                               /* --b1 */
+  --popover-foreground: oklch(0.2000 0 0);               /* --bc */
+  --primary: oklch(0.6935 0.1541 130.8855);              /* --p */
+  --primary-foreground: oklch(1 0 0);                    /* --pc */
+  --secondary: oklch(0.4472 0.1159 152.6844);            /* --s */
+  --secondary-foreground: oklch(1 0 0);                  /* --sc */
+  --muted: oklch(0.9300 0 0);                            /* --b2 */
+  --muted-foreground: oklch(0.4500 0.0100 260);          /* --text-fade: #4b5563 */
+  --accent: oklch(0.9592 0.0206 156.8216);               /* --a */
+  --accent-foreground: oklch(0.4921 0.1410 134.1020);    /* --ac */
+  --destructive: oklch(0.6547 0.1943 24.2300);           /* --er */
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.8600 0 0);                           /* --b3 */
+  --input: oklch(0.8600 0 0);                            /* --b3 */
+  --ring: oklch(0.6935 0.1541 130.8855);                 /* --p (primary green) */
+
+  /* Chart colors derived from the green palette */
+  --chart-1: oklch(0.6935 0.1541 130.8855);              /* primary green */
+  --chart-2: oklch(0.4472 0.1159 152.6844);              /* secondary green */
+  --chart-3: oklch(0.8600 0.1000 130);
+  --chart-4: oklch(0.3732 0.0838 49.2741);               /* --in (info) */
+  --chart-5: oklch(0.4921 0.1410 134.1020);              /* --ac */
+
+  /* Sidebar */
+  --sidebar: oklch(0.9700 0.0300 130);                   /* --paper-2 / --menu-bg: #f1f9e7 */
+  --sidebar-foreground: oklch(0.2000 0 0);
+  --sidebar-primary: oklch(0.6935 0.1541 130.8855);      /* --p */
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.9592 0.0206 156.8216);       /* --a */
+  --sidebar-accent-foreground: oklch(0.4921 0.1410 134.1020);
+  --sidebar-border: oklch(0.9000 0.0600 150);            /* --appbar-border: #c4ead1 */
+  --sidebar-ring: oklch(0.6935 0.1541 130.8855);
+
+  /* IslamQA-specific semantic tokens */
+  --appbar-bg: oklch(0.8600 0.1000 130);                 /* #bdde98 */
+  --appbar-text: oklch(0.4921 0.1410 134.1020);          /* #3c7101 */
+  --paper-summary: oklch(0.9700 0.0300 130);             /* #f1f9e7 */
+  --paper-question: oklch(0.9900 0.0200 105);            /* #fdfdea */
+  --paper-title: oklch(0.4921 0.1410 134.1020);          /* #3c7101 */
+  --paper-icon: oklch(0.4921 0.1410 134.1020);           /* #3c7101 */
+  --toaster-bg: oklch(0.2200 0.0200 260);                /* #1f2a37 */
+  --toaster-text: oklch(1 0 0);
+
+  /* Typography */
+  --font-sans: "Noto Sans Variable", "DroidNaskh", arabesque, ui-sans-serif, system-ui, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Radius — from DaisyUI [data-theme=green] */
+  --radius: 0.625rem;                                    /* --rounded-box: 1rem, --rounded-btn: 0.5rem */
+
+  /* Shadows */
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+}
+
+.dark {
+  /* Mapped from IslamQA @media (prefers-color-scheme: dark) */
+  --background: oklch(0.2136 0.0322 262.4373);           /* --b1 dark */
+  --foreground: oklch(1 0 0);                            /* --bc dark */
+  --card: oklch(0.1986 0.0299 262.4373);                 /* --b2 dark */
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.1837 0.0276 262.4373);              /* --b3 dark */
+  --popover-foreground: oklch(1 0 0);
+  --primary: oklch(0.6951 0.1633 153.0716);              /* --p dark */
+  --primary-foreground: oklch(1 0 0);                    /* --pc dark */
+  --secondary: oklch(0.6951 0.1633 153.0716);            /* --s dark */
+  --secondary-foreground: oklch(1 0 0);                  /* --sc dark */
+  --muted: oklch(0.1986 0.0299 262.4373);                /* --b2 dark */
+  --muted-foreground: oklch(0.7080 0 0);
+  --accent: oklch(0.3168 0.0301 192.3622);               /* --a dark */
+  --accent-foreground: oklch(1 0 0);                     /* --ac dark */
+  --destructive: oklch(0.6547 0.1943 24.2300);           /* --er (same) */
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.2750 0 0);
+  --input: oklch(0.3250 0 0);
+  --ring: oklch(0.6951 0.1633 153.0716);                 /* --p dark */
+
+  --chart-1: oklch(0.6951 0.1633 153.0716);
+  --chart-2: oklch(0.5500 0.1400 153);
+  --chart-3: oklch(0.4500 0.1200 153);
+  --chart-4: oklch(0.9729 0.0694 103.1933);              /* --in dark */
+  --chart-5: oklch(0.3168 0.0301 192.3622);
+
+  --sidebar: oklch(0.2136 0.0322 262.4373);
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-primary: oklch(0.6951 0.1633 153.0716);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.3168 0.0301 192.3622);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.2750 0 0);
+  --sidebar-ring: oklch(0.4390 0 0);
+
+  --appbar-bg: oklch(0.2136 0.0322 262.4373);
+  --appbar-text: oklch(0.6951 0.1633 153.0716);
+  --paper-summary: oklch(0.1986 0.0299 262.4373);
+  --paper-question: oklch(0.2136 0.0322 262.4373);
+  --paper-title: oklch(0.6951 0.1633 153.0716);
+  --paper-icon: oklch(0.6951 0.1633 153.0716);
+  --toaster-bg: oklch(0.1837 0.0276 262.4373);
+  --toaster-text: oklch(1 0 0);
+
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* IslamQA semantic colors */
+  --color-appbar-bg: var(--appbar-bg);
+  --color-appbar-text: var(--appbar-text);
+  --color-paper-summary: var(--paper-summary);
+  --color-paper-question: var(--paper-question);
+  --color-paper-title: var(--paper-title);
+  --color-paper-icon: var(--paper-icon);
+  --color-toaster-bg: var(--toaster-bg);
+  --color-toaster-text: var(--toaster-text);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    font-size: 14px;
+  }
+}

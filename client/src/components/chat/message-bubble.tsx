@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import type { ChatMessage } from "@/types";
 import type { SourceData } from "@/types";
 import { cn, detectDirection } from "@/lib/utils";
-import { User, Bot } from "lucide-react";
+import { Bot } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -84,13 +84,13 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   // Assistant message: full-width, no bubble
   return (
     <div className="flex gap-3 animate-slide-up">
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-gold-700 flex items-center justify-center shadow-soft mt-1">
+      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm mt-1">
         <Bot size={16} className="text-white" />
       </div>
 
       <div className="flex-1 min-w-0 pt-1">
         <div
-          className="chat-markdown text-sm text-ink-800"
+          className="chat-markdown text-sm text-foreground"
           style={{
             direction: dir,
             textAlign: dir === "rtl" ? "right" : "left",
@@ -127,7 +127,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           </ReactMarkdown>
 
           {message.isStreaming && (
-            <span className="inline-block w-2 h-4 bg-gold-500 ml-0.5 animate-pulse-gentle rounded-sm" />
+            <span className="inline-block w-2 h-4 bg-primary ml-0.5 animate-pulse-gentle rounded-sm" />
           )}
         </div>
 
@@ -140,7 +140,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 export function TypingIndicator() {
   return (
     <div className="flex gap-3 animate-fade-in">
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-gold-500 to-gold-700 flex items-center justify-center shadow-soft">
+      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm">
         <Bot size={16} className="text-white" />
       </div>
       <div className="pt-1">

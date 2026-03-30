@@ -125,13 +125,13 @@ function ChatPageInner() {
               <div className="max-w-2xl w-full text-center">
                 {/* Welcome */}
                 <div className="mb-10 animate-fade-in">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-gold-500 to-gold-700 shadow-glow mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-md mb-6">
                     <MessageSquare size={28} className="text-white" />
                   </div>
-                  <h1 className="font-display text-3xl font-bold text-ink-900 mb-3">
+                  <h1 className="text-3xl font-bold text-foreground mb-3">
                     Assalamu Alaikum
                   </h1>
-                  <p className="text-ink-500 text-base max-w-md mx-auto">
+                  <p className="text-muted-foreground text-base max-w-md mx-auto">
                     Ask any question about Islamic knowledge. I&apos;ll search through
                     classical texts and provide answers with source citations.
                   </p>
@@ -143,18 +143,18 @@ function ChatPageInner() {
                     <button
                       key={action.label}
                       onClick={() => sendMessage(action.query)}
-                      className="group text-left p-4 rounded-xl border border-border/50 bg-card hover:border-gold-200 hover:bg-gold-50/30 shadow-soft hover:shadow-md transition-all duration-300"
+                      className="group text-left p-4 rounded-xl border border-border bg-card hover:border-accent hover:bg-accent/30 shadow-sm hover:shadow-md transition-all duration-300"
                     >
                       <div className="flex items-center gap-2.5 mb-2">
                         <action.icon
                           size={16}
-                          className="text-gold-600 group-hover:text-gold-700"
+                          className="text-primary group-hover:text-secondary"
                         />
-                        <span className="text-sm font-medium text-ink-800">
+                        <span className="text-sm font-medium text-foreground">
                           {action.label}
                         </span>
                       </div>
-                      <p className="text-xs text-ink-400 leading-relaxed line-clamp-2">
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
                         {action.query}
                       </p>
                     </button>
@@ -180,9 +180,9 @@ function ChatPageInner() {
           {/* ============================================================
              INPUT BAR
              ============================================================ */}
-          <div className="border-t border-border/40 bg-background/80 backdrop-blur-lg">
+          <div className="border-t border-border bg-background/80 backdrop-blur-lg">
             <div className="max-w-3xl mx-auto px-4 py-4">
-              <div className="relative flex items-end gap-2 bg-card border border-border/60 rounded-xl shadow-soft focus-within:shadow-md focus-within:border-gold-300 transition-all duration-200">
+              <div className="relative flex items-end gap-2 bg-card border border-border rounded-xl shadow-sm focus-within:shadow-md focus-within:border-primary/30 transition-all duration-200">
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -192,7 +192,7 @@ function ChatPageInner() {
                   dir={dir}
                   rows={1}
                   className={cn(
-                    "flex-1 resize-none bg-transparent px-4 py-3.5 text-sm text-ink-800 placeholder:text-ink-400 focus:outline-none min-h-[48px] max-h-[200px]",
+                    "flex-1 resize-none bg-transparent px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[48px] max-h-[200px]",
                     dir === "rtl" && "text-right"
                   )}
                 />
@@ -200,7 +200,7 @@ function ChatPageInner() {
                   {isLoading ? (
                     <button
                       onClick={stopGeneration}
-                      className="p-2 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 transition-colors"
+                      className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
                       title="Stop generating"
                     >
                       <Square size={16} />
@@ -209,7 +209,7 @@ function ChatPageInner() {
                     <button
                       onClick={handleSubmit}
                       disabled={!input.trim()}
-                      className="p-2 rounded-lg bg-gradient-to-r from-gold-600 to-gold-700 text-white disabled:opacity-30 disabled:shadow-none shadow-soft hover:shadow-glow transition-all duration-200"
+                      className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-white disabled:opacity-30 disabled:shadow-none shadow-sm hover:shadow-md transition-all duration-200"
                       title="Send message"
                     >
                       <Send size={16} />
@@ -217,7 +217,7 @@ function ChatPageInner() {
                   )}
                 </div>
               </div>
-              <p className="text-center text-[10px] text-ink-400 mt-2.5">
+              <p className="text-center text-[10px] text-muted-foreground mt-2.5">
                 AI can make mistakes. Verify important information with scholars.
               </p>
             </div>

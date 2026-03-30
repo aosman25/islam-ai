@@ -24,7 +24,7 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
       {/* Toggle Button (always visible) */}
       <button
         onClick={onToggle}
-        className="fixed top-20 left-3 z-40 p-2 rounded-lg bg-card border border-border/60 shadow-soft text-ink-500 hover:text-ink-800 hover:bg-parchment-100 transition-all md:hidden"
+        className="fixed top-20 left-3 z-40 p-2 rounded-lg bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-all md:hidden"
         aria-label="Toggle sidebar"
       >
         {open ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
@@ -33,7 +33,7 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
       {/* Backdrop (mobile) */}
       {open && (
         <div
-          className="fixed inset-0 bg-ink-950/20 backdrop-blur-sm z-30 md:hidden"
+          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-30 md:hidden"
           onClick={onToggle}
         />
       )}
@@ -41,14 +41,14 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-16 left-0 z-30 h-[calc(100dvh-4rem)] w-72 bg-card border-r border-border/60 flex flex-col transition-transform duration-300 ease-spring",
+          "fixed top-16 left-0 z-30 h-[calc(100dvh-4rem)] w-72 bg-card border-r border-border flex flex-col transition-transform duration-300 ease-spring",
           "md:relative md:top-0 md:translate-x-0 md:z-auto",
           open ? "translate-x-0" : "-translate-x-full md:-translate-x-full"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border/60">
-          <h2 className="font-display text-sm font-semibold text-ink-700">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h2 className="text-sm font-semibold text-foreground">
             Conversations
           </h2>
           <div className="flex items-center gap-1">
@@ -57,7 +57,7 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
                 onClick={() => {
                   if (confirm("Clear all conversations?")) clearChats();
                 }}
-                className="p-1.5 rounded-md text-ink-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                 title="Clear all"
               >
                 <Trash2 size={14} />
@@ -65,7 +65,7 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
             )}
             <button
               onClick={() => createChat()}
-              className="p-1.5 rounded-md text-ink-400 hover:text-gold-700 hover:bg-gold-50 transition-colors"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-accent transition-colors"
               title="New chat"
             >
               <Plus size={16} />
@@ -79,10 +79,10 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
             <div className="px-4 py-8 text-center">
               <MessageSquare
                 size={28}
-                className="mx-auto text-parchment-400 mb-3"
+                className="mx-auto text-border mb-3"
               />
-              <p className="text-xs text-ink-400">No conversations yet</p>
-              <p className="text-xs text-ink-400 mt-1">
+              <p className="text-xs text-muted-foreground">No conversations yet</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 Start by asking a question
               </p>
             </div>
@@ -95,8 +95,8 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
                   className={cn(
                     "w-full text-left group flex items-start gap-2.5 px-3 py-2.5 rounded-lg transition-all duration-150",
                     chat.id === activeChatId
-                      ? "bg-gold-50 border border-gold-200/60"
-                      : "hover:bg-parchment-100"
+                      ? "bg-accent border border-accent"
+                      : "hover:bg-muted"
                   )}
                 >
                   <MessageSquare
@@ -104,8 +104,8 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
                     className={cn(
                       "flex-shrink-0 mt-0.5",
                       chat.id === activeChatId
-                        ? "text-gold-600"
-                        : "text-ink-400"
+                        ? "text-primary"
+                        : "text-muted-foreground"
                     )}
                   />
                   <div className="min-w-0 flex-1">
@@ -113,13 +113,13 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
                       className={cn(
                         "text-sm truncate",
                         chat.id === activeChatId
-                          ? "text-gold-800 font-medium"
-                          : "text-ink-700"
+                          ? "text-accent-foreground font-medium"
+                          : "text-foreground"
                       )}
                     >
                       {truncate(chat.title, 40)}
                     </p>
-                    <p className="text-[10px] text-ink-400 mt-0.5">
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
                       {formatTime(chat.updatedAt)} &middot;{" "}
                       {chat.messages.length} msg
                     </p>
@@ -129,7 +129,7 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
                       e.stopPropagation();
                       deleteChat(chat.id);
                     }}
-                    className="flex-shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 text-ink-400 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                    className="flex-shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -140,10 +140,10 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
         </div>
 
         {/* Desktop toggle */}
-        <div className="hidden md:flex p-3 border-t border-border/60">
+        <div className="hidden md:flex p-3 border-t border-border">
           <button
             onClick={onToggle}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-ink-500 hover:text-ink-700 hover:bg-parchment-100 transition-colors w-full"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors w-full"
           >
             <PanelLeftClose size={14} />
             Hide sidebar

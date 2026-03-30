@@ -1,19 +1,26 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Source_Sans_3, Amiri } from "next/font/google";
+import { Noto_Sans, Noto_Sans_Arabic, Amiri, Noto_Serif } from "next/font/google";
 import "./globals.css";
 
-const cormorant = Cormorant_Garamond({
+const notoSans = Noto_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-display-face",
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-noto-sans",
   display: "swap",
 });
 
-const sourceSans = Source_Sans_3({
-  subsets: ["latin"],
+const notoSansArabic = Noto_Sans_Arabic({
+  subsets: ["arabic"],
   weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-body-face",
+  variable: "--font-noto-arabic",
+  display: "swap",
+});
+
+const notoSerif = Noto_Serif({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-noto-serif",
   display: "swap",
 });
 
@@ -21,7 +28,7 @@ const amiri = Amiri({
   subsets: ["arabic", "latin"],
   weight: ["400", "700"],
   style: ["normal", "italic"],
-  variable: "--font-arabic-face",
+  variable: "--font-amiri",
   display: "swap",
 });
 
@@ -47,7 +54,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${cormorant.variable} ${sourceSans.variable} ${amiri.variable} min-h-screen bg-background text-foreground antialiased`}
+        className={`${notoSans.variable} ${notoSansArabic.variable} ${amiri.variable} ${notoSerif.variable} min-h-screen bg-background text-foreground antialiased`}
       >
         {children}
       </body>

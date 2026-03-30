@@ -28,7 +28,7 @@ export function Navbar() {
     pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="accent-line" />
 
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-page">
@@ -53,8 +53,8 @@ export function Navbar() {
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                 isActive(href)
-                  ? "bg-gold-50 text-gold-700 shadow-soft"
-                  : "text-ink-500 hover:text-ink-800 hover:bg-parchment-100"
+                  ? "bg-accent text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}
             >
               <Icon size={16} strokeWidth={isActive(href) ? 2.2 : 1.8} />
@@ -67,7 +67,7 @@ export function Navbar() {
         <div className="flex items-center gap-3 flex-shrink-0">
           <Link
             href="/signin"
-            className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border/60 text-sm font-medium text-ink-600 hover:text-ink-800 hover:bg-parchment-100 transition-all duration-200"
+            className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
           >
             <LogIn size={15} />
             Sign In / Sign Up
@@ -75,7 +75,7 @@ export function Navbar() {
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-parchment-100 text-ink-600 transition-colors"
+            className="md:hidden p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -85,7 +85,7 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border/60 bg-background animate-slide-down">
+        <div className="md:hidden border-t border-border bg-background animate-slide-down">
           <nav className="px-page py-4 space-y-1">
             {NAV_LINKS.map(({ href, label, icon: Icon }) => (
               <Link
@@ -95,19 +95,19 @@ export function Navbar() {
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
                   isActive(href)
-                    ? "bg-gold-50 text-gold-700"
-                    : "text-ink-600 hover:bg-parchment-100"
+                    ? "bg-accent text-primary"
+                    : "text-muted-foreground hover:bg-muted"
                 )}
               >
                 <Icon size={18} />
                 {label}
               </Link>
             ))}
-            <div className="pt-3 border-t border-border/60 mt-3">
+            <div className="pt-3 border-t border-border mt-3">
               <Link
                 href="/signin"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg border border-border/60 text-sm font-medium text-ink-600"
+                className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg border border-border text-sm font-medium text-muted-foreground"
               >
                 <LogIn size={15} />
                 Sign In / Sign Up

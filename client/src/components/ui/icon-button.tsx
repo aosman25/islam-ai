@@ -15,11 +15,11 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
           "inline-flex items-center justify-center rounded-lg transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none",
           {
             ghost:
-              "text-ink-500 hover:text-ink-800 hover:bg-parchment-200/60",
+              "text-muted-foreground hover:text-foreground hover:bg-muted",
             outline:
-              "border border-border text-ink-600 hover:bg-parchment-100 hover:border-parchment-400",
+              "border border-border text-muted-foreground hover:bg-muted hover:border-border",
             filled:
-              "bg-gold-600 text-white hover:bg-gold-700 shadow-soft",
+              "bg-primary text-white hover:bg-secondary shadow-sm",
           }[variant],
           {
             sm: "h-8 w-8",

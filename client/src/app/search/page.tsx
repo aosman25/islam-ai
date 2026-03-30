@@ -30,7 +30,6 @@ export default function SearchPage() {
   const [totalBooks, setTotalBooks] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query);
@@ -38,7 +37,6 @@ export default function SearchPage() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Search books
   const searchBooks = useCallback(async (q: string) => {
     if (!q.trim()) {
       setBooks([]);
@@ -59,20 +57,17 @@ export default function SearchPage() {
     }
   }, []);
 
-  // Load authors and categories on mount
   useEffect(() => {
     getAuthors().then(setAuthors).catch(console.error);
     getCategories().then(setCategories).catch(console.error);
   }, []);
 
-  // Trigger search on debounced query change
   useEffect(() => {
     if (activeTab === "books") {
       searchBooks(debouncedQuery);
     }
   }, [debouncedQuery, activeTab, searchBooks]);
 
-  // Filter authors/categories by query
   const filteredAuthors = debouncedQuery.trim()
     ? authors.filter((a) =>
         a.name.toLowerCase().includes(debouncedQuery.toLowerCase())
@@ -95,10 +90,10 @@ export default function SearchPage() {
         <div className="mx-auto max-w-4xl px-page py-12 md:py-20">
           {/* Header */}
           <div className="text-center mb-10">
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-ink-900 mb-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Search the Library
             </h1>
-            <p className="text-ink-500 max-w-md mx-auto">
+            <p className="text-muted-foreground max-w-md mx-auto">
               Find books, authors, and categories across the entire corpus of
               Islamic scholarship.
             </p>
@@ -109,7 +104,7 @@ export default function SearchPage() {
             <div className="relative">
               <SearchIcon
                 size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-400"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
               />
               <input
                 type="text"
@@ -118,15 +113,15 @@ export default function SearchPage() {
                 placeholder="Search for books, authors, or categories..."
                 dir={dir}
                 className={cn(
-                  "w-full pl-12 pr-10 py-4 rounded-xl border border-border/60 bg-card text-base text-ink-800",
-                  "placeholder:text-ink-400 focus:outline-none focus:border-gold-300 focus:shadow-md shadow-soft transition-all",
+                  "w-full pl-12 pr-10 py-4 rounded-xl border border-border bg-card text-base text-foreground",
+                  "placeholder:text-muted-foreground focus:outline-none focus:border-primary/30 focus:shadow-md shadow-sm transition-all",
                   dir === "rtl" && "text-right pr-12 pl-10"
                 )}
               />
               {query && (
                 <button
                   onClick={() => setQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-ink-400 hover:text-ink-600 hover:bg-parchment-100 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -147,8 +142,8 @@ export default function SearchPage() {
                 className={cn(
                   "flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                   activeTab === key
-                    ? "bg-gold-50 text-gold-700 border border-gold-200/60 shadow-soft"
-                    : "text-ink-500 hover:text-ink-700 hover:bg-parchment-100"
+                    ? "bg-accent text-primary border border-accent shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
               >
                 <Icon size={15} />
@@ -158,8 +153,8 @@ export default function SearchPage() {
                     className={cn(
                       "text-xs px-1.5 py-0.5 rounded-full",
                       activeTab === key
-                        ? "bg-gold-200/60 text-gold-800"
-                        : "bg-parchment-200 text-ink-500"
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-muted text-muted-foreground"
                     )}
                   >
                     {count}
@@ -176,7 +171,6 @@ export default function SearchPage() {
             </div>
           ) : (
             <div>
-              {/* Books Tab */}
               {activeTab === "books" && (
                 <>
                   {!hasSearched ? (
@@ -201,7 +195,6 @@ export default function SearchPage() {
                 </>
               )}
 
-              {/* Authors Tab */}
               {activeTab === "authors" && (
                 <>
                   {filteredAuthors.length === 0 ? (
@@ -216,16 +209,16 @@ export default function SearchPage() {
                         <Link
                           key={author.id}
                           href={`/books?author=${author.id}`}
-                          className="flex items-center gap-3 p-4 rounded-xl border border-border/50 bg-card hover:border-gold-200 hover:shadow-soft transition-all group"
+                          className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-accent hover:shadow-sm transition-all group"
                         >
-                          <div className="w-10 h-10 rounded-lg bg-parchment-100 flex items-center justify-center group-hover:bg-gold-50 transition-colors">
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-accent transition-colors">
                             <User
                               size={16}
-                              className="text-ink-400 group-hover:text-gold-600"
+                              className="text-muted-foreground group-hover:text-primary"
                             />
                           </div>
                           <span
-                            className="text-sm font-medium text-ink-800 truncate"
+                            className="text-sm font-medium text-foreground truncate"
                             dir={detectDirection(author.name)}
                           >
                             {author.name}
@@ -237,7 +230,6 @@ export default function SearchPage() {
                 </>
               )}
 
-              {/* Categories Tab */}
               {activeTab === "categories" && (
                 <>
                   {filteredCategories.length === 0 ? (
@@ -252,16 +244,16 @@ export default function SearchPage() {
                         <Link
                           key={cat.id}
                           href={`/books?category=${cat.id}`}
-                          className="flex items-center gap-3 p-4 rounded-xl border border-border/50 bg-card hover:border-gold-200 hover:shadow-soft transition-all group"
+                          className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-accent hover:shadow-sm transition-all group"
                         >
-                          <div className="w-10 h-10 rounded-lg bg-parchment-100 flex items-center justify-center group-hover:bg-gold-50 transition-colors">
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-accent transition-colors">
                             <Tag
                               size={16}
-                              className="text-ink-400 group-hover:text-gold-600"
+                              className="text-muted-foreground group-hover:text-primary"
                             />
                           </div>
                           <span
-                            className="text-sm font-medium text-ink-800 truncate"
+                            className="text-sm font-medium text-foreground truncate"
                             dir={detectDirection(cat.name)}
                           >
                             {cat.name}
@@ -287,33 +279,33 @@ function SearchBookResult({ book }: { book: Book }) {
   return (
     <Link
       href={`/books/${book.book_id}`}
-      className="flex items-start gap-4 p-5 rounded-xl border border-border/50 bg-card hover:border-gold-200 hover:shadow-md transition-all group"
+      className="flex items-start gap-4 p-5 rounded-xl border border-border bg-card hover:border-accent hover:shadow-md transition-all group"
     >
-      <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-gradient-to-br from-parchment-200 to-parchment-300 flex items-center justify-center group-hover:from-gold-100 group-hover:to-gold-200 transition-colors">
+      <div className="flex-shrink-0 w-11 h-11 rounded-lg bg-gradient-to-br from-muted to-border flex items-center justify-center group-hover:from-accent group-hover:to-accent transition-colors">
         <BookOpen
           size={18}
-          className="text-ink-500 group-hover:text-gold-700"
+          className="text-muted-foreground group-hover:text-primary"
         />
       </div>
       <div className="min-w-0 flex-1">
         <h3
-          className="text-base font-semibold text-ink-900 group-hover:text-gold-800 transition-colors"
+          className="text-base font-semibold text-foreground group-hover:text-primary transition-colors"
           dir={dir}
           style={{ textAlign: dir === "rtl" ? "right" : "left" }}
         >
           {book.book_name}
         </h3>
         {book.author_full && (
-          <p className="text-sm text-ink-500 mt-0.5">{book.author_full}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{book.author_full}</p>
         )}
         <div className="flex flex-wrap gap-2 mt-2">
           {book.category && (
-            <span className="px-2 py-0.5 rounded bg-parchment-100 text-[10px] font-medium text-ink-500">
+            <span className="px-2 py-0.5 rounded bg-muted text-[10px] font-medium text-muted-foreground">
               {book.category.name}
             </span>
           )}
           {book.num_pages && (
-            <span className="text-[10px] text-ink-400">
+            <span className="text-[10px] text-muted-foreground">
               {book.num_pages} pages
             </span>
           )}
@@ -321,7 +313,7 @@ function SearchBookResult({ book }: { book: Book }) {
       </div>
       <ArrowRight
         size={16}
-        className="flex-shrink-0 text-ink-300 group-hover:text-gold-500 mt-1 group-hover:translate-x-1 transition-all"
+        className="flex-shrink-0 text-border group-hover:text-primary mt-1 group-hover:translate-x-1 transition-all"
       />
     </Link>
   );
@@ -338,9 +330,9 @@ function EmptyState({
 }) {
   return (
     <div className="text-center py-16">
-      <Icon size={36} className="mx-auto text-parchment-400 mb-4" />
-      <p className="text-ink-600 font-medium">{title}</p>
-      <p className="text-sm text-ink-400 mt-1">{description}</p>
+      <Icon size={36} className="mx-auto text-border mb-4" />
+      <p className="text-foreground font-medium">{title}</p>
+      <p className="text-sm text-muted-foreground mt-1">{description}</p>
     </div>
   );
 }

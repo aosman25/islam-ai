@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { SourceData } from "@/types";
 import { cn } from "@/lib/utils";
@@ -41,19 +41,19 @@ function CitationOverlay({
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
-      <div className="absolute inset-0 bg-ink-950/40 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-lg max-h-[80vh] bg-card border border-border/60 rounded-2xl shadow-2xl flex flex-col animate-scale-in"
+        className="relative w-full max-w-lg max-h-[80vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border/60 flex-shrink-0">
-          <span className="text-sm font-semibold text-ink-700">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+          <span className="text-sm font-semibold text-foreground">
             {sources.length} {sources.length === 1 ? "Source" : "Sources"}
           </span>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-ink-400 hover:text-ink-700 hover:bg-parchment-100 transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -66,42 +66,42 @@ function CitationOverlay({
               key={source.id}
               className={cn(
                 "space-y-3",
-                i > 0 && "pt-5 border-t border-border/40"
+                i > 0 && "pt-5 border-t border-border"
               )}
             >
               {/* Book name */}
               <div className="flex items-start gap-2">
-                <BookOpen className="w-4 h-4 text-gold-600 mt-0.5 flex-shrink-0" />
-                <h3 className="font-display text-base font-semibold text-ink-900 leading-snug">
+                <BookOpen className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                <h3 className="text-base font-semibold text-foreground leading-snug">
                   {source.book_name}
                 </h3>
               </div>
 
               {/* Meta row */}
               <div className="flex flex-wrap gap-2 text-xs">
-                <span className="text-ink-500">{source.author}</span>
+                <span className="text-muted-foreground">{source.author}</span>
                 {source.page_num_range && source.page_num_range.length > 0 && (
                   <>
-                    <span className="text-ink-300">&middot;</span>
-                    <span className="text-ink-500">
+                    <span className="text-border">&middot;</span>
+                    <span className="text-muted-foreground">
                       Pages {source.page_num_range.join("-")}
                     </span>
                   </>
                 )}
                 {source.part_title && (
                   <>
-                    <span className="text-ink-300">&middot;</span>
-                    <span className="text-ink-500">{source.part_title}</span>
+                    <span className="text-border">&middot;</span>
+                    <span className="text-muted-foreground">{source.part_title}</span>
                   </>
                 )}
               </div>
 
               {/* Citation text */}
               <div
-                className="bg-parchment-50 border border-border/40 rounded-xl p-4 max-h-48 overflow-y-auto"
+                className="bg-background border border-border rounded-xl p-4 max-h-48 overflow-y-auto"
                 style={{ direction: "rtl", textAlign: "right" }}
               >
-                <p className="text-sm leading-[2.2] whitespace-pre-wrap text-ink-700 font-arabic">
+                <p className="text-sm leading-[2.2] whitespace-pre-wrap text-foreground font-arabic">
                   {source.text}
                 </p>
               </div>
@@ -109,7 +109,7 @@ function CitationOverlay({
               {/* Open in viewer */}
               <Link
                 href={`/books/${source.book_id}?page=${source.start_page_id}`}
-                className="inline-flex items-center gap-2 py-1.5 px-3 rounded-lg bg-gold-50 hover:bg-gold-100 border border-gold-200/60 text-gold-700 text-xs font-medium transition-colors"
+                className="inline-flex items-center gap-2 py-1.5 px-3 rounded-lg bg-accent hover:bg-accent/80 border border-accent text-accent-foreground text-xs font-medium transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Open in Book Viewer
@@ -144,7 +144,7 @@ function CitationGroupBadge({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1 h-5 max-w-[10rem] px-1.5 mx-0.5 text-[10px] font-medium rounded-md bg-gold-100 text-gold-700 border border-gold-200/60 hover:bg-gold-200 transition-colors cursor-pointer align-middle"
+        className="inline-flex items-center gap-1 h-5 max-w-[10rem] px-1.5 mx-0.5 text-[10px] font-medium rounded-md bg-accent text-accent-foreground border border-accent hover:bg-accent/80 transition-colors cursor-pointer align-middle"
       >
         <span className="overflow-hidden text-ellipsis whitespace-nowrap">
           {label}
@@ -255,15 +255,15 @@ export function SourcesPanel({ sources }: { sources: SourceData[] }) {
 
   return (
     <>
-      <div className="mt-4 pt-4 border-t border-border/40">
+      <div className="mt-4 pt-4 border-t border-border">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-2 text-xs font-medium text-ink-500 hover:text-gold-700 transition-colors mb-3"
+          className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors mb-3"
         >
           <BookOpen size={13} />
           {sources.length} Source{sources.length !== 1 ? "s" : ""}
           {!expanded && sources.length > 3 && (
-            <span className="text-ink-400">&middot; Show all</span>
+            <span className="text-muted-foreground">&middot; Show all</span>
           )}
         </button>
         <div className="space-y-2">
@@ -272,18 +272,18 @@ export function SourcesPanel({ sources }: { sources: SourceData[] }) {
               key={source.id}
               onClick={() => setSelectedSources([source])}
               className={cn(
-                "w-full text-left flex items-start gap-3 p-3 rounded-lg border border-border/40 bg-parchment-50/50",
-                "hover:border-gold-200 hover:bg-gold-50/30 transition-all duration-200 group"
+                "w-full text-left flex items-start gap-3 p-3 rounded-lg border border-border bg-background/50",
+                "hover:border-accent hover:bg-accent/30 transition-all duration-200 group"
               )}
             >
-              <span className="flex-shrink-0 w-6 h-6 rounded bg-gold-100 text-gold-700 text-xs font-bold flex items-center justify-center mt-0.5">
+              <span className="flex-shrink-0 w-6 h-6 rounded bg-accent text-accent-foreground text-xs font-bold flex items-center justify-center mt-0.5">
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-ink-800 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {source.book_name}
                 </p>
-                <p className="text-xs text-ink-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {source.author}
                   {source.page_num_range.length > 0 &&
                     ` · p. ${source.page_num_range.join("-")}`}
@@ -291,7 +291,7 @@ export function SourcesPanel({ sources }: { sources: SourceData[] }) {
               </div>
               <ExternalLink
                 size={12}
-                className="flex-shrink-0 text-ink-300 group-hover:text-gold-500 mt-1 transition-colors"
+                className="flex-shrink-0 text-border group-hover:text-primary mt-1 transition-colors"
               />
             </button>
           ))}
