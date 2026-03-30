@@ -127,7 +127,7 @@ function CitationOverlay({
 // Citation Group Badge (inline in text, shows book names)
 // ============================================================
 
-function CitationGroupBadge({
+export function CitationGroupBadge({
   sources,
 }: {
   ids: number[];
