@@ -517,7 +517,7 @@ const COVER_PALETTES = [
   { bg: "#1b2838", accent: "#2a4a6b", text: "#cce3f0" },  // navy
   { bg: "#2d1b2e", accent: "#5c3a60", text: "#e8d0ea" },  // plum
   { bg: "#3b1c1c", accent: "#6b3030", text: "#f0d0d0" },  // burgundy
-  { bg: "#2e2412", accent: "#5c4a28", text: "#f0e4c8" },  // antique gold
+  { bg: "#1a2a3a", accent: "#2e4e6e", text: "#c8ddf0" },  // slate blue
   { bg: "#1c2e2e", accent: "#2a5454", text: "#c8e8e8" },  // teal
   { bg: "#2a1f14", accent: "#5a4030", text: "#e8d8c4" },  // mahogany
   { bg: "#1e2a1e", accent: "#3a5a3a", text: "#d0e8d0" },  // forest
@@ -747,7 +747,7 @@ function BookListCard({ book }: { book: Book }) {
         {/* Author */}
         {book.author_full && (
           <p
-            className="text-secondary-foreground text-xs mt-1"
+            className="text-muted-foreground text-xs mt-1"
             dir={authorDir}
           >
             {book.author_full}
