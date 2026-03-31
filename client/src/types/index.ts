@@ -34,8 +34,10 @@ export interface TocEntry {
   id: number;
   title: string;
   page_id: number;
-  parent_id: number | null;
-  level: number;
+  page_num: number;
+  parent: number;
+  parent_id?: number | null;
+  level?: number;
   children?: TocEntry[];
 }
 

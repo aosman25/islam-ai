@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -15,16 +15,88 @@ import type { Book, BookPage, TocEntry } from "@/types";
 import {
   ArrowLeft,
   BookOpen,
-  ChevronDown,
   ChevronRight,
   GripVertical,
   List,
   Info,
   PanelRightClose,
   PanelRightOpen,
+  NotepadText,
 } from "lucide-react";
 
 type SidebarTab = "toc" | "info";
+
+const BRACKETED_NUMBERS_RE = /\[[\d٠-٩،,\-\s]+\][.،,؛:]?/g;
+const FONT_MARKER_RE = /<font[^>]*color="#be0000"[^>]*>[\d٠-٩\s\-]+<\/font>/g;
+const SPECIAL_BRACKET_RE = /⦗[\d٠-٩\s\-]+⦘/g;
+const EMPTY_PS_RE = /(<p[^>]*>\s*<\/p>\s*)+/g;
+
+type PageGroup = {
+  pageNum: number;
+  partTitle: string;
+  pages: BookPage[];
+  html: string;
+};
+
+function groupPagesByNum(pages: BookPage[]): PageGroup[] {
+  const groups: PageGroup[] = [];
+  for (const p of pages) {
+    const last = groups[groups.length - 1];
+    if (last && last.pageNum === p.page_num) {
+      last.pages.push(p);
+      last.html = last.html.replace(/<\/div>\s*$/, "</div><br><br>") + cleanPageHtml(p.display_elem);
+      if (p.part_title) last.partTitle = p.part_title;
+    } else {
+      groups.push({
+        pageNum: p.page_num,
+        partTitle: p.part_title,
+        pages: [p],
+        html: cleanPageHtml(p.display_elem),
+      });
+    }
+  }
+  return groups;
+}
+
+function cleanPageHtml(html: string): string {
+  return html.replace(FONT_MARKER_RE, "").replace(BRACKETED_NUMBERS_RE, "").replace(SPECIAL_BRACKET_RE, "").replace(EMPTY_PS_RE, "<br><br>");
+}
+
+function GroupedPages({ pages, showFootnotes }: { pages: BookPage[]; showFootnotes: boolean }) {
+  const groups = useMemo(() => groupPagesByNum(pages), [pages]);
+  return (
+    <>
+      {groups.map((group, i) => (
+        <div key={group.pages[0].page_id} id={`page-${group.pages[0].page_id}`}>
+          {i > 0 && (
+            <div className="flex items-center gap-3 my-8 select-none">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[10px] font-medium text-muted-foreground bg-background px-2 tabular-nums">
+                {group.pageNum}
+              </span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+          )}
+
+          {group.partTitle &&
+            (i === 0 || group.partTitle !== groups[i - 1]?.partTitle) && (
+              <h2
+                className="text-xl font-bold text-foreground mb-6 text-center"
+                dir={detectDirection(group.partTitle)}
+              >
+                {group.partTitle}
+              </h2>
+            )}
+
+          <div
+            className={cn("prose-arabic", !showFootnotes && "hide-footnotes")}
+            dangerouslySetInnerHTML={{ __html: group.html }}
+          />
+        </div>
+      ))}
+    </>
+  );
+}
 
 export default function BookViewerPage() {
   return (
@@ -44,13 +116,18 @@ function BookViewerInner() {
   const [pages, setPages] = useState<BookPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingBefore, setLoadingBefore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [hasBefore, setHasBefore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("toc");
+  const [showFootnotes, setShowFootnotes] = useState(false);
   const [seeking, setSeeking] = useState(false);
   const readerRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const firstOffsetRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +147,9 @@ function BookViewerInner() {
         if (!cancelled) {
           setPages(res.data);
           setOffset(res.offset + res.data.length);
+          firstOffsetRef.current = res.offset;
           setHasMore(res.data.length === 20);
+          setHasBefore(res.offset > 0);
           setLoading(false);
         }
       })
@@ -99,6 +178,40 @@ function BookViewerInner() {
     }
   }, [bookId, offset, loadingMore, hasMore]);
 
+  const loadBefore = useCallback(async () => {
+    if (loadingBefore || !hasBefore) return;
+    const beforeOffset = firstOffsetRef.current;
+    if (beforeOffset <= 0) { setHasBefore(false); return; }
+    setLoadingBefore(true);
+    try {
+      const loadCount = Math.min(20, beforeOffset);
+      const newOffset = beforeOffset - loadCount;
+      const res = await getBookPages(bookId, { offset: newOffset, limit: loadCount });
+      if (res.data.length > 0) {
+        // preserve scroll position
+        const reader = readerRef.current;
+        const prevHeight = reader?.scrollHeight ?? 0;
+        setPages((prev) => [...res.data, ...prev]);
+        firstOffsetRef.current = newOffset;
+        setHasBefore(newOffset > 0);
+        // restore scroll after prepend
+        requestAnimationFrame(() => {
+          if (reader) {
+            const newHeight = reader.scrollHeight;
+            reader.scrollTop += newHeight - prevHeight;
+          }
+        });
+      } else {
+        setHasBefore(false);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingBefore(false);
+    }
+  }, [bookId, loadingBefore, hasBefore]);
+
+  // Bottom sentinel observer
   useEffect(() => {
     if (!bottomSentinelRef.current) return;
     const observer = new IntersectionObserver(
@@ -111,8 +224,28 @@ function BookViewerInner() {
     return () => observer.disconnect();
   }, [loadMore]);
 
+  // Top sentinel observer
+  useEffect(() => {
+    if (!topSentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadBefore();
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(topSentinelRef.current);
+    return () => observer.disconnect();
+  }, [loadBefore]);
+
   const navigateToPage = useCallback(
     async (pageId: number) => {
+      // If the page is already loaded, scroll to it
+      const existingEl = readerRef.current?.querySelector(`#page-${pageId}`);
+      if (existingEl) {
+        existingEl.scrollIntoView({ behavior: "instant", block: "start" });
+        return;
+      }
+
       setSeeking(true);
       try {
         const res = await getBookPages(bookId, {
@@ -121,7 +254,9 @@ function BookViewerInner() {
         });
         setPages(res.data);
         setOffset(res.offset + res.data.length);
+        firstOffsetRef.current = res.offset;
         setHasMore(res.data.length === 20);
+        setHasBefore(res.offset > 0);
         if (readerRef.current) readerRef.current.scrollTop = 0;
       } catch (err) {
         console.error(err);
@@ -169,6 +304,8 @@ function BookViewerInner() {
         book={book}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        showFootnotes={showFootnotes}
+        onToggleFootnotes={() => setShowFootnotes(!showFootnotes)}
       />
 
       {/* Main Content Area */}
@@ -216,34 +353,15 @@ function BookViewerInner() {
 
                 {/* Pages */}
                 <article className="max-w-4xl mx-auto px-5 md:px-12 lg:px-16 py-6">
-                  {pages.map((p, i) => (
-                    <div key={`${p.book_id}-${p.page_id}`} id={`page-${p.page_id}`}>
-                      {i > 0 && (
-                        <div className="flex items-center gap-3 my-8 select-none">
-                          <div className="flex-1 h-px bg-border" />
-                          <span className="text-[10px] font-medium text-muted-foreground bg-background px-2 tabular-nums">
-                            {p.page_num}
-                          </span>
-                          <div className="flex-1 h-px bg-border" />
-                        </div>
-                      )}
-
-                      {p.part_title &&
-                        (i === 0 || p.part_title !== pages[i - 1]?.part_title) && (
-                          <h2
-                            className="text-xl font-bold text-foreground mb-6 text-center"
-                            dir={detectDirection(p.part_title)}
-                          >
-                            {p.part_title}
-                          </h2>
-                        )}
-
-                      <div
-                        className="prose-arabic"
-                        dangerouslySetInnerHTML={{ __html: p.display_elem }}
-                      />
+                  {/* Top sentinel for loading previous pages */}
+                  <div ref={topSentinelRef} className="h-1" />
+                  {loadingBefore && (
+                    <div className="flex justify-center py-4">
+                      <Spinner />
                     </div>
-                  ))}
+                  )}
+
+                  <GroupedPages pages={pages} showFootnotes={showFootnotes} />
 
                   <div ref={bottomSentinelRef} className="h-4" />
 
@@ -308,10 +426,14 @@ function ReaderNavBar({
   book,
   sidebarOpen,
   onToggleSidebar,
+  showFootnotes,
+  onToggleFootnotes,
 }: {
   book: Book;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
+  showFootnotes: boolean;
+  onToggleFootnotes: () => void;
 }) {
   return (
     <header className="flex items-center justify-between h-12 px-4 lg:px-6 border-b border-border bg-background/95 backdrop-blur-lg z-20 flex-shrink-0">
@@ -332,31 +454,46 @@ function ReaderNavBar({
           >
             {book.book_name}
           </h1>
-          {book.author_full && (
+          {(book.author?.name || book.author_full) && (
             <>
               <div className="h-4 w-px bg-border flex-shrink-0 hidden sm:block" />
               <p
                 className="text-xs text-muted-foreground truncate hidden sm:block"
-                dir={detectDirection(book.author_full)}
+                dir={detectDirection(book.author?.name || book.author_full || "")}
               >
-                {book.author_full}
+                {book.author?.name || book.author_full}
               </p>
             </>
           )}
         </div>
       </div>
 
-      <button
-        onClick={onToggleSidebar}
-        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
-        title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-      >
+      <div className="flex items-center gap-1">
+        <button
+          onClick={onToggleFootnotes}
+          className={cn(
+            "p-1.5 rounded-lg transition-colors flex-shrink-0",
+            showFootnotes
+              ? "text-primary bg-primary/10 hover:bg-primary/20"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          )}
+          title={showFootnotes ? "Hide footnotes" : "Show footnotes"}
+        >
+          <NotepadText size={16} />
+        </button>
+
+        <button
+          onClick={onToggleSidebar}
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
+          title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+        >
         {sidebarOpen ? (
           <PanelRightClose size={16} />
         ) : (
           <PanelRightOpen size={16} />
         )}
       </button>
+      </div>
     </header>
   );
 }
@@ -417,8 +554,37 @@ function ReaderSidebar({
 }
 
 /* ============================================================
-   TOC Panel
+   TOC Panel — Tree View (inspired by usul-dev)
    ============================================================ */
+
+interface TocTreeItem {
+  id: number;
+  title: string;
+  pageId: number;
+  children: TocTreeItem[];
+}
+
+function buildTocTree(entries: TocEntry[]): TocTreeItem[] {
+  const map = new Map<number, TocTreeItem>();
+  const roots: TocTreeItem[] = [];
+
+  for (const e of entries) {
+    map.set(e.id, { id: e.id, title: e.title, pageId: e.page_id, children: [] });
+  }
+
+  for (const e of entries) {
+    const node = map.get(e.id)!;
+    const parentId = e.parent ?? e.parent_id;
+    if (parentId && parentId !== 0 && map.has(parentId)) {
+      map.get(parentId)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  return roots;
+}
+
 
 function TocPanel({
   entries,
@@ -427,6 +593,28 @@ function TocPanel({
   entries: TocEntry[];
   onNavigate: (pageId: number) => void;
 }) {
+  const tree = useMemo(() => buildTocTree(entries), [entries]);
+
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleSelect = useCallback(
+    (item: TocTreeItem) => {
+      setSelectedId(String(item.id));
+      onNavigate(item.pageId);
+    },
+    [onNavigate]
+  );
+
   if (entries.length === 0) {
     return (
       <div className="p-6 text-center">
@@ -438,78 +626,111 @@ function TocPanel({
     );
   }
 
-  const roots = entries.filter((e) => !e.parent_id);
-
   return (
-    <div className="py-2">
-      {roots.map((entry) => (
-        <TocItem
-          key={entry.id}
-          entry={entry}
-          allEntries={entries}
-          onNavigate={onNavigate}
-          depth={0}
-        />
-      ))}
+    <div className="relative overflow-hidden">
+      {/* Tree */}
+      <div className="p-2" role="tree" dir="rtl">
+        {tree.map((item) => (
+          <TocTreeNode
+            key={item.id}
+            item={item}
+            depth={0}
+            expandedIds={expandedIds}
+            selectedId={selectedId}
+            onToggle={toggleExpand}
+            onSelect={handleSelect}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
-function TocItem({
-  entry,
-  allEntries,
-  onNavigate,
+function TocTreeNode({
+  item,
   depth,
+  expandedIds,
+  selectedId,
+  onToggle,
+  onSelect,
 }: {
-  entry: TocEntry;
-  allEntries: TocEntry[];
-  onNavigate: (pageId: number) => void;
+  item: TocTreeItem;
   depth: number;
+  expandedIds: Set<string>;
+  selectedId: string | null;
+  onToggle: (id: string) => void;
+  onSelect: (item: TocTreeItem) => void;
 }) {
-  const [expanded, setExpanded] = useState(depth === 0);
-  const children = allEntries.filter((e) => e.parent_id === entry.id);
-  const hasChildren = children.length > 0;
-  const dir = detectDirection(entry.title);
+  const hasChildren = item.children.length > 0;
+  const isExpanded = expandedIds.has(String(item.id));
+  const isSelected = selectedId === String(item.id);
+  const dir = detectDirection(item.title);
+
+  if (!hasChildren) {
+    return (
+      <button
+        onClick={() => onSelect(item)}
+        className={cn(
+          "group relative w-full flex items-center py-2 text-sm transition-colors rounded-lg cursor-pointer",
+          "hover:bg-accent/70",
+          isSelected && "bg-primary/10 text-primary"
+        )}
+        style={{ paddingInlineStart: `${8 + depth * 16}px`, paddingInlineEnd: 8 }}
+        dir={dir}
+      >
+        <span className={cn("truncate", isSelected ? "font-medium" : "text-muted-foreground")} title={item.title}>
+          {item.title}
+        </span>
+      </button>
+    );
+  }
 
   return (
     <div>
+      {/* Node trigger */}
       <button
         onClick={() => {
-          if (hasChildren) setExpanded(!expanded);
-          onNavigate(entry.page_id);
+          onToggle(String(item.id));
+          onSelect(item);
         }}
         className={cn(
-          "w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-muted transition-colors text-sm",
-          depth > 0 && "text-xs"
+          "group relative w-full flex items-center py-2.5 text-sm transition-colors rounded-lg cursor-pointer",
+          "hover:bg-accent/70",
+          isSelected && "bg-primary/10 text-primary"
         )}
-        style={{ paddingLeft: `${12 + depth * 16}px` }}
+        style={{ paddingInlineStart: `${4 + depth * 16}px`, paddingInlineEnd: 8 }}
         dir={dir}
       >
-        {hasChildren && (
-          <span className="flex-shrink-0 mt-0.5 text-muted-foreground">
-            {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          </span>
-        )}
-        <span
+        <ChevronRight
+          size={14}
           className={cn(
-            "flex-1 leading-relaxed",
-            depth === 0
-              ? "font-medium text-foreground"
-              : "text-muted-foreground"
+            "shrink-0 text-muted-foreground transition-transform duration-200 me-1 rotate-180",
+            isExpanded && "!rotate-90"
           )}
-        >
-          {entry.title}
+        />
+        <span className={cn("truncate font-medium", isSelected ? "text-primary" : "text-foreground")} title={item.title}>
+          {item.title}
         </span>
       </button>
-      {hasChildren && expanded && (
-        <div>
-          {children.map((child) => (
-            <TocItem
+
+      {/* Children with connector line */}
+      {isExpanded && (
+        <div className="relative" style={{ paddingInlineStart: `${12 + depth * 16}px` }}>
+          {/* Vertical connector */}
+          <div
+            className="absolute top-0 bottom-0 w-[2px] bg-border hover:bg-foreground/30 transition-colors cursor-pointer"
+            style={{ insetInlineStart: `${7 + depth * 16}px` }}
+            onClick={() => onToggle(String(item.id))}
+          />
+          {item.children.map((child) => (
+            <TocTreeNode
               key={child.id}
-              entry={child}
-              allEntries={allEntries}
-              onNavigate={onNavigate}
+              item={child}
               depth={depth + 1}
+              expandedIds={expandedIds}
+              selectedId={selectedId}
+              onToggle={onToggle}
+              onSelect={onSelect}
             />
           ))}
         </div>
