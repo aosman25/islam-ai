@@ -262,6 +262,22 @@
   body {
     @apply bg-background text-foreground;
   }
+  button,
+  [role="button"],
+  a[href],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  select,
+  summary,
+  [onclick],
+  label[for] {
+    cursor: pointer;
+  }
+  [disabled],
+  [aria-disabled="true"] {
+    cursor: default;
+  }
   html {
     font-size: 14px;
     -webkit-font-smoothing: antialiased;

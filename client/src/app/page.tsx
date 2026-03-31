@@ -184,21 +184,22 @@ function PreviewCitationBadge({ ids }: { ids: number[] }) {
   return <CitationGroupBadge ids={ids} sources={sources} />;
 }
 
-function AnswerPreviewSection() {
+function AnswerPreviewSection({ skipAnimations = false }: { skipAnimations?: boolean }) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const hasTriggered = useRef(false);
 
   // Animation phases
   const [phase, setPhase] = useState<
     "idle" | "question" | "thinking" | "streaming" | "done"
-  >("idle");
-  const [typedChars, setTypedChars] = useState(0);
-  const [visibleParagraphs, setVisibleParagraphs] = useState(0);
-  const [showCta, setShowCta] = useState(false);
-  const [showSources, setShowSources] = useState(false);
+  >(skipAnimations ? "done" : "idle");
+  const [typedChars, setTypedChars] = useState(skipAnimations ? QUESTION_TEXT.length : 0);
+  const [visibleParagraphs, setVisibleParagraphs] = useState(skipAnimations ? 4 : 0);
+  const [showCta, setShowCta] = useState(skipAnimations);
+  const [showSources, setShowSources] = useState(skipAnimations);
 
   // Intersection Observer — trigger once when section is ~30% visible
   useEffect(() => {
+    if (skipAnimations) return;
     const el = sectionRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -212,7 +213,7 @@ function AnswerPreviewSection() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [skipAnimations]);
 
   // Phase: typing the question
   useEffect(() => {
@@ -251,14 +252,14 @@ function AnswerPreviewSection() {
 
   // Phase: done — show CTA and sources
   useEffect(() => {
-    if (phase !== "done") return;
+    if (phase !== "done" || skipAnimations) return;
     const t1 = setTimeout(() => setShowCta(true), 100);
     const t2 = setTimeout(() => setShowSources(true), 250);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [phase]);
+  }, [phase, skipAnimations]);
 
   // Cursor component
   const Cursor = () => (
@@ -533,9 +534,9 @@ function AnswerPreviewSection() {
 /* ------------------------------------------------------------------ */
 /*  Browse by Subject — fade-up on scroll                              */
 /* ------------------------------------------------------------------ */
-function BrowseBySubjectSection() {
+function BrowseBySubjectSection({ skipAnimations = false }: { skipAnimations?: boolean }) {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(skipAnimations);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -561,7 +562,8 @@ function BrowseBySubjectSection() {
       <div className="relative mx-auto max-w-7xl px-page">
         <div
           className={cn(
-            "flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14 transition-all duration-700",
+            "flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14",
+            !skipAnimations && "transition-all duration-700",
             visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           )}
         >
@@ -593,12 +595,13 @@ function BrowseBySubjectSection() {
               href={`/books?categories=${encodeURIComponent(cat.categories.join(","))}`}
               className={cn(
                 "group relative rounded-2xl overflow-hidden border border-black/[0.06] hover:shadow-xl hover:scale-[1.02]",
-                visible ? "transition-[transform,box-shadow] duration-300" : "transition-[opacity,transform] duration-500",
+                !skipAnimations && "transition-[opacity,translate] duration-500",
+                "hover:transition-[transform,box-shadow] hover:duration-150 hover:ease-out",
                 visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
               )}
               style={{
                 backgroundColor: cat.palette.bg,
-                transitionDelay: visible ? `${150 + i * 100}ms` : "0ms",
+                transitionDelay: !skipAnimations && visible ? `${150 + i * 100}ms` : "0ms",
               }}
             >
               {/* Decorative SVG pattern */}
@@ -720,12 +723,12 @@ function BrowseBySubjectSection() {
   );
 }
 
-function useCountUp(target: number, duration = 1500, start = false) {
-  const [value, setValue] = useState(0);
+function useCountUp(target: number, duration = 1500, start = false, instant = false) {
+  const [value, setValue] = useState(instant ? target : 0);
   const rafRef = useRef<number>(undefined);
 
   useEffect(() => {
-    if (!start) return;
+    if (!start || instant) return;
     const startTime = performance.now();
     const animate = (now: number) => {
       const elapsed = now - startTime;
@@ -747,12 +750,20 @@ function useCountUp(target: number, duration = 1500, start = false) {
 export default function HomePage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [mounted, setMounted] = useState(false);
+  const [skipAnimations] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (sessionStorage.getItem("homepage-visited")) return true;
+    sessionStorage.setItem("homepage-visited", "1");
+    return false;
+  });
+  const [mounted, setMounted] = useState(skipAnimations);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    if (!mounted) setMounted(true);
+  }, []);
 
-  const chunksCount = useCountUp(650, 1800, mounted);
-  const booksCount = useCountUp(2500, 2000, mounted);
+  const chunksCount = useCountUp(650, 1800, mounted, skipAnimations);
+  const booksCount = useCountUp(2500, 2000, mounted, skipAnimations);
 
   const handleSearch = (q?: string) => {
     const searchQuery = q || query;
@@ -784,16 +795,18 @@ export default function HomePage() {
               <div>
                 <h1
                   className={cn(
-                    "font-heading font-bold text-2xl sm:text-3xl md:text-4xl leading-[1.12] tracking-tight text-foreground whitespace-nowrap transition-all duration-700 delay-100",
-                    mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                    "font-heading font-bold text-2xl sm:text-3xl md:text-4xl leading-[1.12] tracking-tight text-foreground whitespace-nowrap",
+                    !skipAnimations && "transition-all duration-700 delay-100",
+                    mounted || skipAnimations ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                   )}
                 >
                   AI-Powered Islamic <span className="hero-gradient-text">Scholarship</span>
                 </h1>
                 <p
                   className={cn(
-                    "mt-6 text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl transition-all duration-700 delay-200",
-                    mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                    "mt-6 text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl",
+                    !skipAnimations && "transition-all duration-700 delay-200",
+                    mounted || skipAnimations ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                   )}
                 >
                   Explore centuries of Islamic scholarship through AI. Ask questions,
@@ -804,8 +817,9 @@ export default function HomePage() {
               {/* Search Box */}
               <div
                 className={cn(
-                  "max-w-xl transition-all duration-700 delay-300",
-                  mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                  "max-w-xl",
+                  !skipAnimations && "transition-all duration-700 delay-300",
+                  mounted || skipAnimations ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                 )}
               >
                 <div className="relative group">
@@ -826,7 +840,7 @@ export default function HomePage() {
                     <button
                       onClick={() => handleSearch()}
                       disabled={!query.trim()}
-                      className="mr-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:shadow-md hover:brightness-110 disabled:opacity-30 disabled:shadow-none transition-all duration-300 flex items-center gap-2 cursor-pointer"
+                      className="mr-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:shadow-md hover:brightness-110 disabled:opacity-30 disabled:shadow-none transition-all duration-300 flex items-center gap-2"
                     >
                       <span className="hidden sm:inline">Ask</span>
                       <ArrowRight size={15} />
@@ -842,9 +856,9 @@ export default function HomePage() {
                       onClick={() => handleSearch(q)}
                       className={cn(
                         "px-3.5 py-1.5 rounded-full border border-border/60 bg-background/60 backdrop-blur-sm text-xs text-muted-foreground hover:text-primary hover:border-primary/30 hover:bg-primary/[0.04] transition-all duration-200 cursor-pointer",
-                        mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                        mounted || skipAnimations ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                       )}
-                      style={{ transitionDelay: mounted ? `${400 + i * 60}ms` : "0ms" }}
+                      style={{ transitionDelay: !skipAnimations && mounted ? `${400 + i * 60}ms` : "0ms" }}
                     >
                       {q}
                     </button>
@@ -856,8 +870,9 @@ export default function HomePage() {
             {/* Right column: simple stats */}
             <div
               className={cn(
-                "lg:col-span-5 hidden lg:flex items-center justify-center transition-all duration-1000 delay-500",
-                mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                "lg:col-span-5 hidden lg:flex items-center justify-center",
+                !skipAnimations && "transition-all duration-1000 delay-500",
+                mounted || skipAnimations ? "opacity-100 scale-100" : "opacity-0 scale-95"
               )}
             >
               <div className="flex gap-8">
@@ -882,12 +897,12 @@ export default function HomePage() {
       {/* ============================================================
           ANSWER PREVIEW SECTION
           ============================================================ */}
-      <AnswerPreviewSection />
+      <AnswerPreviewSection skipAnimations={skipAnimations} />
 
       {/* ============================================================
           CATEGORIES SECTION
           ============================================================ */}
-      <BrowseBySubjectSection />
+      <BrowseBySubjectSection skipAnimations={skipAnimations} />
 
       <Footer />
     </div>
