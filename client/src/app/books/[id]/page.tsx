@@ -3,6 +3,11 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import {
+  Panel,
+  Group as PanelGroup,
+  Separator as ResizeHandle,
+} from "react-resizable-panels";
 import { Spinner } from "@/components/ui/spinner";
 import { cn, detectDirection } from "@/lib/utils";
 import { getBook, getBookPages } from "@/lib/api";
@@ -12,6 +17,7 @@ import {
   BookOpen,
   ChevronDown,
   ChevronRight,
+  GripVertical,
   List,
   Info,
   PanelRightClose,
@@ -43,7 +49,6 @@ function BookViewerInner() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("toc");
   const [seeking, setSeeking] = useState(false);
-
   const readerRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
 
@@ -144,7 +149,10 @@ function BookViewerInner() {
         <div className="text-center">
           <BookOpen size={40} className="mx-auto text-border mb-4" />
           <p className="text-foreground font-medium">Book not found</p>
-          <Link href="/books" className="text-sm text-primary hover:underline mt-2 inline-block">
+          <Link
+            href="/books"
+            className="text-sm text-primary hover:underline mt-2 inline-block"
+          >
             Back to Library
           </Link>
         </div>
@@ -155,139 +163,262 @@ function BookViewerInner() {
   const tocEntries = (book.table_of_contents as TocEntry[] | null) ?? [];
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* Top Bar */}
-      <header className="flex items-center justify-between h-14 px-4 border-b border-border bg-card/90 backdrop-blur-lg z-10 flex-shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link
-            href="/books"
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
-          >
-            <ArrowLeft size={18} />
-          </Link>
-          <div className="min-w-0">
-            <h1
-              className="text-sm font-semibold text-foreground truncate"
-              dir={detectDirection(book.book_name)}
-            >
-              {book.book_name}
-            </h1>
-            {book.author_full && (
-              <p className="text-[11px] text-muted-foreground truncate">
-                {book.author_full}
-              </p>
-            )}
-          </div>
-        </div>
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-        >
-          {sidebarOpen ? (
-            <PanelRightClose size={18} />
-          ) : (
-            <PanelRightOpen size={18} />
-          )}
-        </button>
-      </header>
+    <div className="h-svh w-svw flex flex-col overflow-hidden bg-background">
+      {/* Navigation Bar */}
+      <ReaderNavBar
+        book={book}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+      />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Reader */}
-        <div
-          ref={readerRef}
-          className="flex-1 overflow-y-auto relative"
+      {/* Main Content Area */}
+      <div className="flex-1 min-h-0 w-full overflow-hidden">
+        <PanelGroup
+          orientation="horizontal"
+          style={{ height: "100%", width: "100%" }}
         >
-          {seeking && (
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
-              <Spinner size="lg" />
-            </div>
-          )}
-
-          <div className="max-w-3xl mx-auto px-6 md:px-12 py-8">
-            {pages.map((p, i) => (
-              <div key={`${p.book_id}-${p.page_id}`} id={`page-${p.page_id}`}>
-                {i > 0 && (
-                  <div className="flex items-center gap-3 my-8 select-none">
-                    <div className="flex-1 h-px bg-border" />
-                    <span className="text-[10px] font-medium text-muted-foreground bg-background px-2">
-                      {p.page_num}
-                    </span>
-                    <div className="flex-1 h-px bg-border" />
+          {/* Reader Panel */}
+          <Panel defaultSize={sidebarOpen ? "70%" : "100%"} minSize="50%">
+            <div className="relative h-full">
+              {/* Reader Content */}
+              <div
+                ref={readerRef}
+                className="h-full overflow-y-auto [overflow-anchor:none]"
+              >
+                {seeking && (
+                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
+                    <Spinner size="lg" />
                   </div>
                 )}
 
-                {p.part_title && (i === 0 || p.part_title !== pages[i - 1]?.part_title) && (
-                  <h2
-                    className="text-xl font-bold text-foreground mb-6 text-center"
-                    dir={detectDirection(p.part_title)}
-                  >
-                    {p.part_title}
-                  </h2>
-                )}
-
-                <div
-                  className="prose-arabic"
-                  dangerouslySetInnerHTML={{ __html: p.display_elem }}
-                />
-              </div>
-            ))}
-
-            <div ref={bottomSentinelRef} className="h-4" />
-
-            {loadingMore && (
-              <div className="flex justify-center py-8">
-                <Spinner />
-              </div>
-            )}
-
-            {!hasMore && pages.length > 0 && (
-              <div className="text-center py-12">
-                <div className="divider-diamond max-w-xs mx-auto mb-4">
-                  <div className="diamond" />
+                {/* Book Info Section */}
+                <div className="w-full px-5 lg:px-8">
+                  <div className="mx-auto max-w-4xl py-8">
+                    <h1
+                      className="text-2xl font-bold text-foreground leading-snug"
+                      dir={detectDirection(book.book_name)}
+                    >
+                      {book.book_name}
+                    </h1>
+                    {book.author_full && (
+                      <p
+                        className="text-base text-muted-foreground mt-2"
+                        dir={detectDirection(book.author_full)}
+                      >
+                        {book.author_full}
+                      </p>
+                    )}
+                  </div>
+                  <div className="mx-auto max-w-4xl">
+                    <div className="h-px bg-border" />
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">End of text</p>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Sidebar */}
-        {sidebarOpen && (
-          <aside className="w-72 lg:w-80 border-l border-border bg-card flex flex-col flex-shrink-0 overflow-hidden">
-            <div className="flex border-b border-border">
-              {[
-                { key: "toc" as const, label: "Contents", icon: List },
-                { key: "info" as const, label: "Details", icon: Info },
-              ].map(({ key, label, icon: Icon }) => (
-                <button
-                  key={key}
-                  onClick={() => setSidebarTab(key)}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2",
-                    sidebarTab === key
-                      ? "border-primary text-primary bg-accent/50"
-                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"
+                {/* Pages */}
+                <article className="max-w-4xl mx-auto px-5 md:px-12 lg:px-16 py-6">
+                  {pages.map((p, i) => (
+                    <div key={`${p.book_id}-${p.page_id}`} id={`page-${p.page_id}`}>
+                      {i > 0 && (
+                        <div className="flex items-center gap-3 my-8 select-none">
+                          <div className="flex-1 h-px bg-border" />
+                          <span className="text-[10px] font-medium text-muted-foreground bg-background px-2 tabular-nums">
+                            {p.page_num}
+                          </span>
+                          <div className="flex-1 h-px bg-border" />
+                        </div>
+                      )}
+
+                      {p.part_title &&
+                        (i === 0 || p.part_title !== pages[i - 1]?.part_title) && (
+                          <h2
+                            className="text-xl font-bold text-foreground mb-6 text-center"
+                            dir={detectDirection(p.part_title)}
+                          >
+                            {p.part_title}
+                          </h2>
+                        )}
+
+                      <div
+                        className="prose-arabic"
+                        dangerouslySetInnerHTML={{ __html: p.display_elem }}
+                      />
+                    </div>
+                  ))}
+
+                  <div ref={bottomSentinelRef} className="h-4" />
+
+                  {loadingMore && (
+                    <div className="flex justify-center py-8">
+                      <Spinner />
+                    </div>
                   )}
-                >
-                  <Icon size={14} />
-                  {label}
-                </button>
-              ))}
-            </div>
 
-            <div className="flex-1 overflow-y-auto">
-              {sidebarTab === "toc" ? (
-                <TocPanel entries={tocEntries} onNavigate={navigateToPage} />
-              ) : (
-                <InfoPanel book={book} />
-              )}
+                  {!hasMore && pages.length > 0 && (
+                    <div className="text-center py-12">
+                      <div className="divider-diamond max-w-xs mx-auto mb-4">
+                        <div className="diamond" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">End of text</p>
+                    </div>
+                  )}
+                </article>
+              </div>
             </div>
-          </aside>
+          </Panel>
+
+          {/* Resize Handle */}
+          {sidebarOpen && (
+            <>
+              <ResizeHandle className="group relative flex w-2 items-center justify-center bg-border/50 transition-colors hover:bg-primary/20 active:bg-primary/30">
+                <GripVertical
+                  size={12}
+                  className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                />
+              </ResizeHandle>
+
+              {/* Sidebar Panel */}
+              <Panel
+                defaultSize="30%"
+                minSize="15%"
+                maxSize="50%"
+                collapsible
+                collapsedSize={0}
+              >
+                <ReaderSidebar
+                  book={book}
+                  tocEntries={tocEntries}
+                  sidebarTab={sidebarTab}
+                  onTabChange={setSidebarTab}
+                  onNavigate={navigateToPage}
+                />
+              </Panel>
+            </>
+          )}
+        </PanelGroup>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   Navigation Bar
+   ============================================================ */
+
+function ReaderNavBar({
+  book,
+  sidebarOpen,
+  onToggleSidebar,
+}: {
+  book: Book;
+  sidebarOpen: boolean;
+  onToggleSidebar: () => void;
+}) {
+  return (
+    <header className="flex items-center justify-between h-12 px-4 lg:px-6 border-b border-border bg-background/95 backdrop-blur-lg z-20 flex-shrink-0">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <Link
+          href="/books"
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
+        >
+          <ArrowLeft size={16} />
+        </Link>
+
+        <div className="h-5 w-px bg-border flex-shrink-0" />
+
+        <div className="min-w-0 flex items-center gap-2">
+          <h1
+            className="text-sm font-semibold text-foreground truncate"
+            dir={detectDirection(book.book_name)}
+          >
+            {book.book_name}
+          </h1>
+          {book.author_full && (
+            <>
+              <div className="h-4 w-px bg-border flex-shrink-0 hidden sm:block" />
+              <p
+                className="text-xs text-muted-foreground truncate hidden sm:block"
+                dir={detectDirection(book.author_full)}
+              >
+                {book.author_full}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      <button
+        onClick={onToggleSidebar}
+        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
+        title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+      >
+        {sidebarOpen ? (
+          <PanelRightClose size={16} />
+        ) : (
+          <PanelRightOpen size={16} />
+        )}
+      </button>
+    </header>
+  );
+}
+
+/* ============================================================
+   Sidebar
+   ============================================================ */
+
+function ReaderSidebar({
+  book,
+  tocEntries,
+  sidebarTab,
+  onTabChange,
+  onNavigate,
+}: {
+  book: Book;
+  tocEntries: TocEntry[];
+  sidebarTab: SidebarTab;
+  onTabChange: (tab: SidebarTab) => void;
+  onNavigate: (pageId: number) => void;
+}) {
+  const tabs = [
+    { key: "toc" as const, label: "Contents", icon: List },
+    { key: "info" as const, label: "Details", icon: Info },
+  ];
+
+  return (
+    <div className="flex h-full flex-col bg-card">
+      {/* Tab Buttons */}
+      <div className="flex border-b border-border flex-shrink-0">
+        {tabs.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => onTabChange(key)}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium transition-colors border-b-2",
+              sidebarTab === key
+                ? "border-primary text-primary bg-accent/50"
+                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+          >
+            <Icon size={14} />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="flex-1 overflow-y-auto">
+        {sidebarTab === "toc" ? (
+          <TocPanel entries={tocEntries} onNavigate={onNavigate} />
+        ) : (
+          <InfoPanel book={book} />
         )}
       </div>
     </div>
   );
 }
+
+/* ============================================================
+   TOC Panel
+   ============================================================ */
 
 function TocPanel({
   entries,
@@ -300,7 +431,9 @@ function TocPanel({
     return (
       <div className="p-6 text-center">
         <List size={24} className="mx-auto text-border mb-3" />
-        <p className="text-xs text-muted-foreground">No table of contents available</p>
+        <p className="text-xs text-muted-foreground">
+          No table of contents available
+        </p>
       </div>
     );
   }
@@ -354,11 +487,7 @@ function TocItem({
       >
         {hasChildren && (
           <span className="flex-shrink-0 mt-0.5 text-muted-foreground">
-            {expanded ? (
-              <ChevronDown size={12} />
-            ) : (
-              <ChevronRight size={12} />
-            )}
+            {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           </span>
         )}
         <span
@@ -388,6 +517,10 @@ function TocItem({
     </div>
   );
 }
+
+/* ============================================================
+   Info Panel
+   ============================================================ */
 
 function InfoPanel({ book }: { book: Book }) {
   const fields = [

@@ -326,6 +326,10 @@ textarea:focus-visible {
   margin-bottom: 1.5rem;
 }
 
+.prose-arabic .PageHead {
+  display: none;
+}
+
 /* ============================================================
    DECORATIVE UTILITIES
    ============================================================ */
