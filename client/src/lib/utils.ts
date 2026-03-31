@@ -71,3 +71,20 @@ export function debounce<T extends (...args: unknown[]) => void>(
     timer = setTimeout(() => fn(...args), ms);
   };
 }
+
+/**
+ * Normalize Arabic text for search comparison.
+ * Unifies letter variants (e.g. أإآ → ا, ة → ه, ى → ي) and strips diacritics/tatweel.
+ */
+export function normalizeArabic(text: string): string {
+  return text
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/[\u064B-\u065F\u0670]/g, "") // diacritics (tashkeel)
+    .replace(/\u0640/g, "")               // tatweel
+    .trim()
+    .toLowerCase();
+}

@@ -18,7 +18,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CitationGroupBadge } from "@/components/chat/citation-renderer";
+import { CitationGroupBadge, CitationOverlayProvider } from "@/components/chat/citation-renderer";
 import { PREVIEW_SOURCE_MAP } from "@/data/preview-sources";
 
 const SUGGESTED_QUERIES = [
@@ -30,10 +30,10 @@ const SUGGESTED_QUERIES = [
 
 
 const CATEGORIES = [
-  { name: "Hadith", nameAr: "الحديث", icon: Scroll, count: "8,200+" },
-  { name: "Fiqh", nameAr: "الفقه", icon: GraduationCap, count: "5,400+" },
-  { name: "Tafsir", nameAr: "التفسير", icon: BookOpen, count: "3,100+" },
-  { name: "Aqeedah", nameAr: "العقيدة", icon: Star, count: "2,800+" },
+  { name: "Aqeedah", nameAr: "العقيدة", icon: Star, palette: { bg: "#c8d8ec", pattern: "#4a6fa0", text: "#1e3050" }, categories: ["العقيدة", "الفرق والردود"] },
+  { name: "Hadith", nameAr: "الحديث", icon: Scroll, palette: { bg: "#c2e0cc", pattern: "#38845a", text: "#14301e" }, categories: ["كتب السنة", "شروح الحديث", "علوم الحديث", "التخريج والأطراف", "العلل والسؤلات الحديثية"] },
+  { name: "Fiqh", nameAr: "الفقه", icon: GraduationCap, palette: { bg: "#dcc8e0", pattern: "#7a4a82", text: "#2e1434" }, categories: ["الفقه العام", "الفقه الحنفي", "الفقه المالكي", "الفقه الشافعي", "الفقه الحنبلي", "أصول الفقه", "علوم الفقه والقواعد الفقهية", "مسائل فقهية", "الفتاوى", "الفرائض والوصايا"] },
+  { name: "Tafsir", nameAr: "التفسير", icon: BookOpen, palette: { bg: "#e4d5c2", pattern: "#7a5c38", text: "#2e1e0e" }, categories: ["التفسير", "علوم القرآن وأصول التفسير", "التجويد والقراءات"] },
 ];
 
 
@@ -530,6 +530,196 @@ function AnswerPreviewSection() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Browse by Subject — fade-up on scroll                              */
+/* ------------------------------------------------------------------ */
+function BrowseBySubjectSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setVisible(true);
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section ref={sectionRef} className="py-24 md:py-32 relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30" />
+      <div className="absolute inset-0 opacity-[0.02]">
+        <GeometricPattern />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-page">
+        <div
+          className={cn(
+            "flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14 transition-all duration-700",
+            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          )}
+        >
+          <div className="max-w-lg">
+            <p className="text-xs font-medium tracking-[0.2em] uppercase text-primary mb-4">
+              Disciplines
+            </p>
+            <h2 className="text-3xl md:text-4xl font-heading text-foreground mb-4 leading-tight">
+              Browse by Subject
+            </h2>
+            <p className="text-muted-foreground text-base">
+              Explore the rich traditions of Islamic scholarship across major
+              disciplines.
+            </p>
+          </div>
+          <Link
+            href="/books"
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:gap-3 transition-all duration-200 self-start md:self-auto"
+          >
+            View all subjects
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-5">
+          {CATEGORIES.map((cat, i) => (
+            <Link
+              key={cat.name}
+              href={`/books?categories=${encodeURIComponent(cat.categories.join(","))}`}
+              className={cn(
+                "group relative rounded-2xl overflow-hidden border border-black/[0.06] hover:shadow-xl hover:scale-[1.02]",
+                visible ? "transition-[transform,box-shadow] duration-300" : "transition-[opacity,transform] duration-500",
+                visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+              )}
+              style={{
+                backgroundColor: cat.palette.bg,
+                transitionDelay: visible ? `${150 + i * 100}ms` : "0ms",
+              }}
+            >
+              {/* Decorative SVG pattern */}
+              <svg
+                className="absolute inset-0 w-full h-full opacity-[0.25] group-hover:opacity-[0.35] transition-opacity duration-500"
+                viewBox="0 0 200 200"
+                preserveAspectRatio="xMidYMid slice"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {i === 0 && /* 8-pointed star grid for Aqeedah */
+                  Array.from({ length: 4 }, (_, row) =>
+                    Array.from({ length: 4 }, (_, col) => {
+                      const cx = col * 55 + 25;
+                      const cy = row * 55 + 20;
+                      const r1 = 22;
+                      const r2 = 10;
+                      const points = Array.from({ length: 8 }, (_, k) => {
+                        const angle = (Math.PI / 4) * k - Math.PI / 2;
+                        const r = k % 2 === 0 ? r1 : r2;
+                        return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`;
+                      }).join(" ");
+                      return (
+                        <polygon
+                          key={`${row}-${col}`}
+                          points={points}
+                          stroke={cat.palette.pattern}
+                          strokeWidth="0.5"
+                        />
+                      );
+                    })
+                  )
+                }
+                {i === 1 && /* Concentric circles for Hadith */
+                  <>
+                    {Array.from({ length: 8 }, (_, k) => (
+                      <circle
+                        key={k}
+                        cx="100"
+                        cy="100"
+                        r={15 + k * 14}
+                        stroke={cat.palette.pattern}
+                        strokeWidth="0.4"
+                      />
+                    ))}
+                    {Array.from({ length: 12 }, (_, k) => {
+                      const angle = (Math.PI * 2 * k) / 12;
+                      return (
+                        <line
+                          key={k}
+                          x1="100"
+                          y1="100"
+                          x2={100 + 130 * Math.cos(angle)}
+                          y2={100 + 130 * Math.sin(angle)}
+                          stroke={cat.palette.pattern}
+                          strokeWidth="0.3"
+                        />
+                      );
+                    })}
+                  </>
+                }
+                {i === 2 && /* Diamond lattice for Fiqh */
+                  Array.from({ length: 5 }, (_, row) =>
+                    Array.from({ length: 5 }, (_, col) => {
+                      const cx = col * 45 + (row % 2 === 0 ? 10 : 32);
+                      const cy = row * 45 + 15;
+                      return (
+                        <polygon
+                          key={`${row}-${col}`}
+                          points={`${cx},${cy - 18} ${cx + 18},${cy} ${cx},${cy + 18} ${cx - 18},${cy}`}
+                          stroke={cat.palette.pattern}
+                          strokeWidth="0.4"
+                        />
+                      );
+                    })
+                  )
+                }
+                {i === 3 && /* Nested arches for Tafsir */
+                  <>
+                    {Array.from({ length: 7 }, (_, k) => (
+                      <path
+                        key={k}
+                        d={`M ${20 + k * 5} 200 Q 100 ${-20 + k * 20} ${180 - k * 5} 200`}
+                        stroke={cat.palette.pattern}
+                        strokeWidth="0.5"
+                      />
+                    ))}
+                    <line x1="100" y1="0" x2="100" y2="200" stroke={cat.palette.pattern} strokeWidth="0.3" />
+                  </>
+                }
+              </svg>
+
+              {/* Gradient overlay at bottom */}
+              <div
+                className="absolute inset-x-0 bottom-0 h-2/3"
+                style={{
+                  background: `linear-gradient(to top, ${cat.palette.bg} 20%, transparent)`,
+                }}
+              />
+
+              {/* Content */}
+              <div className="relative p-6 lg:p-8 flex flex-col h-full min-h-[160px] justify-end">
+                <div className="absolute top-5 right-5">
+                  <ArrowRight size={14} className="opacity-0 group-hover:opacity-70 transition-all duration-300 -translate-x-2 group-hover:translate-x-0" style={{ color: cat.palette.text }} />
+                </div>
+
+                <h3 className="text-base font-semibold mb-1" style={{ color: cat.palette.text }}>
+                  {cat.name}
+                </h3>
+                <p className="font-arabic text-sm opacity-60" style={{ color: cat.palette.text }}>
+                  {cat.nameAr}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function useCountUp(target: number, duration = 1500, start = false) {
   const [value, setValue] = useState(0);
   const rafRef = useRef<number>(undefined);
@@ -571,6 +761,7 @@ export default function HomePage() {
   };
 
   return (
+    <CitationOverlayProvider>
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
@@ -696,66 +887,10 @@ export default function HomePage() {
       {/* ============================================================
           CATEGORIES SECTION
           ============================================================ */}
-      <section className="py-24 md:py-32 relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-muted/50 to-muted/30" />
-        <div className="absolute inset-0 opacity-[0.02]">
-          <GeometricPattern />
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-page">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14">
-            <div className="max-w-lg">
-              <p className="text-xs font-medium tracking-[0.2em] uppercase text-primary mb-4">
-                Disciplines
-              </p>
-              <h2 className="text-3xl md:text-4xl font-heading text-foreground mb-4 leading-tight">
-                Browse by Subject
-              </h2>
-              <p className="text-muted-foreground text-base">
-                Explore the rich traditions of Islamic scholarship across major
-                disciplines.
-              </p>
-            </div>
-            <Link
-              href="/books"
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:gap-3 transition-all duration-200 self-start md:self-auto"
-            >
-              View all subjects
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-5">
-            {CATEGORIES.map((cat) => (
-              <Link
-                key={cat.name}
-                href={`/search?category=${cat.name.toLowerCase()}`}
-                className="group relative rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 lg:p-8 hover:border-primary/20 hover:shadow-lg transition-all duration-400"
-              >
-                <div className="flex items-center justify-between mb-5">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/[0.07] text-primary group-hover:bg-primary/[0.14] transition-colors duration-300">
-                    <cat.icon size={18} strokeWidth={1.6} />
-                  </div>
-                  <ArrowRight size={14} className="text-muted-foreground/0 group-hover:text-primary transition-all duration-300 -translate-x-2 group-hover:translate-x-0" />
-                </div>
-
-                <h3 className="text-base font-semibold text-foreground mb-1">
-                  {cat.name}
-                </h3>
-                <p className="font-arabic text-sm text-muted-foreground/70 mb-3">
-                  {cat.nameAr}
-                </p>
-                <p className="text-xs text-muted-foreground font-medium tracking-wide">
-                  {cat.count} texts
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <BrowseBySubjectSection />
 
       <Footer />
     </div>
+    </CitationOverlayProvider>
   );
 }

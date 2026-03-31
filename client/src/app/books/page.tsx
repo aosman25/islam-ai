@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Spinner } from "@/components/ui/spinner";
-import { cn, detectDirection } from "@/lib/utils";
+import { cn, detectDirection, normalizeArabic } from "@/lib/utils";
 import { getBooks, getAuthors, getCategories } from "@/lib/api";
 import { FilterSearchInput } from "@/components/ui/filter-search-input";
 import { GeometricPattern } from "@/components/ui/geometric-pattern";
@@ -15,6 +16,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   X,
   User,
   Tag,
@@ -22,6 +24,44 @@ import {
   LayoutGrid,
   List,
 } from "lucide-react";
+
+/* ------------------------------------------------------------------ */
+/*  Category grouping                                                    */
+/* ------------------------------------------------------------------ */
+const CATEGORY_GROUPS: { name: string; subcategories: string[] }[] = [
+  {
+    name: "العقيدة",
+    subcategories: ["العقيدة", "الفرق والردود"],
+  },
+  {
+    name: "الحديث وعلومه",
+    subcategories: ["كتب السنة", "شروح الحديث", "علوم الحديث", "التخريج والأطراف", "العلل والسؤلات الحديثية", "الجوامع"],
+  },
+  {
+    name: "الفقه وأصوله",
+    subcategories: ["الفقه العام", "الفقه الحنفي", "الفقه المالكي", "الفقه الشافعي", "الفقه الحنبلي", "أصول الفقه", "علوم الفقه والقواعد الفقهية", "مسائل فقهية", "الفتاوى", "الفرائض والوصايا", "السياسة الشرعية والقضاء"],
+  },
+  {
+    name: "القرآن والتفسير",
+    subcategories: ["التفسير", "علوم القرآن وأصول التفسير", "التجويد والقراءات"],
+  },
+  {
+    name: "السيرة والتاريخ",
+    subcategories: ["السيرة النبوية", "التاريخ", "التراجم والطبقات", "الأنساب", "البلدان والرحلات"],
+  },
+  {
+    name: "اللغة والأدب",
+    subcategories: ["النحو والصرف", "البلاغة", "الأدب", "الغريب والمعاجم"],
+  },
+  {
+    name: "الرقائق والأخلاق",
+    subcategories: ["الرقائق والآداب والأذكار"],
+  },
+  {
+    name: "علوم أخرى",
+    subcategories: ["الطب", "علوم أخرى", "كتب عامة", "فهارس الكتب والأدلة"],
+  },
+];
 
 /* ------------------------------------------------------------------ */
 /*  Filter Container                                                    */
@@ -116,7 +156,16 @@ function FilterDrawer({
 /* ------------------------------------------------------------------ */
 /*  Main Page                                                           */
 /* ------------------------------------------------------------------ */
-export default function BooksPage() {
+export default function BooksPageWrapper() {
+  return (
+    <Suspense>
+      <BooksPage />
+    </Suspense>
+  );
+}
+
+function BooksPage() {
+  const searchParams = useSearchParams();
   const [books, setBooks] = useState<Book[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -131,6 +180,7 @@ export default function BooksPage() {
   const [categorySearch, setCategorySearch] = useState("");
   const [view, setView] = useState<"list" | "grid">("list");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   const limit = 20;
 
@@ -162,8 +212,28 @@ export default function BooksPage() {
   }, [loadBooks]);
 
   useEffect(() => {
-    getAuthors().then(setAuthors).catch(console.error);
-    getCategories().then(setCategories).catch(console.error);
+    getAuthors().then((a) => setAuthors(a.filter((x) => x.name.trim() !== "-"))).catch(console.error);
+    getCategories().then((cats) => {
+      setCategories(cats);
+      const categoryParam = searchParams.get("categories");
+      if (categoryParam) {
+        const categoryNames = categoryParam.split(",");
+        const matchingIds = cats
+          .filter((c) => categoryNames.includes(c.name))
+          .map((c) => c.id);
+        if (matchingIds.length > 0) {
+          setSelectedCategories(matchingIds);
+          // Auto-expand groups containing selected categories
+          const groupsToExpand = new Set<string>();
+          for (const group of CATEGORY_GROUPS) {
+            if (group.subcategories.some((s) => categoryNames.includes(s))) {
+              groupsToExpand.add(group.name);
+            }
+          }
+          setExpandedGroups(groupsToExpand);
+        }
+      }
+    }).catch(console.error);
   }, []);
 
   // Debounced search
@@ -179,12 +249,32 @@ export default function BooksPage() {
   const activeFilters = selectedAuthors.length + selectedCategories.length;
 
   const filteredAuthors = authors.filter((a) =>
-    a.name.toLowerCase().includes(authorSearch.toLowerCase())
+    normalizeArabic(a.name).includes(normalizeArabic(authorSearch))
   );
 
-  const filteredCategories = categories.filter((c) =>
-    c.name.toLowerCase().includes(categorySearch.toLowerCase())
-  );
+  // Build grouped categories from backend data
+  const groupedCategories = CATEGORY_GROUPS.map((group) => {
+    const subs = group.subcategories
+      .map((name) => categories.find((c) => c.name === name))
+      .filter(Boolean) as Category[];
+    return { ...group, subs };
+  }).filter((g) => g.subs.length > 0);
+
+  // For search: flatten and filter
+  const filteredCategories = categorySearch
+    ? categories.filter((c) =>
+        normalizeArabic(c.name).includes(normalizeArabic(categorySearch))
+      )
+    : [];
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupName)) next.delete(groupName);
+      else next.add(groupName);
+      return next;
+    });
+  };
 
   const filtersContent = (
     <>
@@ -204,37 +294,121 @@ export default function BooksPage() {
           onChange={setCategorySearch}
           placeholder="Search categories..."
         />
-        <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-          {(categorySearch ? filteredCategories : categories).map((c) => (
-            <label
-              key={c.id}
-              className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/60 cursor-pointer transition-colors"
-            >
-              <input
-                type="checkbox"
-                checked={selectedCategories.includes(c.id)}
-                onChange={() => {
-                  setSelectedCategories((prev) =>
-                    prev.includes(c.id)
-                      ? prev.filter((id) => id !== c.id)
-                      : [...prev, c.id]
-                  );
-                  setPage(1);
-                }}
-                className="rounded border-border text-primary focus:ring-0 focus:ring-offset-0 h-4 w-4"
-              />
-              <span
-                className="text-sm text-foreground truncate flex-1"
-                dir={detectDirection(c.name)}
-              >
-                {c.name}
-              </span>
-            </label>
-          ))}
-          {categorySearch && filteredCategories.length === 0 && (
-            <p className="text-xs text-muted-foreground px-2 py-2">
-              No categories found
-            </p>
+        <div className="space-y-0.5 max-h-[400px] overflow-y-auto">
+          {categorySearch ? (
+            <>
+              {filteredCategories.map((c) => (
+                <label
+                  key={c.id}
+                  className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/60 cursor-pointer transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.includes(c.id)}
+                    onChange={() => {
+                      setSelectedCategories((prev) =>
+                        prev.includes(c.id)
+                          ? prev.filter((id) => id !== c.id)
+                          : [...prev, c.id]
+                      );
+                      setPage(1);
+                    }}
+                    className="rounded border-border text-primary focus:ring-0 focus:ring-offset-0 h-4 w-4"
+                  />
+                  <span className="text-sm text-foreground truncate flex-1" dir="rtl">
+                    {c.name}
+                  </span>
+                </label>
+              ))}
+              {filteredCategories.length === 0 && (
+                <p className="text-xs text-muted-foreground px-2 py-2">
+                  No categories found
+                </p>
+              )}
+            </>
+          ) : (
+            groupedCategories.map((group) => {
+              const isExpanded = expandedGroups.has(group.name);
+              const selectedCount = group.subs.filter((c) =>
+                selectedCategories.includes(c.id)
+              ).length;
+              const allSelected = selectedCount === group.subs.length;
+              const someSelected = selectedCount > 0 && !allSelected;
+
+              return (
+                <div key={group.name}>
+                  {/* Group header */}
+                  <div className="flex items-center gap-1.5 py-1.5 px-1 rounded-lg hover:bg-muted/60 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someSelected;
+                      }}
+                      onChange={() => {
+                        const groupIds = group.subs.map((c) => c.id);
+                        if (allSelected) {
+                          setSelectedCategories((prev) =>
+                            prev.filter((id) => !groupIds.includes(id))
+                          );
+                        } else {
+                          setSelectedCategories((prev) => [
+                            ...prev.filter((id) => !groupIds.includes(id)),
+                            ...groupIds,
+                          ]);
+                        }
+                        setPage(1);
+                      }}
+                      className="rounded border-border text-primary focus:ring-0 focus:ring-offset-0 h-4 w-4 cursor-pointer"
+                    />
+                    <button
+                      onClick={() => toggleGroup(group.name)}
+                      className="flex items-center gap-1 flex-1 min-w-0 cursor-pointer"
+                    >
+                      <ChevronDown
+                        size={14}
+                        className={cn(
+                          "text-muted-foreground shrink-0 transition-transform duration-200",
+                          !isExpanded && "-rotate-90"
+                        )}
+                      />
+                      <span className="text-sm font-medium text-foreground truncate" dir="rtl">
+                        {group.name}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Subcategories */}
+                  {isExpanded && (
+                    <div className="ml-5 space-y-0.5">
+                      {group.subs.map((c) => (
+                        <label
+                          key={c.id}
+                          className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/60 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCategories.includes(c.id)}
+                            onChange={() => {
+                              setSelectedCategories((prev) =>
+                                prev.includes(c.id)
+                                  ? prev.filter((id) => id !== c.id)
+                                  : [...prev, c.id]
+                              );
+                              setPage(1);
+                            }}
+                            className="rounded border-border text-primary focus:ring-0 focus:ring-offset-0 h-4 w-4"
+                          />
+                          <span className="text-sm text-foreground truncate flex-1" dir="rtl">
+                            {c.name}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </FilterSection>
