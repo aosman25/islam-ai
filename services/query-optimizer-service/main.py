@@ -19,7 +19,7 @@ from tenacity import (
     wait_exponential,
 )
 from dotenv import load_dotenv
-from utils import generate_prompt, resolve_categories
+from utils import generate_contextualize_prompt, generate_prompt, resolve_categories
 from models import (
     OptimizedQueryResponse,
     QueryRequest,
@@ -204,6 +204,33 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 
+# Contextualize query using chat history
+@retry(
+    retry=retry_if_exception_type((Exception,)),
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    reraise=True,
+)
+async def contextualize_query(query: str, chat_history) -> str:
+    """Resolve follow-up references in the query using chat history."""
+    try:
+        response = gemini_client.models.generate_content(
+            model=Config.GEMINI_MODEL,
+            contents=generate_contextualize_prompt(query, chat_history),
+            config={
+                "response_mime_type": "text/plain",
+                "thinking_config": {"thinking_budget": 0},
+            },
+        )
+
+        resolved = response.text.strip() if response.text else query
+        return resolved
+
+    except Exception as e:
+        logger.error("Query contextualization failed", error=str(e), query=query)
+        raise
+
+
 # Retry logic for Gemini API calls
 @retry(
     retry=retry_if_exception_type((Exception,)),
@@ -242,10 +269,20 @@ async def call_gemini_api(query: str) -> List[OptimizedQueryResponse]:
 
 
 async def process_single_query(
-    query: str, request_id: str
+    query: str, request_id: str, chat_history=None
 ) -> List[OptimizedQueryResponse]:
     """Process a single query with proper error handling"""
     try:
+        # Step 1: Contextualize query if chat history is provided
+        if chat_history:
+            logger.info("Contextualizing query", query=query, request_id=request_id)
+            query = await asyncio.wait_for(
+                contextualize_query(query, chat_history),
+                timeout=Config.REQUEST_TIMEOUT,
+            )
+            logger.info("Query contextualized", resolved_query=query, request_id=request_id)
+
+        # Step 2: Optimize the (possibly resolved) query
         logger.info("Processing query", query=query, request_id=request_id)
 
         # Add timeout
@@ -331,7 +368,10 @@ async def optimize_queries(request: QueryRequest, http_request: Request):
             )
 
         # Process all queries concurrently
-        tasks = [process_single_query(query, request_id) for query in request.queries]
+        tasks = [
+            process_single_query(query, request_id, request.chat_history)
+            for query in request.queries
+        ]
 
         results = await asyncio.gather(*tasks, return_exceptions=False)
 

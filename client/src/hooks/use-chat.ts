@@ -4,7 +4,12 @@ import { useState, useCallback, useRef } from "react";
 import { useChatStore } from "@/stores/chat-store";
 import { gatewayQuery } from "@/lib/api";
 import { generateId } from "@/lib/utils";
-import type { ChatMessage, SourceData, GatewayStreamChunk } from "@/types";
+import type {
+  ChatMessage,
+  ChatHistoryMessage,
+  SourceData,
+  GatewayStreamChunk,
+} from "@/types";
 
 export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +40,15 @@ export function useChat() {
         chatId = createChat(content);
       }
 
+      // Capture prior messages BEFORE adding new ones (use getState for fresh store state)
+      const freshChat = useChatStore
+        .getState()
+        .chats.find((c) => c.id === chatId);
+      const priorMessages = freshChat?.messages ?? [];
+      const chatHistory: ChatHistoryMessage[] = priorMessages
+        .filter((m) => m.content.trim())
+        .map((m) => ({ role: m.role, content: m.content }));
+
       // Add user message
       const userMsg: ChatMessage = {
         id: generateId(),
@@ -45,8 +59,7 @@ export function useChat() {
       addMessage(chatId, userMsg);
 
       // Update title if first message
-      const chat = chats.find((c) => c.id === chatId);
-      if (chat && chat.messages.length === 0) {
+      if (priorMessages.length === 0) {
         updateChatTitle(chatId, content.trim().slice(0, 60));
       }
 
@@ -74,6 +87,7 @@ export function useChat() {
       await gatewayQuery(
         {
           query: content.trim(),
+          chat_history: chatHistory.length > 0 ? chatHistory : undefined,
           stream: true,
           top_k: 20,
           temperature: 1,

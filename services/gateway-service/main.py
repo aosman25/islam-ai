@@ -324,9 +324,18 @@ async def process_query(request: GatewayRequest, http_request: Request):
 
         # Step 1: Extract keywords via query optimizer
         logger.info("Step 1: Extracting keywords", request_id=request_id)
+        optimize_payload = {"queries": [request.query]}
+        if request.chat_history:
+            # Contextualizer only needs user queries — last 15
+            user_queries = [
+                msg.model_dump()
+                for msg in request.chat_history
+                if msg.role == "user"
+            ][-15:]
+            optimize_payload["chat_history"] = user_queries
         optimize_response = await http_client.post(
             f"{Config.QUERY_OPTIMIZER_URL}/optimize-queries",
-            json={"queries": [request.query]},
+            json=optimize_payload,
             headers={"x-request-id": request_id},
         )
         optimize_response.raise_for_status()
@@ -449,6 +458,11 @@ async def process_query(request: GatewayRequest, http_request: Request):
             "max_tokens": request.max_tokens,
             "stream": request.stream,
         }
+        if request.chat_history:
+            # Ask service gets full conversation (both roles) — last 10 messages (5 turns)
+            ask_payload["chat_history"] = [
+                msg.model_dump() for msg in request.chat_history
+            ][-10:]
 
         if request.stream:
             # Stream response with metadata

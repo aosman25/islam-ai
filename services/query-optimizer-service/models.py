@@ -1,8 +1,12 @@
-from typing import List, Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
-MAX_QUERY_LENGTH = 1000
+class ChatHistoryMessage(BaseModel):
+    """A single message in the chat history"""
+
+    role: Literal["user", "assistant"]
+    content: str
 
 
 class OptimizedQueryResponse(BaseModel):
@@ -14,20 +18,15 @@ class QueryRequest(BaseModel):
     queries: List[str] = Field(
         ..., min_items=1, max_items=10
     )
+    chat_history: Optional[List[ChatHistoryMessage]] = Field(
+        default=None,
+        description="Previous conversation messages for context",
+    )
 
     @field_validator("queries")
     @classmethod
     def validate_queries(cls, v):
-        # Filter out empty queries and validate length
-        valid_queries = []
-        for query in v:
-            if query.strip():
-                if len(query) > MAX_QUERY_LENGTH:
-                    raise ValueError(
-                        f"Query exceeds maximum length of {MAX_QUERY_LENGTH} characters"
-                    )
-                valid_queries.append(query.strip())
-
+        valid_queries = [query.strip() for query in v if query.strip()]
         if not valid_queries:
             raise ValueError("At least one non-empty query is required")
         return valid_queries

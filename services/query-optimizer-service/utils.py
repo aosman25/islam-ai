@@ -71,7 +71,17 @@ def resolve_categories(higher_order: List[str]) -> List[str]:
 
 
 
+def generate_contextualize_prompt(query: str, chat_history) -> str:
+    """Build the prompt for the query contextualization LLM call."""
+    with open("contextualize_prompt.txt", "r", encoding="utf-8") as f:
+        template = f.read()
+
+    previous_queries = "\n".join(f"- {msg.content}" for msg in chat_history)
+    return template.format(previous_queries=previous_queries, current_query=query)
+
+
 def generate_prompt(query: str) -> str:
+    """Build the prompt for the HyDE optimizer LLM call."""
     with open("prompt.txt", "r", encoding="utf-8") as f:
         prompt = f.read()
 

@@ -189,6 +189,7 @@ function ChatPageInner() {
                   ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  maxLength={1500}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask about Islamic knowledge..."
                   dir={dir}

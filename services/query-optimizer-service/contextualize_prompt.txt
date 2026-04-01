@@ -1,0 +1,20 @@
+You are given a conversation history and a follow-up user query. Your task is to rewrite the follow-up query into a fully self-contained query that can be understood without any conversation context.
+
+Rules:
+- Resolve all pronouns, demonstratives, elliptical phrases, and implicit subjects using the conversation history.
+- The rewritten query must preserve the user's original intent exactly — do not add, remove, or broaden the scope.
+- Write the rewritten query in the same language as the original query.
+- Return ONLY the rewritten query text, nothing else.
+
+Example:
+Previous User Queries:
+- ما حكم الاستغاثة بغير الله؟
+
+Current Query: وما رأي المالكية؟
+Rewritten Query: ما رأي المالكية في حكم الاستغاثة بغير الله؟
+
+Previous User Queries:
+{previous_queries}
+
+Current Query: {current_query}
+Rewritten Query:

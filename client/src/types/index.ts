@@ -79,8 +79,14 @@ export interface SourceData {
 // Gateway / Chat Types
 // ============================================================
 
+export interface ChatHistoryMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export interface GatewayRequest {
   query: string;
+  chat_history?: ChatHistoryMessage[];
   top_k?: number;
   temperature?: number;
   max_tokens?: number;

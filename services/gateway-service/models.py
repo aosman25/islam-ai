@@ -2,10 +2,21 @@ from pydantic import BaseModel, Field, model_validator
 from typing import List, Optional, Literal, Union
 
 
+class ChatHistoryMessage(BaseModel):
+    """A single message in the chat history"""
+
+    role: Literal["user", "assistant"]
+    content: str
+
+
 class GatewayRequest(BaseModel):
     """Request model for the gateway service"""
 
-    query: str = Field(..., min_length=1, max_length=1000, description="User query")
+    query: str = Field(..., min_length=1, max_length=2000, description="User query")
+    chat_history: Optional[List[ChatHistoryMessage]] = Field(
+        default=None,
+        description="Previous conversation messages for context (last 10 messages / 5 turns)",
+    )
     top_k: int = Field(
         default=15, gt=0, le=100, description="Number of search results to retrieve"
     )
