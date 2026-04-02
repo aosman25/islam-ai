@@ -3,14 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth/client";
 import {
   MessageSquare,
   BookOpen,
   Menu,
   X,
   LogIn,
+  LogOut,
+  User,
 } from "lucide-react";
 
 const NAV_LINKS = [
@@ -20,10 +23,20 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const session = authClient.useSession();
+
+  const user = session.data?.user;
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
+
+  const handleSignOut = async () => {
+    await authClient.signOut();
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
@@ -61,15 +74,45 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Right side - Sign In + mobile toggle */}
+        {/* Right side */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <Link
-            href="/signin"
-            className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
-          >
-            <LogIn size={15} />
-            Sign In / Sign Up
-          </Link>
+          {user ? (
+            <div className="hidden md:flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  {user.image ? (
+                    <Image
+                      src={user.image}
+                      alt={user.name || ""}
+                      width={28}
+                      height={28}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <User size={14} />
+                  )}
+                </div>
+                <span className="max-w-[120px] truncate font-medium text-foreground">
+                  {user.name || user.email}
+                </span>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <LogOut size={14} />
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/auth/sign-in"
+              className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
+            >
+              <LogIn size={15} />
+              Sign In / Sign Up
+            </Link>
+          )}
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -102,14 +145,33 @@ export function Navbar() {
               </Link>
             ))}
             <div className="pt-3 border-t border-border mt-3">
-              <Link
-                href="/signin"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg border border-border text-sm font-medium text-muted-foreground"
-              >
-                <LogIn size={15} />
-                Sign In / Sign Up
-              </Link>
+              {user ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-4 py-2 text-sm text-foreground">
+                    <User size={16} />
+                    <span className="truncate">{user.name || user.email}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setMobileOpen(false);
+                      handleSignOut();
+                    }}
+                    className="flex w-full items-center justify-center gap-2 px-5 py-3 rounded-lg border border-border text-sm font-medium text-muted-foreground"
+                  >
+                    <LogOut size={15} />
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/auth/sign-in"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-lg border border-border text-sm font-medium text-muted-foreground"
+                >
+                  <LogIn size={15} />
+                  Sign In / Sign Up
+                </Link>
+              )}
             </div>
           </nav>
         </div>

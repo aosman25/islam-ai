@@ -1,11 +1,69 @@
 "use client";
 
-import { useState, useMemo, createContext, useContext, useCallback } from "react";
+import { useState, useMemo, useEffect, createContext, useContext, useCallback } from "react";
 import { createPortal } from "react-dom";
 import type { SourceData } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, detectDirection } from "@/lib/utils";
 import { BookOpen, X, ExternalLink } from "lucide-react";
 import Link from "next/link";
+
+// ============================================================
+// Book metadata lookup from local JSON
+// ============================================================
+
+interface BookMeta {
+  book_name: string;
+  book_name_ar: string;
+  author_id: number;
+}
+
+interface AuthorMeta {
+  name: string;
+  name_ar: string;
+}
+
+let booksData: Record<string, BookMeta> | null = null;
+let authorsData: Record<string, AuthorMeta> | null = null;
+let loadingPromise: Promise<void> | null = null;
+
+function ensureLoaded(): Promise<void> {
+  if (booksData && authorsData) return Promise.resolve();
+  if (!loadingPromise) {
+    loadingPromise = Promise.all([
+      fetch("/data/books_transliteration.json").then((r) => r.json()),
+      fetch("/data/authors_transliteration.json").then((r) => r.json()),
+    ]).then(([b, a]) => {
+      booksData = b;
+      authorsData = a;
+    });
+  }
+  return loadingPromise;
+}
+
+function extractBookId(chunkId: number): number {
+  return Math.floor(chunkId / 10_000_000);
+}
+
+function getBookMeta(bookId: number): { bookName: string; bookNameAr: string; authorName: string; authorNameAr: string } | null {
+  if (!booksData) return null;
+  const book = booksData[String(bookId)];
+  if (!book) return null;
+  const author = authorsData?.[String(book.author_id)];
+  return {
+    bookName: book.book_name ?? book.book_name_ar ?? "",
+    bookNameAr: book.book_name_ar ?? book.book_name ?? "",
+    authorName: author?.name ?? "",
+    authorNameAr: author?.name_ar ?? "",
+  };
+}
+
+function useBookMetaLoaded() {
+  const [loaded, setLoaded] = useState(!!booksData);
+  useEffect(() => {
+    if (!loaded) ensureLoaded().then(() => setLoaded(true));
+  }, [loaded]);
+  return loaded;
+}
 
 // ============================================================
 // Overlay context — survives re-renders during streaming
@@ -57,6 +115,7 @@ function CitationOverlay({
   sources: SourceData[];
   onClose: () => void;
 }) {
+  useBookMetaLoaded();
   if (typeof document === "undefined") return null;
 
   return createPortal(
@@ -84,7 +143,10 @@ function CitationOverlay({
 
         {/* Sources list */}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
-          {sources.map((source, i) => (
+          {sources.map((source, i) => {
+            const bookId = extractBookId(source.id);
+            const meta = getBookMeta(bookId);
+            return (
             <div
               key={source.id}
               className={cn(
@@ -95,14 +157,21 @@ function CitationOverlay({
               {/* Book name */}
               <div className="flex items-start gap-2">
                 <BookOpen className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                <h3 className="text-base font-semibold text-foreground leading-snug">
-                  {source.book_name}
-                </h3>
+                <div>
+                  <h3 className="text-base font-semibold text-foreground leading-snug">
+                    {meta?.bookName ?? source.book_name}
+                  </h3>
+                  {meta?.bookNameAr && (
+                    <p className="text-sm text-muted-foreground mt-0.5" dir="rtl">
+                      {meta.bookNameAr}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Meta row */}
               <div className="flex flex-wrap gap-2 text-xs">
-                <span className="text-muted-foreground">{source.author}</span>
+                <span className="text-muted-foreground">{meta?.authorName || source.author}</span>
                 {source.page_num_range && source.page_num_range.length > 0 && (
                   <>
                     <span className="text-border">&middot;</span>
@@ -131,14 +200,15 @@ function CitationOverlay({
 
               {/* Open in viewer */}
               <Link
-                href={`/books/${source.book_id}?page=${source.start_page_id}`}
+                href={`/books/${bookId}?page=${source.start_page_id}`}
                 className="inline-flex items-center gap-2 py-1.5 px-3 rounded-lg bg-accent hover:bg-accent/80 border border-accent text-accent-foreground text-xs font-medium transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Open in Book Viewer
               </Link>
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
     </div>,
@@ -152,16 +222,29 @@ function CitationOverlay({
 
 export function CitationGroupBadge({
   sources,
+  isArabicResponse,
 }: {
   ids: number[];
   sources: SourceData[];
+  isArabicResponse?: boolean;
 }) {
   const { open } = useContext(OverlayContext);
+  useBookMetaLoaded();
 
-  const label =
-    sources.length > 0
-      ? [...new Set(sources.map((s) => s.book_name))].join("، ")
-      : "";
+  const label = useMemo(() => {
+    if (sources.length === 0) return "";
+    const names = new Set<string>();
+    for (const s of sources) {
+      const bookId = extractBookId(s.id);
+      const meta = getBookMeta(bookId);
+      if (meta) {
+        names.add(isArabicResponse ? meta.bookNameAr : meta.bookName);
+      } else {
+        names.add(s.book_name);
+      }
+    }
+    return [...names].join(isArabicResponse ? "، " : ", ");
+  }, [sources, isArabicResponse]);
 
   return (
     <button
@@ -197,6 +280,8 @@ export function CitationRenderer({
     }
     return map;
   }, [sources]);
+
+  const isArabicResponse = useMemo(() => detectDirection(text) === "rtl", [text]);
 
   const processedText = useMemo(() => {
     const input = isStreaming ? stripIncompleteCitation(text) : text;
@@ -241,6 +326,7 @@ export function CitationRenderer({
             key={`${group.start}`}
             ids={group.ids}
             sources={resolved}
+            isArabicResponse={isArabicResponse}
           />
         );
       }
@@ -274,6 +360,7 @@ function extractCitedIds(content: string): Set<number> {
 export function SourcesPanel({ sources, content }: { sources: SourceData[]; content: string }) {
   const [expanded, setExpanded] = useState(false);
   const { open } = useContext(OverlayContext);
+  useBookMetaLoaded();
 
   const citedSources = useMemo(() => {
     const citedIds = extractCitedIds(content);
@@ -292,7 +379,10 @@ export function SourcesPanel({ sources, content }: { sources: SourceData[]; cont
         {citedSources.length} Source{citedSources.length !== 1 ? "s" : ""} cited
       </div>
       <div className="space-y-2">
-        {shown.map((source, i) => (
+        {shown.map((source, i) => {
+          const bookId = extractBookId(source.id);
+          const meta = getBookMeta(bookId);
+          return (
           <button
             key={source.id}
             onClick={() => open([source])}
@@ -306,10 +396,10 @@ export function SourcesPanel({ sources, content }: { sources: SourceData[]; cont
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground truncate">
-                {source.book_name}
+                {meta?.bookName ?? source.book_name}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {source.author}
+                {meta?.authorName || source.author}
                 {source.page_num_range.length > 0 &&
                   ` · p. ${source.page_num_range.join("-")}`}
               </p>
@@ -319,7 +409,8 @@ export function SourcesPanel({ sources, content }: { sources: SourceData[]; cont
               className="flex-shrink-0 text-border group-hover:text-primary mt-1 transition-colors"
             />
           </button>
-        ))}
+          );
+        })}
       </div>
       {hasMore && (
         <button
