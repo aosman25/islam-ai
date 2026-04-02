@@ -1,5 +1,6 @@
 __pycache__
 .env
+.env.prod
 .env.storage
 **/*venv/
 /books
@@ -8,6 +9,5 @@ islamic_library.csv
 .claude/*
 *.db
 shamela4
-usul-dev
-tansis-main
+keys
 services/export-service/output/

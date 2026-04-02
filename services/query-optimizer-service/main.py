@@ -111,7 +111,8 @@ async def lifespan(app: FastAPI):
 async def test_gemini_connection():
     """Test Gemini API connection during startup"""
     try:
-        response = gemini_client.models.generate_content(
+        response = await asyncio.to_thread(
+            gemini_client.models.generate_content,
             model=Config.GEMINI_MODEL,
             contents="test",
             config={"response_mime_type": "text/plain"},
@@ -214,7 +215,8 @@ async def general_exception_handler(request: Request, exc: Exception):
 async def contextualize_query(query: str, chat_history) -> str:
     """Resolve follow-up references in the query using chat history."""
     try:
-        response = gemini_client.models.generate_content(
+        response = await asyncio.to_thread(
+            gemini_client.models.generate_content,
             model=Config.GEMINI_MODEL,
             contents=generate_contextualize_prompt(query, chat_history),
             config={
@@ -241,7 +243,8 @@ async def contextualize_query(query: str, chat_history) -> str:
 async def call_gemini_api(query: str) -> List[OptimizedQueryResponse]:
     """Call Gemini API with retry logic"""
     try:
-        response = gemini_client.models.generate_content(
+        response = await asyncio.to_thread(
+            gemini_client.models.generate_content,
             model=Config.GEMINI_MODEL,
             contents=generate_prompt(query),
             config={

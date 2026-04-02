@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import sys
@@ -336,10 +337,12 @@ async def get_embedding(request: EmbeddingRequest, http_request: Request):
         dense_embeddings = raw_response.get("embeddings", []) if request.dense and raw_response else None
         sparse_embeddings = None
         if request.sparse:
-            bm25 = ArabicBM25S()
-            bm25.fit(request.input_text)
-            sparse_vectors = bm25.encode_queries(request.input_text)
-            sparse_embeddings = [sv.to_milvus() for sv in sparse_vectors]
+            def _compute_sparse():
+                bm25 = ArabicBM25S()
+                bm25.fit(request.input_text)
+                sparse_vectors = bm25.encode_queries(request.input_text)
+                return [sv.to_milvus() for sv in sparse_vectors]
+            sparse_embeddings = await asyncio.to_thread(_compute_sparse)
         colbert_embeddings = (
             raw_response.get("colbert", []) if request.colbert and raw_response else None
         )

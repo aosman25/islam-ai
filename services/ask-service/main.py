@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import sys
@@ -317,7 +318,8 @@ async def ask(request: AskRequest, http_request: Request):
             # Generate streaming response
             async def stream_generator():
                 try:
-                    stream = gemini_client.models.generate_content_stream(
+                    stream = await asyncio.to_thread(
+                        gemini_client.models.generate_content_stream,
                         model=Config.MODEL,
                         contents=[prompt],
                         config=types.GenerateContentConfig(
@@ -336,9 +338,22 @@ async def ask(request: AskRequest, http_request: Request):
                     )
 
                     chunk_count = 0
-                    for chunk in stream:
+                    queue = asyncio.Queue()
+
+                    def _consume_stream():
+                        try:
+                            for chunk in stream:
+                                queue.put_nowait(chunk)
+                        finally:
+                            queue.put_nowait(None)
+
+                    asyncio.get_event_loop().run_in_executor(None, _consume_stream)
+
+                    while True:
+                        chunk = await queue.get()
+                        if chunk is None:
+                            break
                         chunk_count += 1
-                        # Extract text from chunk
                         chunk_text = ""
                         try:
                             if hasattr(chunk, "text") and chunk.text:
@@ -367,7 +382,6 @@ async def ask(request: AskRequest, http_request: Request):
                                 chunk_length=len(chunk_text),
                                 request_id=request_id,
                             )
-                            # Yield text immediately for streaming
                             yield chunk_text
 
                     logger.info(
@@ -396,7 +410,8 @@ async def ask(request: AskRequest, http_request: Request):
         else:
             # Generate non-streaming response
             try:
-                response = gemini_client.models.generate_content(
+                response = await asyncio.to_thread(
+                    gemini_client.models.generate_content,
                     model=Config.MODEL,
                     contents=[prompt],
                     config=types.GenerateContentConfig(

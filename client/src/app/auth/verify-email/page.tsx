@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Mail, ShieldCheck, Loader2, RotateCw } from "lucide-react";
 import { authClient } from "@/lib/auth/client";
 import { AuthLayout } from "@/components/auth/auth-layout";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const email = searchParams.get("email") || "";
@@ -124,5 +124,13 @@ export default function VerifyEmailPage() {
         </div>
       </div>
     </AuthLayout>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

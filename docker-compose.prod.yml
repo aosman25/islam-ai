@@ -1,0 +1,337 @@
+services:
+
+  # ===========================================================================
+  # STORAGE LAYER
+  # ===========================================================================
+
+  minio:
+    container_name: books-minio
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    env_file:
+      - .env.prod
+    expose:
+      - "9000"
+      - "9001"
+    volumes:
+      - /var/lib/books-data/bucket:/data
+    command: minio server /data --console-address ":9001"
+    networks:
+      - storage-network
+    restart: unless-stopped
+    logging: &default-logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  postgres:
+    container_name: books-db
+    image: postgres:17
+    env_file:
+      - .env.prod
+    expose:
+      - "5432"
+    volumes:
+      - /var/lib/books-data/db:/var/lib/postgresql/data
+    networks:
+      - storage-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ===========================================================================
+  # MILVUS VECTOR DATABASE
+  # ===========================================================================
+
+  etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.25
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - /var/lib/books-data/etcd:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - storage-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  milvus-minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    env_file:
+      - .env.prod
+    expose:
+      - "9000"
+      - "9001"
+    volumes:
+      - /var/lib/books-data/minio:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    networks:
+      - storage-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  milvus:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.6.9
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    env_file:
+      - .env.prod
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: milvus-minio:9000
+    volumes:
+      - ./services/milvus.yaml:/milvus/configs/milvus.yaml
+      - /var/lib/books-data/milvus:/var/lib/milvus
+    expose:
+      - "19530"
+      - "9091"
+    depends_on:
+      etcd:
+        condition: service_healthy
+      milvus-minio:
+        condition: service_healthy
+    networks:
+      - storage-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+
+  # ===========================================================================
+  # RAG PIPELINE
+  # ===========================================================================
+
+  gateway:
+    build:
+      context: ./services/gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    expose:
+      - "8000"
+    env_file:
+      - .env.prod
+    environment:
+      - QUERY_OPTIMIZER_URL=http://query-optimizer:5000
+      - EMBED_SERVICE_URL=http://embed-service:4000
+      - SEARCH_SERVICE_URL=http://search-service:3000
+      - ASK_SERVICE_URL=http://ask-service:2000
+    depends_on:
+      query-optimizer:
+        condition: service_started
+      embed-service:
+        condition: service_started
+      search-service:
+        condition: service_started
+      ask-service:
+        condition: service_started
+    networks:
+      - rag-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  query-optimizer:
+    build:
+      context: ./services/query-optimizer-service
+      dockerfile: Dockerfile
+    expose:
+      - "5000"
+    env_file:
+      - .env.prod
+    networks:
+      - rag-network
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      replicas: 2
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  embed-service:
+    build:
+      context: ./services/embed-service
+      dockerfile: Dockerfile
+    expose:
+      - "4000"
+    env_file:
+      - .env.prod
+    networks:
+      - rag-network
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      replicas: 2
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  search-service:
+    build:
+      context: ./services/search-service
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    env_file:
+      - .env.prod
+    environment:
+      - MILVUS_IP_ADDRESS=milvus-standalone
+    networks:
+      - rag-network
+      - storage-network
+    restart: unless-stopped
+    logging: *default-logging
+    deploy:
+      replicas: 2
+    depends_on:
+      milvus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ask-service:
+    build:
+      context: ./services/ask-service
+      dockerfile: Dockerfile
+    expose:
+      - "2000"
+    env_file:
+      - .env.prod
+    deploy:
+      replicas: 2
+    volumes:
+      - ./services/ask-service/system_instruction.txt:/app/system_instruction.txt:ro
+    networks:
+      - rag-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # MASTER SERVER
+  # ===========================================================================
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: master-server
+    expose:
+      - "3000"
+    env_file:
+      - .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rag-network
+      - storage-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/api/docs', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ===========================================================================
+  # CLIENT (Next.js) - Only exposed service
+  # ===========================================================================
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_MASTER_BASE_URL: ${NEXT_PUBLIC_MASTER_BASE_URL}
+        NEON_AUTH_BASE_URL: ${NEON_AUTH_BASE_URL}
+        NEON_AUTH_COOKIE_SECRET: ${NEON_AUTH_COOKIE_SECRET}
+        GATEWAY_INTERNAL_URL: http://gateway:8000
+        MASTER_INTERNAL_URL: http://server:3000
+    container_name: client
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.prod
+    environment:
+      - GATEWAY_INTERNAL_URL=http://gateway:8000
+      - MASTER_INTERNAL_URL=http://server:3000
+    depends_on:
+      gateway:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    networks:
+      - rag-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+# ===========================================================================
+# NETWORKS
+# ===========================================================================
+networks:
+  rag-network:
+    driver: bridge
+    name: rag-network
+  storage-network:
+    driver: bridge
+    name: storage-network
