@@ -66,9 +66,11 @@ function ChatPageInner() {
   const initialQuery = searchParams.get("q");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
+  const [sidebarInitialized, setSidebarInitialized] = useState(false);
+  if (!sidebarInitialized && typeof window !== "undefined") {
     if (window.innerWidth >= 768) setSidebarOpen(true);
-  }, []);
+    setSidebarInitialized(true);
+  }
   const [input, setInput] = useState("");
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);

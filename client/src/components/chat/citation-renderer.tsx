@@ -289,6 +289,7 @@ export function CitationGroupBadge({
   const metaLoaded = useBookMetaLoaded();
 
   const label = useMemo(() => {
+    void metaLoaded; // depend on meta load state to recompute labels
     if (sources.length === 0) return "";
     const names = new Set<string>();
     for (const s of sources) {
@@ -394,7 +395,7 @@ export function CitationRenderer({
     }
 
     return parts;
-  }, [text, sourceMap, isStreaming]);
+  }, [text, sourceMap, isStreaming, isArabicResponse]);
 
   return <>{processedText}</>;
 }

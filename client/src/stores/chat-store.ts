@@ -212,7 +212,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
       chats: state.chats.map((c) => {
         if (c.id !== chatId) return c;
         const allMessages = [...messages, ...c.messages];
-        const { trimmed, evicted } = trimMessages(allMessages);
+        const { trimmed } = trimMessages(allMessages);
         return {
           ...c,
           messages: trimmed,

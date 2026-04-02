@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
@@ -38,137 +38,6 @@ const CATEGORIES = [
 
 
 /* ------------------------------------------------------------------ */
-/*  Animated hero background — drifting geometric particle mesh        */
-/* ------------------------------------------------------------------ */
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  r: number;          // base radius
-  phase: number;      // for pulsing
-  speed: number;      // pulse speed
-}
-
-function AnimatedHeroBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const particles = useRef<Particle[]>([]);
-  const raf = useRef<number>(0);
-  const dpr = useRef(1);
-
-  const initParticles = useCallback((w: number, h: number) => {
-    const count = Math.min(Math.floor((w * h) / 16000), 70);
-    const arr: Particle[] = [];
-    for (let i = 0; i < count; i++) {
-      arr.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: (Math.random() - 0.5) * 0.6,
-        r: Math.random() * 2 + 1.2,
-        phase: Math.random() * Math.PI * 2,
-        speed: Math.random() * 0.6 + 0.4,
-      });
-    }
-    particles.current = arr;
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    dpr.current = window.devicePixelRatio || 1;
-
-    const resize = () => {
-      const rect = canvas.parentElement!.getBoundingClientRect();
-      const w = rect.width;
-      const h = rect.height;
-      canvas.width = w * dpr.current;
-      canvas.height = h * dpr.current;
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
-      ctx.setTransform(dpr.current, 0, 0, dpr.current, 0, 0);
-      initParticles(w, h);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-
-    // Green that matches the primary theme color
-    const dotColor = "rgba(56,142,60,";
-    const lineColor = "rgba(56,142,60,";
-    const CONNECTION_DIST = 180;
-
-    const draw = (t: number) => {
-      const w = canvas.width / dpr.current;
-      const h = canvas.height / dpr.current;
-      ctx.clearRect(0, 0, w, h);
-
-      const pts = particles.current;
-
-      // Update positions
-      for (const p of pts) {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < -10) p.x = w + 10;
-        if (p.x > w + 10) p.x = -10;
-        if (p.y < -10) p.y = h + 10;
-        if (p.y > h + 10) p.y = -10;
-      }
-
-      // Draw connections
-      for (let i = 0; i < pts.length; i++) {
-        for (let j = i + 1; j < pts.length; j++) {
-          const dx = pts[i].x - pts[j].x;
-          const dy = pts[i].y - pts[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < CONNECTION_DIST) {
-            const alpha = (1 - dist / CONNECTION_DIST) * 0.35;
-            ctx.strokeStyle = `${lineColor}${alpha})`;
-            ctx.lineWidth = 0.8;
-            ctx.beginPath();
-            ctx.moveTo(pts[i].x, pts[i].y);
-            ctx.lineTo(pts[j].x, pts[j].y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw dots
-      for (const p of pts) {
-        const pulse = Math.sin(t * 0.001 * p.speed + p.phase) * 0.3 + 0.7;
-        const alpha = 0.55 * pulse;
-        ctx.fillStyle = `${dotColor}${alpha})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * (0.8 + pulse * 0.4), 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      raf.current = requestAnimationFrame(draw);
-    };
-
-    raf.current = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(raf.current);
-      window.removeEventListener("resize", resize);
-    };
-  }, [initParticles]);
-
-  return (
-    <div className="absolute inset-0 pointer-events-none" aria-hidden>
-      <canvas ref={canvasRef} className="absolute inset-0" />
-      {/* Ambient glows */}
-      <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/[0.08] blur-[100px] animate-[float_8s_ease-in-out_infinite]" />
-      <div className="absolute -top-20 right-1/4 w-[400px] h-[300px] rounded-full bg-secondary/[0.10] blur-[80px] animate-[float_10s_ease-in-out_2s_infinite]" />
-      <div className="absolute top-1/3 left-1/2 w-[300px] h-[300px] rounded-full bg-primary/[0.06] blur-[120px] animate-[float_12s_ease-in-out_4s_infinite]" />
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /*  Answer Preview with scroll-triggered animations                    */
 /* ------------------------------------------------------------------ */
 const QUESTION_TEXT = "What is the meaning of sincerity (ikhlāṣ) in Islam?";
@@ -182,6 +51,40 @@ function PreviewCitationBadge({ ids }: { ids: number[] }) {
     .filter((s): s is NonNullable<typeof s> => !!s);
   if (sources.length === 0) return null;
   return <CitationGroupBadge ids={ids} sources={sources} />;
+}
+
+function Cursor() {
+  return (
+    <span className="inline-block w-[2px] h-[1.1em] bg-primary align-middle ml-0.5 animate-[cursor-blink_0.8s_step-end_infinite]" />
+  );
+}
+
+function AnimatedParagraph({
+  index,
+  children,
+  visibleParagraphs,
+  phase,
+}: {
+  index: number;
+  children: React.ReactNode;
+  visibleParagraphs: number;
+  phase: string;
+}) {
+  const isVisible = visibleParagraphs > index;
+  const isLast = index === visibleParagraphs - 1 && phase === "streaming";
+  return (
+    <p
+      className="transition-all duration-500 ease-out"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(12px)",
+        filter: isVisible ? "blur(0)" : "blur(4px)",
+      }}
+    >
+      {children}
+      {isLast && <Cursor />}
+    </p>
+  );
 }
 
 function AnswerPreviewSection({ skipAnimations = false }: { skipAnimations?: boolean }) {
@@ -260,36 +163,6 @@ function AnswerPreviewSection({ skipAnimations = false }: { skipAnimations?: boo
       clearTimeout(t2);
     };
   }, [phase, skipAnimations]);
-
-  // Cursor component
-  const Cursor = () => (
-    <span className="inline-block w-[2px] h-[1.1em] bg-primary align-middle ml-0.5 animate-[cursor-blink_0.8s_step-end_infinite]" />
-  );
-
-  // Paragraph wrapper with enter animation
-  const AnimatedParagraph = ({
-    index,
-    children,
-  }: {
-    index: number;
-    children: React.ReactNode;
-  }) => {
-    const isVisible = visibleParagraphs > index;
-    const isLast = index === visibleParagraphs - 1 && phase === "streaming";
-    return (
-      <p
-        className="transition-all duration-500 ease-out"
-        style={{
-          opacity: isVisible ? 1 : 0,
-          transform: isVisible ? "translateY(0)" : "translateY(12px)",
-          filter: isVisible ? "blur(0)" : "blur(4px)",
-        }}
-      >
-        {children}
-        {isLast && <Cursor />}
-      </p>
-    );
-  };
 
   return (
     <section ref={sectionRef} className="py-24 md:py-32 relative overflow-hidden">
@@ -388,7 +261,7 @@ function AnswerPreviewSection({ skipAnimations = false }: { skipAnimations?: boo
                 className="chat-markdown text-sm text-foreground leading-[1.8] space-y-5"
                 style={{ direction: "ltr", textAlign: "left" }}
               >
-                <AnimatedParagraph index={0}>
+                <AnimatedParagraph visibleParagraphs={visibleParagraphs} phase={phase} index={0}>
                   Sincerity (<em>ikhlāṣ</em>) in Islam is a fundamental concept
                   deeply rooted in the Quran and Sunnah, encompassing the
                   purification of one&apos;s intentions and actions for God
@@ -398,7 +271,7 @@ function AnswerPreviewSection({ skipAnimations = false }: { skipAnimations?: boo
                   various scholars.
                 </AnimatedParagraph>
 
-                <AnimatedParagraph index={1}>
+                <AnimatedParagraph visibleParagraphs={visibleParagraphs} phase={phase} index={1}>
                   The essence of <em>ikhlāṣ</em> lies in directing one&apos;s
                   obedience and worship solely towards God, without seeking any
                   worldly gains or human recognition. Abū al-Qāsim al-Qushayrī
@@ -419,7 +292,7 @@ function AnswerPreviewSection({ skipAnimations = false }: { skipAnimations?: boo
                   religious practices.
                 </AnimatedParagraph>
 
-                <AnimatedParagraph index={2}>
+                <AnimatedParagraph visibleParagraphs={visibleParagraphs} phase={phase} index={2}>
                   The profound significance of <em>ikhlāṣ</em> is further
                   elucidated in the context of accepting actions. Imām Abū
                   Zakariyyā Yaḥyā al-Nawawī, narrating from Abū al-Qāsim
@@ -441,7 +314,7 @@ function AnswerPreviewSection({ skipAnimations = false }: { skipAnimations?: boo
                   .
                 </AnimatedParagraph>
 
-                <AnimatedParagraph index={3}>
+                <AnimatedParagraph visibleParagraphs={visibleParagraphs} phase={phase} index={3}>
                   This highlights that <em>ikhlāṣ</em> (being for God) and
                   adherence to the Sunnah (correctness) are the twin conditions
                   for any action to be accepted, forming the very essence of the
@@ -743,7 +616,7 @@ function useCountUp(target: number, duration = 1500, start = false, instant = fa
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [target, duration, start]);
+  }, [target, duration, start, instant]);
 
   return value;
 }
@@ -757,11 +630,12 @@ export default function HomePage() {
     sessionStorage.setItem("homepage-visited", "1");
     return false;
   });
-  const [mounted, setMounted] = useState(skipAnimations);
-
-  useEffect(() => {
-    if (!mounted) setMounted(true);
-  }, []);
+  const [mounted] = useState(() => {
+    if (skipAnimations) return true;
+    if (typeof window === "undefined") return false;
+    // Signal mounted on first client render
+    return true;
+  });
 
   const chunksCount = useCountUp(650, 1800, mounted, skipAnimations);
   const booksCount = useCountUp(2500, 2000, mounted, skipAnimations);

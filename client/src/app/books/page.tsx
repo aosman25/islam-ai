@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
@@ -233,7 +233,7 @@ function BooksPage() {
         }
       }
     }).catch(console.error);
-  }, []);
+  }, [searchParams]);
 
   // Debounced search
   useEffect(() => {

@@ -87,7 +87,8 @@ export function useChatSync() {
     if (sessionPending) return;
 
     if (!user?.id) {
-      setSynced(true);
+      // Use a microtask to avoid synchronous setState in effect
+      queueMicrotask(() => setSynced(true));
       return;
     }
 
@@ -117,7 +118,7 @@ export function useChatSync() {
     };
 
     sync();
-  }, [user?.id, sessionPending]);
+  }, [user?.id, sessionPending, clearChats, loadChats]);
 
   // Load more conversations (for sidebar infinite scroll)
   const loadMoreConversations = useCallback(async () => {

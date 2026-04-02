@@ -19,8 +19,6 @@ export function useChat() {
   const pendingPersistRef = useRef<(() => void) | null>(null);
 
   const {
-    chats,
-    activeChatId,
     getActiveChat,
     createChat,
     addMessage,
@@ -175,9 +173,7 @@ export function useChat() {
       );
     },
     [
-      activeChatId,
       isLoading,
-      chats,
       isAuthenticated,
       userId,
       createChat,
