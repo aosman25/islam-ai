@@ -1,33 +1,35 @@
 import type { Metadata } from "next";
-import { Noto_Sans, Noto_Sans_Arabic, Amiri, Noto_Serif } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const notoSans = Noto_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+const notoSans = localFont({
+  src: "../../public/fonts/noto-sans.ttf",
   variable: "--font-noto-sans",
   display: "swap",
 });
 
-const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ["arabic"],
-  weight: ["300", "400", "500", "600", "700"],
+const notoSansArabic = localFont({
+  src: "../../public/fonts/noto-sans-arabic.ttf",
   variable: "--font-noto-arabic",
   display: "swap",
 });
 
-const notoSerif = Noto_Serif({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+const notoSerif = localFont({
+  src: [
+    { path: "../../public/fonts/noto-serif.ttf", style: "normal" },
+    { path: "../../public/fonts/noto-serif-italic.ttf", style: "italic" },
+  ],
   variable: "--font-noto-serif",
   display: "swap",
 });
 
-const amiri = Amiri({
-  subsets: ["arabic", "latin"],
-  weight: ["400", "700"],
-  style: ["normal", "italic"],
+const amiri = localFont({
+  src: [
+    { path: "../../public/fonts/amiri-regular.ttf", weight: "400", style: "normal" },
+    { path: "../../public/fonts/amiri-italic.ttf", weight: "400", style: "italic" },
+    { path: "../../public/fonts/amiri-bold.ttf", weight: "700", style: "normal" },
+    { path: "../../public/fonts/amiri-bold-italic.ttf", weight: "700", style: "italic" },
+  ],
   variable: "--font-amiri",
   display: "swap",
 });
