@@ -630,12 +630,13 @@ export default function HomePage() {
     sessionStorage.setItem("homepage-visited", "1");
     return false;
   });
-  const [mounted] = useState(() => {
-    if (skipAnimations) return true;
-    if (typeof window === "undefined") return false;
-    // Signal mounted on first client render
-    return true;
-  });
+  const [mounted, setMounted] = useState(skipAnimations);
+
+  useEffect(() => {
+    if (!mounted) {
+      queueMicrotask(() => setMounted(true));
+    }
+  }, [mounted]);
 
   const chunksCount = useCountUp(650, 1800, mounted, skipAnimations);
   const booksCount = useCountUp(2500, 2000, mounted, skipAnimations);
