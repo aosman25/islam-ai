@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth/client";
+import { useChatStore } from "@/stores/chat-store";
 import {
   MessageSquare,
   BookOpen,
@@ -34,6 +35,8 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     await authClient.signOut();
+    useChatStore.getState().clearChats();
+    useChatStore.getState().setAuth(null);
     router.push("/");
     router.refresh();
   };

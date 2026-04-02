@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useChatStore } from "@/stores/chat-store";
-import { gatewayQuery } from "@/lib/api";
+import { gatewayQuery, createConversation, addMessages } from "@/lib/api";
+import { cacheSources } from "@/lib/source-cache";
 import { generateId } from "@/lib/utils";
 import type {
   ChatMessage,
@@ -15,6 +16,7 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const pendingPersistRef = useRef<(() => void) | null>(null);
 
   const {
     chats,
@@ -25,6 +27,8 @@ export function useChat() {
     updateMessage,
     updateChatTitle,
     setActiveChat,
+    isAuthenticated,
+    userId,
   } = useChatStore();
 
   const activeChat = getActiveChat();
@@ -33,6 +37,9 @@ export function useChat() {
   const sendMessage = useCallback(
     async (content: string) => {
       if (!content.trim() || isLoading) return;
+
+      // Block anonymous users at char limit
+      if (useChatStore.getState().shouldBlockAnonymous()) return;
 
       // Create or get chat
       let chatId = activeChatId;
@@ -84,6 +91,17 @@ export function useChat() {
       let sources: SourceData[] = [];
       let categories: string[] = [];
 
+      // Set up persist callback so stopGeneration can call it
+      pendingPersistRef.current = () => {
+        if (isAuthenticated && userId && accumulatedContent) {
+          if (sources.length > 0) cacheSources(sources);
+          persistMessages(userId, chatId!, priorMessages.length === 0, content.trim(), {
+            userMsg,
+            assistantContent: accumulatedContent,
+          });
+        }
+      };
+
       await gatewayQuery(
         {
           query: content.trim(),
@@ -122,6 +140,10 @@ export function useChat() {
               sources,
               categories,
             });
+
+            // Persist to DB and cache sources
+            pendingPersistRef.current?.();
+            pendingPersistRef.current = null;
           }
         },
         // onError
@@ -150,6 +172,8 @@ export function useChat() {
       activeChatId,
       isLoading,
       chats,
+      isAuthenticated,
+      userId,
       createChat,
       addMessage,
       updateMessage,
@@ -174,6 +198,10 @@ export function useChat() {
         });
       }
     }
+
+    // Persist truncated answer
+    pendingPersistRef.current?.();
+    pendingPersistRef.current = null;
   }, [getActiveChat, updateMessage]);
 
   const startNewChat = useCallback(() => {
@@ -188,4 +216,55 @@ export function useChat() {
     stopGeneration,
     startNewChat,
   };
+}
+
+/**
+ * Persist user + assistant messages to the DB in the background.
+ */
+async function persistMessages(
+  userId: string,
+  chatId: string,
+  isNewChat: boolean,
+  userContent: string,
+  data: {
+    userMsg: ChatMessage;
+    assistantContent: string;
+  }
+) {
+  try {
+    const chat = useChatStore.getState().chats.find((c) => c.id === chatId);
+
+    if (isNewChat) {
+      await createConversation(userId, {
+        title: chat?.title || userContent.slice(0, 60),
+        messages: [
+          {
+            role: "user" as const,
+            content: userContent,
+            timestamp: data.userMsg.timestamp,
+          },
+          {
+            role: "assistant" as const,
+            content: data.assistantContent,
+            timestamp: Date.now(),
+          },
+        ],
+      });
+    } else {
+      await addMessages(userId, chatId, [
+        {
+          role: "user",
+          content: userContent,
+          timestamp: data.userMsg.timestamp,
+        },
+        {
+          role: "assistant",
+          content: data.assistantContent,
+          timestamp: Date.now(),
+        },
+      ]);
+    }
+  } catch (error) {
+    console.error("Failed to persist messages:", error);
+  }
 }

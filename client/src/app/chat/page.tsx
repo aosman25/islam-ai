@@ -7,6 +7,8 @@ import { ChatSidebar } from "@/components/chat/chat-sidebar";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { CitationOverlayProvider } from "@/components/chat/citation-renderer";
 import { useChat } from "@/hooks/use-chat";
+import { useChatSync } from "@/hooks/use-chat-sync";
+import { useChatStore } from "@/stores/chat-store";
 import { cn, detectDirection } from "@/lib/utils";
 import {
   Send,
@@ -17,6 +19,8 @@ import {
   Compass,
   ArrowDown,
   MessageSquare,
+  LogIn,
+  PenSquare,
 } from "lucide-react";
 
 const SUGGESTED_ACTIONS = [
@@ -64,7 +68,21 @@ function ChatPageInner() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const initialQuerySent = useRef(false);
 
+  // Sync auth state and load conversations
+  const { loadMoreConversations, loadMessages, loadOlderMessages } = useChatSync();
+
   const { messages, isLoading, sendMessage, stopGeneration } = useChat();
+  const shouldBlock = useChatStore((s) => s.shouldBlockAnonymous());
+  const activeChatId = useChatStore((s) => s.activeChatId);
+  const activeChat = useChatStore((s) => s.getActiveChat());
+  const loadingOlderRef = useRef(false);
+
+  // Load messages when a chat is selected
+  useEffect(() => {
+    if (activeChatId) {
+      loadMessages(activeChatId);
+    }
+  }, [activeChatId, loadMessages]);
 
   // Handle initial query from URL
   useEffect(() => {
@@ -93,28 +111,45 @@ function ChatPageInner() {
     }
   }, [input]);
 
-  // Scroll-to-bottom visibility
+  // Scroll-to-bottom visibility + load older messages on scroll up
   const [isAtBottom, setIsAtBottom] = useState(true);
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const onScroll = () => {
+    const onScroll = async () => {
       const threshold = 100;
       setIsAtBottom(
         container.scrollHeight - container.scrollTop - container.clientHeight <
           threshold
       );
+
+      // Load older messages when scrolling near top
+      if (
+        container.scrollTop < 100 &&
+        !loadingOlderRef.current &&
+        activeChat?.hasMoreMessages &&
+        activeChatId
+      ) {
+        loadingOlderRef.current = true;
+        const prevHeight = container.scrollHeight;
+        await loadOlderMessages(activeChatId);
+        // Maintain scroll position after prepending
+        requestAnimationFrame(() => {
+          container.scrollTop = container.scrollHeight - prevHeight;
+        });
+        loadingOlderRef.current = false;
+      }
     };
     container.addEventListener("scroll", onScroll);
     return () => container.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [activeChatId, activeChat?.hasMoreMessages, loadOlderMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSubmit = () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || shouldBlock) return;
     sendMessage(input);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -140,6 +175,7 @@ function ChatPageInner() {
         <ChatSidebar
           open={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
+          onLoadMore={loadMoreConversations}
         />
 
         {/* Main Chat Area */}
@@ -161,6 +197,43 @@ function ChatPageInner() {
             <div ref={messagesEndRef} className="min-h-6 shrink-0" />
           </div>
 
+          {/* Auth Prompt — replaces input when blocked */}
+          {shouldBlock ? (
+            <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-4 py-8">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
+                <MessageSquare size={22} className="text-primary" />
+              </div>
+              <div className="text-center">
+                <p className="text-base font-semibold text-foreground mb-1">
+                  Chat limit reached
+                </p>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  You&apos;ve reached the conversation limit. Start a new chat or sign in for unlimited access and saved history.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    useChatStore.getState().clearChats();
+                    useChatStore.getState().setActiveChat(null);
+                  }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border bg-background text-foreground text-sm font-medium shadow-sm hover:bg-muted transition-colors"
+                >
+                  <PenSquare size={15} />
+                  New Chat
+                </button>
+                <a
+                  href="/auth/sign-in"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition-opacity"
+                >
+                  <LogIn size={15} />
+                  Sign In
+                </a>
+              </div>
+            </div>
+          ) : (
+          <>
           {/* Input Area */}
           <form
             onSubmit={(e) => {
@@ -229,6 +302,8 @@ function ChatPageInner() {
               AI can make mistakes. Verify important information with scholars.
             </p>
           </form>
+          </>
+          )}
         </main>
       </div>
     </div>

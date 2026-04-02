@@ -8,6 +8,9 @@ import type {
   GatewayRequest,
   GatewayStreamChunk,
   HealthResponse,
+  SourceData,
+  ConversationsPage,
+  ConversationDetail,
 } from "@/types";
 import { normalizeSearch } from "@/lib/utils";
 
@@ -93,6 +96,109 @@ export async function gatewayQuery(
 export async function gatewayHealth(): Promise<HealthResponse> {
   return apiFetch<HealthResponse>(API_BASE, "/health");
 }
+
+// ============================================================
+// Chunks (via Gateway → Search Service)
+// ============================================================
+
+export async function fetchChunks(
+  chunkIds: number[]
+): Promise<SourceData[]> {
+  const data = await apiFetch<{ chunks: SourceData[]; count: number }>(
+    API_BASE,
+    "/chunks",
+    {
+      method: "POST",
+      body: JSON.stringify({ chunk_ids: chunkIds }),
+    }
+  );
+  return data.chunks;
+}
+
+// ============================================================
+// Conversations (Master Server)
+// ============================================================
+
+function authHeaders(userId: string): HeadersInit {
+  return { Authorization: `Bearer ${userId}` };
+}
+
+export async function getConversations(
+  userId: string,
+  opts: { limit?: number; cursor?: string } = {}
+): Promise<ConversationsPage> {
+  const params = new URLSearchParams();
+  if (opts.limit) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const qs = params.toString();
+  return apiFetch<ConversationsPage>(
+    MASTER_BASE,
+    `/conversations${qs ? `?${qs}` : ""}`,
+    { headers: authHeaders(userId) }
+  );
+}
+
+export async function getConversation(
+  userId: string,
+  id: string,
+  opts: { messagesLimit?: number; before?: number } = {}
+): Promise<ConversationDetail> {
+  const params = new URLSearchParams();
+  if (opts.messagesLimit) params.set("messages_limit", String(opts.messagesLimit));
+  if (opts.before) params.set("before", String(opts.before));
+  const qs = params.toString();
+  return apiFetch<ConversationDetail>(
+    MASTER_BASE,
+    `/conversations/${id}${qs ? `?${qs}` : ""}`,
+    { headers: authHeaders(userId) }
+  );
+}
+
+export async function createConversation(
+  userId: string,
+  data: { title?: string; messages?: unknown[] }
+): Promise<{ id: string }> {
+  return apiFetch<{ id: string }>(MASTER_BASE, "/conversations", {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: authHeaders(userId),
+  });
+}
+
+export async function updateConversationTitle(
+  userId: string,
+  id: string,
+  title: string
+): Promise<void> {
+  await apiFetch(MASTER_BASE, `/conversations/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ title }),
+    headers: authHeaders(userId),
+  });
+}
+
+export async function deleteConversation(
+  userId: string,
+  id: string
+): Promise<void> {
+  await apiFetch(MASTER_BASE, `/conversations/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(userId),
+  });
+}
+
+export async function addMessages(
+  userId: string,
+  conversationId: string,
+  messages: unknown[]
+): Promise<void> {
+  await apiFetch(MASTER_BASE, `/conversations/${conversationId}/messages`, {
+    method: "POST",
+    body: JSON.stringify(messages),
+    headers: authHeaders(userId),
+  });
+}
+
 
 // ============================================================
 // Local JSON data cache

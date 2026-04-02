@@ -22,6 +22,8 @@ from models import (
     HealthResponse,
     PartitionsResponse,
     ErrorResponse,
+    ChunksRequest,
+    ChunksResponse,
 )
 
 # Import .env file
@@ -344,6 +346,53 @@ async def get_partitions(collection_name: str = "islamic_library"):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch partitions: {str(e)}"
+        )
+
+
+@app.post(
+    "/chunks",
+    response_model=ChunksResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid input"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+async def get_chunks(request: ChunksRequest, http_request: Request):
+    """Retrieve chunks by their IDs from Milvus."""
+    request_id = http_request.headers.get(
+        "x-request-id", f"req_{int(time.time() * 1000)}"
+    )
+
+    try:
+        client = get_milvus_client()
+
+        ids_str = ", ".join(str(i) for i in request.chunk_ids)
+        filter_expr = f"id in [{ids_str}]"
+
+        def query_thread():
+            return client.query(
+                collection_name=request.collection_name,
+                filter=filter_expr,
+                output_fields=request.output_fields,
+                limit=len(request.chunk_ids),
+            )
+
+        results = await asyncio.to_thread(query_thread)
+
+        logger.info(
+            "Chunks retrieved",
+            requested=len(request.chunk_ids),
+            returned=len(results),
+            request_id=request_id,
+        )
+
+        return ChunksResponse(chunks=results, count=len(results))
+
+    except Exception as e:
+        logger.error("Chunks retrieval failed", error=str(e), request_id=request_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve chunks",
         )
 
 

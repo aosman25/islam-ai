@@ -552,6 +552,34 @@ async def process_query(request: GatewayRequest, http_request: Request):
         )
 
 
+@app.post("/chunks")
+async def proxy_chunks(http_request: Request):
+    """Proxy chunk retrieval requests to the search service."""
+    request_id = http_request.headers.get(
+        "x-request-id", f"req_{int(time.time() * 1000)}"
+    )
+    try:
+        body = await http_request.json()
+        resp = await http_client.post(
+            f"{Config.SEARCH_SERVICE_URL}/chunks",
+            json=body,
+            headers={"x-request-id": request_id},
+        )
+        resp.raise_for_status()
+        return resp.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"Search service error: {e.response.text}",
+        )
+    except Exception as e:
+        logger.error("Chunks proxy failed", error=str(e), request_id=request_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve chunks",
+        )
+
+
 if __name__ == "__main__":
     setup_logging()
     import uvicorn

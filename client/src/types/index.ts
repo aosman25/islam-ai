@@ -135,6 +135,51 @@ export interface Chat {
   messages: ChatMessage[];
   createdAt: number;
   updatedAt: number;
+  hasMoreMessages?: boolean;
+}
+
+// ============================================================
+// Source Reference (lightweight, stored in DB)
+// ============================================================
+
+export interface SourceRef {
+  chunk_id: number;
+  distance: number;
+}
+
+// ============================================================
+// Conversation API Types
+// ============================================================
+
+export interface ConversationSummary {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConversationsPage {
+  data: ConversationSummary[];
+  hasMore: boolean;
+  nextCursor: string | null;
+}
+
+export interface ApiMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+}
+
+export interface ConversationDetail {
+  id: string;
+  user_id: string;
+  title: string;
+  messages: ApiMessage[];
+  totalMessages: number;
+  hasMoreMessages: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // ============================================================

@@ -1,7 +1,6 @@
-import { auth } from "@/lib/auth/server";
-
-export default auth.middleware({ loginUrl: "/auth/sign-in" });
+// Chat is accessible without authentication.
+// Auth middleware disabled — no routes are protected.
 
 export const config = {
-  matcher: ["/chat/:path*"],
+  matcher: [],
 };

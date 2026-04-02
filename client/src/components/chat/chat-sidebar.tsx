@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useChatStore } from "@/stores/chat-store";
 import type { Chat } from "@/types";
@@ -14,15 +14,18 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  LogIn,
+  Loader2,
 } from "lucide-react";
 
 interface ChatSidebarProps {
   open: boolean;
   onToggle: () => void;
+  onLoadMore?: () => Promise<void>;
 }
 
-export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
-  const { chats, activeChatId, setActiveChat, deleteChat, updateChatTitle } =
+export function ChatSidebar({ open, onToggle, onLoadMore }: ChatSidebarProps) {
+  const { chats, activeChatId, setActiveChat, deleteChat, updateChatTitle, clearChats, isAuthenticated } =
     useChatStore();
 
   return (
@@ -74,9 +77,12 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
           )}
         </div>
 
-        {/* New Chat */}
+        {/* New Chat button — always visible */}
         <button
-          onClick={() => setActiveChat(null)}
+          onClick={() => {
+            if (!isAuthenticated) clearChats();
+            setActiveChat(null);
+          }}
           className={cn(
             "flex items-center gap-2.5 mt-3 mb-1 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors whitespace-nowrap",
             open ? "mx-3 px-3 py-2.5" : "mx-auto p-1.5 justify-center"
@@ -86,36 +92,118 @@ export function ChatSidebar({ open, onToggle }: ChatSidebarProps) {
           {open && "New Chat"}
         </button>
 
-        {/* Chat List */}
-        <div className={cn("flex-1 overflow-y-auto py-2", !open && "hidden")}>
-          {chats.length === 0 ? (
-            <div className="px-4 py-8 text-center">
-              <MessageSquare
-                size={28}
-                className="mx-auto text-border mb-3"
-              />
-              <p className="text-xs text-muted-foreground">No conversations yet</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Start by asking a question
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-0.5 px-2">
-              {chats.map((chat) => (
-                <ChatItem
-                  key={chat.id}
-                  chat={chat}
-                  isActive={chat.id === activeChatId}
-                  onSelect={() => setActiveChat(chat.id)}
-                  onDelete={() => deleteChat(chat.id)}
-                  onRename={(title) => updateChatTitle(chat.id, title)}
-                />
-              ))}
+        {isAuthenticated ? (
+          <ChatList
+            open={open}
+            chats={chats}
+            activeChatId={activeChatId}
+            onSelect={setActiveChat}
+            onDelete={deleteChat}
+            onRename={updateChatTitle}
+            onLoadMore={onLoadMore}
+          />
+        ) : (
+          /* Anonymous: prompt to sign in */
+          <div className={cn("flex-1 flex flex-col items-center justify-center px-4", !open && "hidden")}>
+            <LogIn size={28} className="text-border mb-3" />
+            <p className="text-sm font-medium text-foreground text-center mb-1">
+              Sign in to save chats
+            </p>
+            <p className="text-xs text-muted-foreground text-center mb-4">
+              Your conversation history will be saved when you sign in.
+            </p>
+            <a
+              href="/auth/sign-in"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              <LogIn size={14} />
+              Sign In
+            </a>
+          </div>
+        )}
+      </aside>
+    </>
+  );
+}
+
+function ChatList({
+  open,
+  chats,
+  activeChatId,
+  onSelect,
+  onDelete,
+  onRename,
+  onLoadMore,
+}: {
+  open: boolean;
+  chats: Chat[];
+  activeChatId: string | null;
+  onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
+  onRename: (id: string, title: string) => void;
+  onLoadMore?: () => Promise<void>;
+}) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
+  const hasMore = useChatStore((s) => s.hasMoreConversations);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container || !onLoadMore) return;
+
+    const onScroll = async () => {
+      if (loadingRef.current || !hasMore) return;
+      const threshold = 50;
+      if (
+        container.scrollHeight - container.scrollTop - container.clientHeight <
+        threshold
+      ) {
+        loadingRef.current = true;
+        setLoadingMore(true);
+        await onLoadMore();
+        setLoadingMore(false);
+        loadingRef.current = false;
+      }
+    };
+
+    container.addEventListener("scroll", onScroll);
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [onLoadMore, hasMore]);
+
+  return (
+    <div
+      ref={listRef}
+      className={cn("flex-1 overflow-y-auto py-2", !open && "hidden")}
+    >
+      {chats.length === 0 ? (
+        <div className="px-4 py-8 text-center">
+          <MessageSquare size={28} className="mx-auto text-border mb-3" />
+          <p className="text-xs text-muted-foreground">No conversations yet</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Start by asking a question
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-0.5 px-2">
+          {chats.map((chat) => (
+            <ChatItem
+              key={chat.id}
+              chat={chat}
+              isActive={chat.id === activeChatId}
+              onSelect={() => onSelect(chat.id)}
+              onDelete={() => onDelete(chat.id)}
+              onRename={(title) => onRename(chat.id, title)}
+            />
+          ))}
+          {loadingMore && (
+            <div className="flex justify-center py-3">
+              <Loader2 size={16} className="animate-spin text-muted-foreground" />
             </div>
           )}
         </div>
-      </aside>
-    </>
+      )}
+    </div>
   );
 }
 
@@ -209,7 +297,7 @@ function ChatItem({
           </button>
           <button
             onClick={() => setMode("view")}
-            className="flex-shrink-0 p-1 rounded text-muted-foreground hover:bg-muted transition-colors"
+            className="flex-shrink-0 p-1 rounded text-destructive hover:bg-destructive/10 transition-colors"
           >
             <X size={12} />
           </button>

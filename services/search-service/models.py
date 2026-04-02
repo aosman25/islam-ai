@@ -144,6 +144,43 @@ class PartitionsResponse(BaseModel):
     timestamp: str
 
 
+class ChunksRequest(BaseModel):
+    chunk_ids: List[int] = Field(..., min_items=1, max_items=100)
+    collection_name: str = "islamic_library"
+    output_fields: List[str] = [
+        "id",
+        "book_id",
+        "book_name",
+        "order",
+        "author",
+        "category",
+        "part_title",
+        "start_page_id",
+        "page_offset",
+        "page_num_range",
+        "text",
+    ]
+
+
+class ChunkData(BaseModel):
+    id: int
+    book_id: int
+    book_name: str
+    order: int
+    author: str
+    category: str
+    part_title: str
+    start_page_id: int
+    page_offset: int
+    page_num_range: List[int]
+    text: str
+
+
+class ChunksResponse(BaseModel):
+    chunks: List[ChunkData]
+    count: int
+
+
 class ErrorResponse(BaseModel):
     error: str
     request_id: str
