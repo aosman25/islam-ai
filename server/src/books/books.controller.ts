@@ -20,4 +20,10 @@ export class BooksController {
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<Book> {
     return this.booksService.findOne(id);
   }
+
+  @Get(':id/toc')
+  @ApiOperation({ summary: 'Get table of contents and parts for a book' })
+  async getToc(@Param('id', ParseIntPipe) id: number) {
+    return this.booksService.getToc(id);
+  }
 }

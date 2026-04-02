@@ -88,3 +88,20 @@ export function normalizeArabic(text: string): string {
     .trim()
     .toLowerCase();
 }
+
+/**
+ * Normalize text for search: strips Arabic diacritics, Latin diacritics
+ * (transliteration marks like ā ī ū ṣ etc.), and lowercases.
+ * Works for both Arabic and transliterated text.
+ */
+export function normalizeSearch(text: string): string {
+  return normalizeArabic(text)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // strip Latin combining diacritics
+    .replace(/[\u02BE\u02BF\u02BC\u02BD]/g, "") // ʾ ʿ ʼ etc.
+    .replace(/[ʾʿʼ''`]/g, "")
+    .replace(/[\u1E00-\u1EFF]/g, (ch) => ch.normalize("NFD").replace(/[\u0300-\u036f]/g, "")) // precomposed Latin diacritics
+    .replace(/[""''«»\-–—.,;:!?()[\]{}/\\@#$%^&*_+=~`|<>]/g, "") // punctuation
+    .replace(/\s+/g, " ")
+    .trim();
+}

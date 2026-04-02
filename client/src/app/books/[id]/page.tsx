@@ -749,8 +749,8 @@ function InfoPanel({ book }: { book: Book }) {
     { label: "Editor", value: book.editor },
     { label: "Edition", value: book.edition },
     { label: "Publisher", value: book.publisher },
-    { label: "Volumes", value: book.num_volumes },
-    { label: "Pages", value: book.num_pages },
+    { label: "Volumes", value: book.num_volumes?.match(/^\d+/)?.[0] },
+    { label: "Pages", value: book.num_pages?.match(/^\d+/)?.[0] },
     { label: "Category", value: book.category?.name },
   ].filter((f) => f.value);
 

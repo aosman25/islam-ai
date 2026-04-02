@@ -74,4 +74,17 @@ export class BooksService {
 
     return book;
   }
+
+  async getToc(id: number): Promise<{ table_of_contents: unknown; parts: unknown }> {
+    const book = await this.bookRepository.findOne({
+      where: { book_id: id },
+      select: ['book_id', 'table_of_contents', 'parts'],
+    });
+
+    if (!book) {
+      throw new NotFoundException(`Book with ID ${id} not found`);
+    }
+
+    return { table_of_contents: book.table_of_contents, parts: book.parts };
+  }
 }

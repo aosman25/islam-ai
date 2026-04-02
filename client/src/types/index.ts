@@ -5,16 +5,19 @@
 export interface Author {
   id: number;
   name: string;
+  name_ar?: string;
 }
 
 export interface Category {
   id: number;
   name: string;
+  name_ar?: string;
 }
 
 export interface Book {
   book_id: number;
   book_name: string;
+  book_name_ar?: string;
   author_id: number;
   category_id: number;
   editor: string | null;

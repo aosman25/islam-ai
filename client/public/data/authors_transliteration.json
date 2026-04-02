@@ -1,0 +1,4506 @@
+{
+  "2": {
+    "name": "Ibn Hazm",
+    "name_ar": "ابن حزم"
+  },
+  "3": {
+    "name": "Ibn Kathir",
+    "name_ar": "ابن كثير"
+  },
+  "4": {
+    "name": "al-Baghawī, Abū Muḥammad",
+    "name_ar": "البغوي، أبو محمد"
+  },
+  "6": {
+    "name": "Zakariyā al-Anṣārī",
+    "name_ar": "زكريا الأنصاري"
+  },
+  "7": {
+    "name": "al-Jalāl al-Suyūṭī",
+    "name_ar": "الجلال السيوطي"
+  },
+  "8": {
+    "name": "al-Ḥamawī, Ibn Abī al-Ridā",
+    "name_ar": "الحموي، ابن أبي الرضا"
+  },
+  "10": {
+    "name": "Ibn Khalaf al-Muqriʾ",
+    "name_ar": "ابن خلف المقرئ"
+  },
+  "13": {
+    "name": "ʿAlī aḍ-Ḍibāʿ",
+    "name_ar": "علي الضباع"
+  },
+  "14": {
+    "name": "Ibn al-Qayyim",
+    "name_ar": "ابن القيم"
+  },
+  "20": {
+    "name": "al-Shāfiʿī",
+    "name_ar": "الشافعي"
+  },
+  "21": {
+    "name": "Abū Bakr al-Rāzī al-Jaṣṣāṣ",
+    "name_ar": "أبو بكر الرازي الجصاص"
+  },
+  "23": {
+    "name": "ʿIlm al-Dīn al-Sakhāwī al-Muqriʾ",
+    "name_ar": "علم الدين السخاوي المقرئ"
+  },
+  "24": {
+    "name": "Sulaymān al-Jamzūrī",
+    "name_ar": "سليمان الجمزوري"
+  },
+  "25": {
+    "name": "Ibn al-Jazarī",
+    "name_ar": "ابن الجزري"
+  },
+  "26": {
+    "name": "Abū ʿUbayd al-Qāsim b. Sallām",
+    "name_ar": "أبو عبيد القاسم بن سلام"
+  },
+  "32": {
+    "name": "ʿAbd al-Raḥmān b. Qāsim",
+    "name_ar": "عبد الرحمن بن قاسم"
+  },
+  "34": {
+    "name": "al-Sakhāwī",
+    "name_ar": "السخاوي"
+  },
+  "36": {
+    "name": "ʿAbd al-Qāhir al-Jurjānī",
+    "name_ar": "عبد القاهر الجرجاني"
+  },
+  "37": {
+    "name": "Fāḍil Ṣāliḥ al-Sāmirāʾī",
+    "name_ar": "فاضل صالح السامرائي"
+  },
+  "42": {
+    "name": "Muḥammad Ṭāhir al-Kurdī",
+    "name_ar": "محمد طاهر الكردي"
+  },
+  "44": {
+    "name": "al-Nawawī",
+    "name_ar": "النووي"
+  },
+  "45": {
+    "name": "Abū ʿAmr al-Dānī",
+    "name_ar": "أبو عمرو الداني"
+  },
+  "46": {
+    "name": "Qatāda b. Dāʿama al-Sadūsī",
+    "name_ar": "قتادة بن دعامة السدوسي"
+  },
+  "47": {
+    "name": "ʿAbd Allāh Abā Baṭīn",
+    "name_ar": "عبد الله أبا بطين"
+  },
+  "49": {
+    "name": "al-Nisāʾī",
+    "name_ar": "النسائي"
+  },
+  "51": {
+    "name": "Ibn al-Jawzī",
+    "name_ar": "ابن الجوزي"
+  },
+  "52": {
+    "name": "ʿAbd al-Fatāḥ al-Miṣrī",
+    "name_ar": "عبد الفتاح المرصفي"
+  },
+  "53": {
+    "name": "al-Ḥarīrī",
+    "name_ar": "الحريري"
+  },
+  "54": {
+    "name": "Ibn Taymiyya",
+    "name_ar": "ابن تيمية"
+  },
+  "56": {
+    "name": "Abū al-Qāsim al-Baghawī",
+    "name_ar": "أبو القاسم البغوي"
+  },
+  "57": {
+    "name": "Ibn ʿUthaymīn",
+    "name_ar": "ابن عثيمين"
+  },
+  "59": {
+    "name": "Ibn Jarīr al-Ṭabarī",
+    "name_ar": "ابن جرير الطبري"
+  },
+  "60": {
+    "name": "Abū al-Ḥasan al-Tabrīzī",
+    "name_ar": "أبو الحسن التبريزي"
+  },
+  "62": {
+    "name": "Ṣāliḥ al-Fūzān",
+    "name_ar": "صالح الفوزان"
+  },
+  "66": {
+    "name": "Ibn Yasʿūn",
+    "name_ar": "ابن يسعون"
+  },
+  "67": {
+    "name": "Ibn Bāz",
+    "name_ar": "ابن باز"
+  },
+  "68": {
+    "name": "al-Shāṭibī al-Uṣūlī al-Naḥwī",
+    "name_ar": "الشاطبي الأصولي النحوي"
+  },
+  "69": {
+    "name": "Muḥammad Amān al-Jāmī",
+    "name_ar": "محمد أمان الجامي"
+  },
+  "70": {
+    "name": "ʿAbd al-Raḥmān b. ʿAbd al-Khāliq",
+    "name_ar": "عبد الرحمن بن عبد الخالق"
+  },
+  "71": {
+    "name": "Badr al-Dīn al-ʿAynī",
+    "name_ar": "بدر الدين العيني"
+  },
+  "72": {
+    "name": "Abū al-Ḥasan al-Ṣafāqisī",
+    "name_ar": "أبو الحسن الصفاقسي"
+  },
+  "74": {
+    "name": "Abū Bakr al-Bayhaqī",
+    "name_ar": "أبو بكر البيهقي"
+  },
+  "75": {
+    "name": "Hātim al-ʿAwnī",
+    "name_ar": "حاتم العوني"
+  },
+  "76": {
+    "name": "Ibn ʿAbd al-Barr",
+    "name_ar": "ابن عبد البر"
+  },
+  "78": {
+    "name": "Aḥmad b. Aḥmad al-Mukhtār al-Shinnqīṭī",
+    "name_ar": "أحمد بن أحمد المختار الشنقيطي"
+  },
+  "79": {
+    "name": "Ibn ʿAbd al-Hādī",
+    "name_ar": "ابن عبد الهادي"
+  },
+  "84": {
+    "name": "Abū al-ʿAlāʾ al-Maʿarrī",
+    "name_ar": "أبو العلاء المعري"
+  },
+  "89": {
+    "name": "ʾIḥsān ʿAbbās",
+    "name_ar": "إحسان عباس"
+  },
+  "91": {
+    "name": "Burhān al-Dīn al-Bqāʿiy",
+    "name_ar": "برهان الدين البقاعي"
+  },
+  "93": {
+    "name": "Badr al-Dīn al-Zarkashī",
+    "name_ar": "بدر الدين الزركشي"
+  },
+  "97": {
+    "name": "ʿAbd al-Karīm al-ʿUmuraynī",
+    "name_ar": "عبد الكريم العميريني"
+  },
+  "98": {
+    "name": "al-Alūsī, Shihāb al-Dīn",
+    "name_ar": "الألوسي، شهاب الدين"
+  },
+  "99": {
+    "name": "Abū Ḥayyān al-Andalusī",
+    "name_ar": "أبو حيان الأندلسي"
+  },
+  "100": {
+    "name": "al-Shawkānī",
+    "name_ar": "الشوكاني"
+  },
+  "101": {
+    "name": "Abū al-Layth al-Samarqandī",
+    "name_ar": "أبو الليث السمرقندي"
+  },
+  "102": {
+    "name": "al-Kāsānī",
+    "name_ar": "الكاساني"
+  },
+  "105": {
+    "name": "Hāfiẓ al-Dīn Abū al-Barakāt al-Nasafī",
+    "name_ar": "حافظ الدين أبو البركات النسفي"
+  },
+  "108": {
+    "name": "al-Zamakhsharī",
+    "name_ar": "الزمخشري"
+  },
+  "109": {
+    "name": "al-Māwardī",
+    "name_ar": "الماوردي"
+  },
+  "112": {
+    "name": "Abū Manṣūr al-Thaʿālibī",
+    "name_ar": "أبو منصور الثعالبي"
+  },
+  "114": {
+    "name": "Muḥammad al-Amīn al-Shinqiṭī",
+    "name_ar": "محمد الأمين الشنقيطي"
+  },
+  "117": {
+    "name": "al-Mukhtār as-Sūsī",
+    "name_ar": "المختار السوسي"
+  },
+  "119": {
+    "name": "Ibn Abī Ḥātim",
+    "name_ar": "ابن أبي حاتم"
+  },
+  "123": {
+    "name": "ʿAbd al-Razzāq al-Ṣanʿānī",
+    "name_ar": "عبد الرزاق الصنعاني"
+  },
+  "124": {
+    "name": "Mujāhid b. Jābir",
+    "name_ar": "مجاهد بن جبر"
+  },
+  "126": {
+    "name": "ʿIzz al-Dīn b. ʿAbd al-Salām",
+    "name_ar": "عز الدين بن عبد السلام"
+  },
+  "127": {
+    "name": "Abū Bakr al-Jazāʾirī",
+    "name_ar": "أبو بكر الجزائري"
+  },
+  "128": {
+    "name": "ʿAbd al-Raḥmān al-Saʿdī",
+    "name_ar": "عبد الرحمن السعدي"
+  },
+  "132": {
+    "name": "Abū Jaʿfar al-Naḥḥās",
+    "name_ar": "أبو جعفر النحاس"
+  },
+  "133": {
+    "name": "Ibn ʿAṭiyya",
+    "name_ar": "ابن عطية"
+  },
+  "136": {
+    "name": "al-Khaṭīb al-Sharbinī",
+    "name_ar": "الخطيب الشربيني"
+  },
+  "138": {
+    "name": "Sufyan al-Thawrī",
+    "name_ar": "سفيان الثوري"
+  },
+  "140": {
+    "name": "Abū Ismāʿīl al-Harawī",
+    "name_ar": "أبو إسماعيل الهروي"
+  },
+  "141": {
+    "name": "al-Ṣanʿānī",
+    "name_ar": "الصنعاني"
+  },
+  "142": {
+    "name": "Ibn Shaykh al-Ḥizāmayn",
+    "name_ar": "ابن شيخ الحزامين"
+  },
+  "143": {
+    "name": "Ibn Ba\bta",
+    "name_ar": "ابن بطة"
+  },
+  "144": {
+    "name": "al-Lālikāʾī",
+    "name_ar": "اللالكائي"
+  },
+  "145": {
+    "name": "Bakr Abū Zayd",
+    "name_ar": "بكر أبو زيد"
+  },
+  "147": {
+    "name": "al-Lajnah al-Dāʾimah lil-Buḥūth al-ʿIlmiyyah wa-l-ʾIftāʾ",
+    "name_ar": "اللجنة الدائمة للبحوث العلمية والإفتاء"
+  },
+  "150": {
+    "name": "Saʿīd b. Wahf al-Qaḥṭānī",
+    "name_ar": "سعيد بن وهف القحطاني"
+  },
+  "152": {
+    "name": "Muḥammad b. ʿAbd al-Wahhāb",
+    "name_ar": "محمد بن عبد الوهاب"
+  },
+  "158": {
+    "name": "ʿAbd al-Razzāq ʿAfīfī",
+    "name_ar": "عبد الرزاق عفيفي"
+  },
+  "160": {
+    "name": "Shihāb al-Dīn al-ʿAskarī",
+    "name_ar": "شهاب الدين العسكري"
+  },
+  "161": {
+    "name": "Muḥammad b. Aḥmad Bāshmīl",
+    "name_ar": "محمد بن أحمد باشميل"
+  },
+  "162": {
+    "name": "Abū Isḥāq al-Ḥuwaynī",
+    "name_ar": "أبو إسحق الحويني"
+  },
+  "164": {
+    "name": "ʿAbd Allāh b. ʿAbd al-Muḥsin al-Turkī",
+    "name_ar": "عبد الله بن عبد المحسن التركي"
+  },
+  "166": {
+    "name": "Maḥmūd Shukrī al-Alūsī",
+    "name_ar": "محمود شكري الألوسي"
+  },
+  "168": {
+    "name": "Hāfiẓ b. Aḥmad Ḥikmī",
+    "name_ar": "حافظ بن أحمد حكمي"
+  },
+  "170": {
+    "name": "Ibn Abī al-ʿIzz",
+    "name_ar": "ابن أبي العز"
+  },
+  "172": {
+    "name": "ʿAbd al-Raḥmān b. Ḥasan Āl al-Shaykh",
+    "name_ar": "عبد الرحمن بن حسن آل الشيخ"
+  },
+  "175": {
+    "name": "ʿAbd al-Raḥmān b. Nāṣir al-Barāk",
+    "name_ar": "عبد الرحمن بن ناصر البراك"
+  },
+  "177": {
+    "name": "Faḍl al-Raḥmān Ṣāfī",
+    "name_ar": "فضل الرحمن صافي"
+  },
+  "178": {
+    "name": "ʿAbd al-Raḥmān al-Muʿallimī al-Yamānī",
+    "name_ar": "عبد الرحمن المعلمي اليماني"
+  },
+  "181": {
+    "name": "Ibn Abī Zaydān",
+    "name_ar": "ابن أبي زمنين"
+  },
+  "184": {
+    "name": "Ibn Rajab al-Ḥanbalī",
+    "name_ar": "ابن رجب الحنبلي"
+  },
+  "185": {
+    "name": "ʿAbd al-Muḥsin al-ʿAbbād",
+    "name_ar": "عبد المحسن العباد"
+  },
+  "195": {
+    "name": "Nawāl al-ʿĪd",
+    "name_ar": "نوال العيد"
+  },
+  "198": {
+    "name": "Abū al-Khaṭṭāb al-Kilūdhānī",
+    "name_ar": "أبو الخطاب الكلوذاني"
+  },
+  "199": {
+    "name": "Aḥmad b. ʿUmar Bāzmūl",
+    "name_ar": "أحمد بن عمر بازمول"
+  },
+  "202": {
+    "name": "Ibn Ḥajar al-ʿAsqalānī",
+    "name_ar": "ابن حجر العسقلاني"
+  },
+  "204": {
+    "name": "Ismāʿīl al-Taymī al-Aṣbahānī",
+    "name_ar": "إسماعيل التيمي الأصبهاني"
+  },
+  "205": {
+    "name": "Ibn Bashkuwāl",
+    "name_ar": "ابن بشكوال"
+  },
+  "206": {
+    "name": "Ibn Abī Dāwūd",
+    "name_ar": "ابن أبي داود"
+  },
+  "207": {
+    "name": "Muḥammad Mahdī Qashlān",
+    "name_ar": "محمد مهدي قشلان"
+  },
+  "208": {
+    "name": "Majmūʿat min al-Muʾallifīn",
+    "name_ar": "مجموعة من المؤلفين"
+  },
+  "209": {
+    "name": "Muqātil",
+    "name_ar": "مقاتل"
+  },
+  "211": {
+    "name": "al-Fayruzabadi",
+    "name_ar": "الفيروزآبادي"
+  },
+  "214": {
+    "name": "Mālik b. Anas",
+    "name_ar": "مالك بن أنس"
+  },
+  "215": {
+    "name": "al-Bukhārī",
+    "name_ar": "البخاري"
+  },
+  "216": {
+    "name": "Abū Dāwud",
+    "name_ar": "أبو داود"
+  },
+  "217": {
+    "name": "al-Tirmidhī",
+    "name_ar": "الترمذي"
+  },
+  "218": {
+    "name": "Ibn Mājah",
+    "name_ar": "ابن ماجه"
+  },
+  "219": {
+    "name": "al-Ṭayālisī",
+    "name_ar": "الطيالسي"
+  },
+  "220": {
+    "name": "Ahmad b. Hanbal",
+    "name_ar": "أحمد بن حنبل"
+  },
+  "221": {
+    "name": "al-Ḥumaydī",
+    "name_ar": "الحميدي"
+  },
+  "222": {
+    "name": "Abū ʿAbd Allāh al-Ḥumaydī",
+    "name_ar": "أبو عبد الله الحميدي"
+  },
+  "223": {
+    "name": "al-Dāraquṭnī",
+    "name_ar": "الدارقطني"
+  },
+  "224": {
+    "name": "al-Dārimī",
+    "name_ar": "الدارمي"
+  },
+  "225": {
+    "name": "Abū Bakr b. Abī Shayba",
+    "name_ar": "أبو بكر بن أبي شيبة"
+  },
+  "231": {
+    "name": "Abū ʿAbd Allāh al-Ḥākim",
+    "name_ar": "أبو عبد الله الحاكم"
+  },
+  "232": {
+    "name": "al-Ṭabarānī",
+    "name_ar": "الطبراني"
+  },
+  "234": {
+    "name": "Abū Yaʿlā al-Mawṣilī",
+    "name_ar": "أبو يعلى الموصلي"
+  },
+  "235": {
+    "name": "Ibn Ḥibbān",
+    "name_ar": "ابن حبان"
+  },
+  "236": {
+    "name": "Ibn Khuzayma",
+    "name_ar": "ابن خزيمة"
+  },
+  "239": {
+    "name": "Abū Nuʿaym al-Aṣbahānī",
+    "name_ar": "أبو نعيم الأصبهاني"
+  },
+  "241": {
+    "name": "Abū Ṭāhir al-Salafī",
+    "name_ar": "أبو طاهر السلفي"
+  },
+  "242": {
+    "name": "Muslim",
+    "name_ar": "مسلم"
+  },
+  "243": {
+    "name": "Ibn Mandah Muhammad b. Ishaq",
+    "name_ar": "ابن منده محمد بن إسحاق"
+  },
+  "244": {
+    "name": "ʿIzz al-Dīn Ibn al-Athīr",
+    "name_ar": "عز الدين ابن الأثير"
+  },
+  "246": {
+    "name": "al-Khaṭīb al-Baghdādī",
+    "name_ar": "الخطيب البغدادي"
+  },
+  "248": {
+    "name": "Abū Ḥanīfa al-Dīnawarī",
+    "name_ar": "أبو حنيفة الدينوري"
+  },
+  "249": {
+    "name": "Ibn Qutayba",
+    "name_ar": "ابن قتيبة"
+  },
+  "251": {
+    "name": "Sufyan b. ʿUyayna",
+    "name_ar": "سفيان بن عيينة"
+  },
+  "252": {
+    "name": "al-ʿIrāqī",
+    "name_ar": "العراقي"
+  },
+  "253": {
+    "name": "Ibn al-ʿIrāqī",
+    "name_ar": "ابن العراقي"
+  },
+  "254": {
+    "name": "ʿAbd al-Ghanī al-Maqdisī",
+    "name_ar": "عبد الغني المقدسي"
+  },
+  "256": {
+    "name": "Muʾallif Akhbār ad-Dawla al-ʿAbbāsiyya",
+    "name_ar": "مؤلف أخبار الدولة العباسية"
+  },
+  "260": {
+    "name": "Nūr al-Dīn al-Haythamī",
+    "name_ar": "نور الدين الهيثمي"
+  },
+  "262": {
+    "name": "al-Faryābi",
+    "name_ar": "الفريابي"
+  },
+  "264": {
+    "name": "al-ʾĀjurī",
+    "name_ar": "الآجري"
+  },
+  "267": {
+    "name": "Ibrāhīm al-Ḥarbī",
+    "name_ar": "إبراهيم الحربي"
+  },
+  "276": {
+    "name": "Abū Yūsuf al-Qāḍī",
+    "name_ar": "أبو يوسف القاضي"
+  },
+  "277": {
+    "name": "Muḥammad b. al-Ḥasan al-Shaybānī",
+    "name_ar": "محمد بن الحسن الشيباني"
+  },
+  "283": {
+    "name": "al-Rāmahurmuzī",
+    "name_ar": "الرامهرمزي"
+  },
+  "284": {
+    "name": "Abū Bakr al-Khallāl",
+    "name_ar": "أبو بكر الخلال"
+  },
+  "286": {
+    "name": "Ibn al-Mundhir",
+    "name_ar": "ابن المنذر"
+  },
+  "292": {
+    "name": "Muḥammad ʿAbdallāh Ibrāhīm al-Barakātī",
+    "name_ar": "محمد عبد الله إبراهيم البركاتي"
+  },
+  "293": {
+    "name": "Ibn Shāhīn",
+    "name_ar": "ابن شاهين"
+  },
+  "302": {
+    "name": "Abū Ḥātim al-Rāzī",
+    "name_ar": "أبو حاتم الرازي"
+  },
+  "305": {
+    "name": "H̱inād b. al-Sarī",
+    "name_ar": "هناد بن السري"
+  },
+  "306": {
+    "name": "Wakiʿ b. al-Jarrāḥ",
+    "name_ar": "وكيع بن الجراح"
+  },
+  "308": {
+    "name": "Muḥibb al-Dīn al-Ṭabarī",
+    "name_ar": "محب الدين الطبري"
+  },
+  "309": {
+    "name": "ʿAbd Allāh b. Aḥmad",
+    "name_ar": "عبد الله بن أحمد"
+  },
+  "311": {
+    "name": "ʾAbū ʾIsḥāq al-Fazārī",
+    "name_ar": "أبو إسحاق الفزاري"
+  },
+  "313": {
+    "name": "al-Khaṭṭābī",
+    "name_ar": "الخطابي"
+  },
+  "314": {
+    "name": "Zuhayr b. Ḥarb",
+    "name_ar": "زهير بن حرب"
+  },
+  "315": {
+    "name": "Abū Zurʿa al-Dimashqī",
+    "name_ar": "أبو زرعة الدمشقي"
+  },
+  "324": {
+    "name": "al-Khwārizmī, Abū ʿAbd Allāh",
+    "name_ar": "الخوارزمي، أبو عبد الله"
+  },
+  "325": {
+    "name": "Ibn al-Kalbī",
+    "name_ar": "ابن الكلبي"
+  },
+  "328": {
+    "name": "al-Mizzi, Jamal al-Din",
+    "name_ar": "المزي، جمال الدين"
+  },
+  "330": {
+    "name": "Ṣiddīq Ḥasan Khān",
+    "name_ar": "صديق حسن خان"
+  },
+  "336": {
+    "name": "Ibn Rushd al-Ḥafīd",
+    "name_ar": "ابن رشد الحفيد"
+  },
+  "337": {
+    "name": "al-Bīrūnī",
+    "name_ar": "البيروني"
+  },
+  "346": {
+    "name": "Fāliḥ b. Muḥammad al-Ṣaghīr",
+    "name_ar": "فالح بن محمد الصغير"
+  },
+  "347": {
+    "name": "Sībawayh",
+    "name_ar": "سيبويه"
+  },
+  "348": {
+    "name": "Abū Hilāl al-ʿAskarī",
+    "name_ar": "أبو هلال العسكري"
+  },
+  "349": {
+    "name": "Ibn al-Sikkit",
+    "name_ar": "ابن السكيت"
+  },
+  "350": {
+    "name": "Ibn ʿAqīl",
+    "name_ar": "ابن عقيل"
+  },
+  "352": {
+    "name": "al-Raḍī al-Usturlābī",
+    "name_ar": "الرضي الأستراباذي"
+  },
+  "353": {
+    "name": "Muḥammad Rawwās Qalʿajī",
+    "name_ar": "محمد رواس قلعجي"
+  },
+  "354": {
+    "name": "Muṣṭafā al-Ghālāyīnī",
+    "name_ar": "مصطفى الغلاييني"
+  },
+  "356": {
+    "name": "al-Balādhurī",
+    "name_ar": "البلاذري"
+  },
+  "357": {
+    "name": "al-Yāfiʿī",
+    "name_ar": "اليافعي"
+  },
+  "358": {
+    "name": "Ibn al-Mubarrad",
+    "name_ar": "ابن المبرد"
+  },
+  "362": {
+    "name": "Shams al-Dīn al-Dhahabī",
+    "name_ar": "شمس الدين الذهبي"
+  },
+  "367": {
+    "name": "Muʿammar b. Rāshid",
+    "name_ar": "معمر بن راشد"
+  },
+  "372": {
+    "name": "Ibn al-Jarud",
+    "name_ar": "ابن الجارود"
+  },
+  "377": {
+    "name": "al-Layth b. Saʿd",
+    "name_ar": "الليث بن سعد"
+  },
+  "381": {
+    "name": "Yaḥyā b. Maʿīn",
+    "name_ar": "يحيى بن معين"
+  },
+  "392": {
+    "name": "Isḥāq b. Rāhuwayh",
+    "name_ar": "إسحاق بن راهويه"
+  },
+  "394": {
+    "name": "al-Suhaylī",
+    "name_ar": "السهيلي"
+  },
+  "408": {
+    "name": "al-Samaʿānī",
+    "name_ar": "السمعاني"
+  },
+  "410": {
+    "name": "Abū l-Qāsim Ibn ʿAsākir",
+    "name_ar": "أبو القاسم ابن عساكر"
+  },
+  "414": {
+    "name": "Nāṣir al-Dīn al-Albānī",
+    "name_ar": "ناصر الدين الألباني"
+  },
+  "416": {
+    "name": "Muḥammad Ṭāhir al-Fatnī al-Kujurātī",
+    "name_ar": "محمد طاهر الفتني الكجراتي"
+  },
+  "421": {
+    "name": "al-Mullā ʿAlī al-Qārī",
+    "name_ar": "الملا على القاري"
+  },
+  "423": {
+    "name": "ʿAbd al-Raʾūf al-Manāwī",
+    "name_ar": "عبد الرؤوف المناوي"
+  },
+  "426": {
+    "name": "ʿAlāʾ al-Dīn al-Samarqandī",
+    "name_ar": "علاء الدين السمرقندي"
+  },
+  "427": {
+    "name": "al-Akhḍarī",
+    "name_ar": "الأخضري"
+  },
+  "428": {
+    "name": "Ibn Abī Zayd al-Qayrawānī",
+    "name_ar": "ابن أبي زيد القيرواني"
+  },
+  "429": {
+    "name": "al-Mazani",
+    "name_ar": "المزني"
+  },
+  "430": {
+    "name": "Ibn ʿAllān",
+    "name_ar": "ابن علان"
+  },
+  "433": {
+    "name": "al-Qalyūbī",
+    "name_ar": "القليوبي"
+  },
+  "434": {
+    "name": "al-Rāfiʿī",
+    "name_ar": "الرافعي"
+  },
+  "435": {
+    "name": "Zayn al-Dīn al-Maʿbarī",
+    "name_ar": "زين الدين المعبري"
+  },
+  "436": {
+    "name": "al-Ḥajjāwī",
+    "name_ar": "الحجاوي"
+  },
+  "437": {
+    "name": "Taqī al-Dīn al-Subkī",
+    "name_ar": "تقي الدين السبكي"
+  },
+  "439": {
+    "name": "al-Minhāji al-Asyūṭi",
+    "name_ar": "المنهاجي الأسيوطي"
+  },
+  "441": {
+    "name": "Shams al-Aʾimma al-Sarakhsī",
+    "name_ar": "شمس الأئمة السرخسي"
+  },
+  "442": {
+    "name": "al-Isʿardī, Abū al-Qāsim",
+    "name_ar": "الإسعردي، أبو القاسم"
+  },
+  "443": {
+    "name": "al-Bayqūnī",
+    "name_ar": "البيقوني"
+  },
+  "444": {
+    "name": "al-ʿAẓīm Ābādī, Sharaf al-Ḥaqq",
+    "name_ar": "العظيم آبادي، شرف الحق"
+  },
+  "445": {
+    "name": "Muḥammad b. ʿAlī b. Ādam al-ʾAthiyūbī",
+    "name_ar": "محمد بن علي بن آدم الأثيوبي"
+  },
+  "447": {
+    "name": "Ibn Sīdat al-Nās",
+    "name_ar": "ابن سيد الناس"
+  },
+  "448": {
+    "name": "ʿAbd al-Malik b. Hishām",
+    "name_ar": "عبد الملك بن هشام"
+  },
+  "449": {
+    "name": "al-Wāqidī",
+    "name_ar": "الواقدي"
+  },
+  "450": {
+    "name": "ʿAbd al-Raḥmān al-Mubārakfūrī",
+    "name_ar": "عبد الرحمن المباركفوري"
+  },
+  "451": {
+    "name": "Ṣafī al-Raḥmān al-Mubārakfūrī",
+    "name_ar": "صفي الرحمن المباركفوري"
+  },
+  "454": {
+    "name": "al-Qalqashandī",
+    "name_ar": "القلقشندي"
+  },
+  "455": {
+    "name": "Ḥamad al-Jāser",
+    "name_ar": "حمد الجاسر"
+  },
+  "457": {
+    "name": "al-Mubarrad",
+    "name_ar": "المبرد"
+  },
+  "458": {
+    "name": "Sālim al-Siyābī",
+    "name_ar": "سالم السيابي"
+  },
+  "459": {
+    "name": "al-Ṣaḥḥārī",
+    "name_ar": "الصحاري"
+  },
+  "461": {
+    "name": "Muḥammad al-Bari",
+    "name_ar": "محمد البري"
+  },
+  "463": {
+    "name": "al-Zubayr b. Bakkar",
+    "name_ar": "الزبير بن بكار"
+  },
+  "465": {
+    "name": "al-Ḥāzimī",
+    "name_ar": "الحازمي"
+  },
+  "468": {
+    "name": "Ibn Tulun",
+    "name_ar": "ابن طولون"
+  },
+  "469": {
+    "name": "Marʿī al-Karmī",
+    "name_ar": "مرعي الكرمي"
+  },
+  "470": {
+    "name": "Ibn al-Qaysarānī Muḥammad b. Ṭāhir al-Maqdisī",
+    "name_ar": "ابن القيسراني محمد بن طاهر المقدسي"
+  },
+  "472": {
+    "name": "ʿAlī b. al-Madanī",
+    "name_ar": "علي بن المديني"
+  },
+  "474": {
+    "name": "Ibn Qudāmah",
+    "name_ar": "ابن قدامة"
+  },
+  "476": {
+    "name": "Ibn Dihya",
+    "name_ar": "ابن دحية"
+  },
+  "478": {
+    "name": "Jamāl al-Dīn al-Qāsimī",
+    "name_ar": "جمال الدين القاسمي"
+  },
+  "479": {
+    "name": "Ibn Hajar al-Haytami",
+    "name_ar": "ابن حجر الهيتمي"
+  },
+  "482": {
+    "name": "Muḥammad Rashīd Riḍā",
+    "name_ar": "محمد رشيد رضا"
+  },
+  "486": {
+    "name": "Muḥammad al-Ghazālī",
+    "name_ar": "محمد الغزالي"
+  },
+  "487": {
+    "name": "Māhir al-Faḥḥāl",
+    "name_ar": "ماهر الفحل"
+  },
+  "488": {
+    "name": "al-Ṣaghānī",
+    "name_ar": "الصغاني"
+  },
+  "490": {
+    "name": "al-Būṣīrī",
+    "name_ar": "البوصيري"
+  },
+  "493": {
+    "name": "Ibn al-Athir, Majd al-Din Abu al-Sa'adat",
+    "name_ar": "ابن الأثير، مجد الدين أبو السعادات"
+  },
+  "495": {
+    "name": "ʿAbd al-Rabb Nawwab al-Dīn",
+    "name_ar": "عبد الرب نواب الدين"
+  },
+  "498": {
+    "name": "Shams al-Dīn al-Ramli",
+    "name_ar": "شمس الدين الرملي"
+  },
+  "499": {
+    "name": "al-Jamal",
+    "name_ar": "الجمل"
+  },
+  "500": {
+    "name": "al-Bujayrimī",
+    "name_ar": "البجيرمي"
+  },
+  "501": {
+    "name": "Taqī al-Dīn al-Ḥiṣnī",
+    "name_ar": "تقي الدين الحصني"
+  },
+  "502": {
+    "name": "Abū al-Baqāʾ al-ʿUkbariyy",
+    "name_ar": "أبو البقاء العكبري"
+  },
+  "503": {
+    "name": "Ibn Mandah ʿAbd al-Raḥmān b. Muḥammad",
+    "name_ar": "ابن منده عبد الرحمن بن محمد"
+  },
+  "506": {
+    "name": "al-Masʿūdī",
+    "name_ar": "المسعودي"
+  },
+  "509": {
+    "name": "Ibrāhīm al-Dawsarī",
+    "name_ar": "إبراهيم الدوسري"
+  },
+  "510": {
+    "name": "Ṣafwat Maḥmūd Sālim",
+    "name_ar": "صفوت محمود سالم"
+  },
+  "513": {
+    "name": "Ḥamad b. Nāṣir Āl Muʿammar",
+    "name_ar": "حمد بن ناصر آل معمر"
+  },
+  "520": {
+    "name": "Abu al-Fath al-Azdi",
+    "name_ar": "أبو الفتح الأزدي"
+  },
+  "525": {
+    "name": "Sirāj al-Dīn al-Balqīnī",
+    "name_ar": "سراج الدين البلقيني"
+  },
+  "537": {
+    "name": "ʿAbd al-Wāḥid al-Marrākushī",
+    "name_ar": "عبد الواحد المراكشي"
+  },
+  "555": {
+    "name": "ʾAḥmad al-Fayyāḍ",
+    "name_ar": "أحمد الفياض"
+  },
+  "556": {
+    "name": "Ibn al-Ṣalāḥ",
+    "name_ar": "ابن الصلاح"
+  },
+  "557": {
+    "name": "Ibn Mawdūd al-Mawṣilī",
+    "name_ar": "ابن مودود الموصلي"
+  },
+  "558": {
+    "name": "Ibn ʿĀbidīn",
+    "name_ar": "ابن عابدين"
+  },
+  "560": {
+    "name": "al-Babarti",
+    "name_ar": "البابرتي"
+  },
+  "562": {
+    "name": "al-Kamal b. al-Himām",
+    "name_ar": "الكمال بن الهمام"
+  },
+  "563": {
+    "name": "Mulla Khusraw",
+    "name_ar": "منلا خسرو"
+  },
+  "564": {
+    "name": "Zayn al-Dīn Ibn Nujaym",
+    "name_ar": "زين الدين ابن نجيم"
+  },
+  "565": {
+    "name": "Ghānim b. Muḥammad al-Baghdādī",
+    "name_ar": "غانم بن محمد البغدادي"
+  },
+  "566": {
+    "name": "Dāmād Afandī ʿAbd al-Raḥmān Shaykhīzāda",
+    "name_ar": "داماد أفندي عبد الرحمن شيخي زاده"
+  },
+  "568": {
+    "name": "Khalīl b. Isḥāq al-Jundī",
+    "name_ar": "خليل بن إسحاق الجندي"
+  },
+  "569": {
+    "name": "Muḥammad b. Yūsuf al-Mawwāq",
+    "name_ar": "محمد بن يوسف المواق"
+  },
+  "570": {
+    "name": "al-Ḥaṭṭāb",
+    "name_ar": "الحطاب"
+  },
+  "571": {
+    "name": "Muḥammad b. Aḥmad ʿAlīsh",
+    "name_ar": "محمد بن أحمد عليش"
+  },
+  "572": {
+    "name": "al-Khurshī",
+    "name_ar": "الخرشي = الخراشي"
+  },
+  "573": {
+    "name": "al-Nafrawiyya",
+    "name_ar": "النفراوي"
+  },
+  "574": {
+    "name": "al-ʿAdawī",
+    "name_ar": "العدوي"
+  },
+  "575": {
+    "name": "Muḥammad b. Aḥmad al-Dasūqī",
+    "name_ar": "محمد بن أحمد الدسوقي"
+  },
+  "576": {
+    "name": "Aḥmad al-Ṣāwī",
+    "name_ar": "أحمد الصاوي"
+  },
+  "577": {
+    "name": "Abū Saʿīd Ibn al-Barādhīʿī",
+    "name_ar": "أبو سعيد ابن البراذعي"
+  },
+  "578": {
+    "name": "Ibn Abī ʿUmar",
+    "name_ar": "ابن أبي عمر"
+  },
+  "579": {
+    "name": "Shams al-Dīn Ibn Mufliḥ",
+    "name_ar": "شمس الدين ابن مفلح"
+  },
+  "580": {
+    "name": "al-Mardāwī",
+    "name_ar": "المرداوي"
+  },
+  "581": {
+    "name": "al-Bahūtī",
+    "name_ar": "البهوتي"
+  },
+  "582": {
+    "name": "al-Ruḥaybānī",
+    "name_ar": "الرحيباني"
+  },
+  "583": {
+    "name": "Ibn Duwayyan",
+    "name_ar": "ابن ضويان"
+  },
+  "589": {
+    "name": "Ibn Daqīq al-ʿĪd",
+    "name_ar": "ابن دقيق العيد"
+  },
+  "590": {
+    "name": "Khālid al-Msheiqih",
+    "name_ar": "خالد المشيقح"
+  },
+  "591": {
+    "name": "Muḥammad b. Ibrāhīm Āl al-Shaykh",
+    "name_ar": "محمد بن إبراهيم آل الشيخ"
+  },
+  "592": {
+    "name": "Ibn Jibrin",
+    "name_ar": "ابن جبرين"
+  },
+  "593": {
+    "name": "Muḥammad Taqī al-Dīn al-Hilālī",
+    "name_ar": "محمد تقي الدين الهلالي"
+  },
+  "596": {
+    "name": "Ḥusām al-Dīn ʿAfāna",
+    "name_ar": "حسام الدين عفانة"
+  },
+  "597": {
+    "name": "Ḥammād al-Anṣārī",
+    "name_ar": "حماد الأنصاري"
+  },
+  "601": {
+    "name": "-",
+    "name_ar": "-"
+  },
+  "604": {
+    "name": "al-Shādhilī al-Tūnisī",
+    "name_ar": "الشاذلي التونسي"
+  },
+  "605": {
+    "name": "Muḥammad Ḥayāt al-Sindī",
+    "name_ar": "محمد حياة السندي"
+  },
+  "606": {
+    "name": "Muḥammad b. ʿAlī al-ʿArfa j",
+    "name_ar": "محمد بن علي العرفج"
+  },
+  "607": {
+    "name": "Ibrāhīm al-Khuḍayrī",
+    "name_ar": "إبراهيم الخضيري"
+  },
+  "608": {
+    "name": "ʿAbd al-ʿAziz al-Ḥujaylan",
+    "name_ar": "عبد العزيز الحجيلان"
+  },
+  "609": {
+    "name": "ʿAbd al-ʿAziz al-Ḥamīdī",
+    "name_ar": "عبد العزيز الحميدي"
+  },
+  "610": {
+    "name": "ʿAbd Allāh al-Ṭurayqī",
+    "name_ar": "عبد الله الطريقي"
+  },
+  "611": {
+    "name": "ʿAbd al-Karīm al-Lāḥim",
+    "name_ar": "عبد الكريم اللاحم"
+  },
+  "612": {
+    "name": "Ṣāliḥ al-Sadlān",
+    "name_ar": "صالح السدلان"
+  },
+  "615": {
+    "name": "al-Qarāfī",
+    "name_ar": "القرافي"
+  },
+  "616": {
+    "name": "Muḥammad b. ʿUmar Bāzmūl",
+    "name_ar": "محمد بن عمر بازمول"
+  },
+  "618": {
+    "name": "Bahāʾ al-Dīn Ibn Shaddād",
+    "name_ar": "بهاء الدين ابن شداد"
+  },
+  "619": {
+    "name": "Abū Ḥāmid al-Ghazālī",
+    "name_ar": "أبو حامد الغزالي"
+  },
+  "625": {
+    "name": "Miyāra",
+    "name_ar": "ميارة"
+  },
+  "626": {
+    "name": "ʿAlī Ḥaydar",
+    "name_ar": "علي حيدر"
+  },
+  "627": {
+    "name": "Abū Isḥāq al-Shīrāzī",
+    "name_ar": "أبو إسحاق الشيرازي"
+  },
+  "629": {
+    "name": "Ibn Abī al-Ḥadīd",
+    "name_ar": "ابن أبي الحديد"
+  },
+  "633": {
+    "name": "Ibn al-Najjar al-Futuhi",
+    "name_ar": "ابن النجار الفتوحي"
+  },
+  "638": {
+    "name": "ʿAbd al-ʿAzīz al-Salmān",
+    "name_ar": "عبد العزيز السلمان"
+  },
+  "650": {
+    "name": "Ibn Maskawayh",
+    "name_ar": "ابن مسكويه"
+  },
+  "651": {
+    "name": "Badr al-Dīn al-Ghazī",
+    "name_ar": "بدر الدين الغزي"
+  },
+  "652": {
+    "name": "Zarruq",
+    "name_ar": "زروق"
+  },
+  "654": {
+    "name": "Ibn al-Ḥājj",
+    "name_ar": "ابن الحاج"
+  },
+  "657": {
+    "name": "Abū Dharr al-Qalamūnī",
+    "name_ar": "أبو ذر القلموني"
+  },
+  "662": {
+    "name": "al-Qāḍī ʿIyāḍ",
+    "name_ar": "القاضي عياض"
+  },
+  "663": {
+    "name": "al-Ṣāliḥī al-Shāmī",
+    "name_ar": "الصالحي الشامي"
+  },
+  "667": {
+    "name": "al-Baʿlī, ʿAbd al-Raḥmān b. ʿAbd Allāh",
+    "name_ar": "البعلي، عبد الرحمن بن عبد الله"
+  },
+  "674": {
+    "name": "al-Anṣārī, ʿAbd al-Raḥmān b. ʿAbd al-Karīm",
+    "name_ar": "الأنصاري، عبد الرحمن بن عبد الكريم"
+  },
+  "675": {
+    "name": "Ibn Qunfud",
+    "name_ar": "ابن قنفذ"
+  },
+  "677": {
+    "name": "Abū al-Ḥusayn Ibn Abī Yaʿlā",
+    "name_ar": "أبو الحسين ابن أبي يعلى"
+  },
+  "678": {
+    "name": "al-ʿIṣāmī",
+    "name_ar": "العصامي"
+  },
+  "679": {
+    "name": "Ibn Taghribirdī",
+    "name_ar": "ابن تغري بردي"
+  },
+  "680": {
+    "name": "al-Ṣafadī",
+    "name_ar": "الصفدي"
+  },
+  "685": {
+    "name": "al-Ṣābiʾ, Hilāl b. al-Muḥsin",
+    "name_ar": "الصابئ، هلال بن المحسن"
+  },
+  "689": {
+    "name": "Ibn al-Abbar",
+    "name_ar": "ابن الأبار"
+  },
+  "693": {
+    "name": "al-Maqrīzī",
+    "name_ar": "المقريزي"
+  },
+  "696": {
+    "name": "Ibn Qutlubugha",
+    "name_ar": "ابن قطلوبغا"
+  },
+  "697": {
+    "name": "al-Ḥimyarī, Ibn ʿAbd al-Munʿim",
+    "name_ar": "الحميري، ابن عبد المنعم"
+  },
+  "700": {
+    "name": "Ibn Manẓūr",
+    "name_ar": "ابن منظور"
+  },
+  "702": {
+    "name": "Kamāl al-Dīn Ibn al-ʿAdīm",
+    "name_ar": "كمال الدين ابن العديم"
+  },
+  "703": {
+    "name": "al-Fasawī",
+    "name_ar": "الفسوي"
+  },
+  "706": {
+    "name": "Muḥibb al-Dīn Ibn al-Najjār",
+    "name_ar": "محب الدين ابن النجار"
+  },
+  "709": {
+    "name": "Ibn al-Muqallin",
+    "name_ar": "ابن الملقن"
+  },
+  "716": {
+    "name": "ʿUmar Riḍā Kaḥḥālah",
+    "name_ar": "عمر رضا كحالة"
+  },
+  "717": {
+    "name": "Muḥammad b. Ḥabīb",
+    "name_ar": "محمد بن حبيب"
+  },
+  "718": {
+    "name": "Khalīfa b. Khayyāṭ",
+    "name_ar": "خليفة بن خياط"
+  },
+  "723": {
+    "name": "Tāj al-Dīn Ibn al-Subkī",
+    "name_ar": "تاج الدين ابن السبكي"
+  },
+  "724": {
+    "name": "Ṣalāḥ al-Dīn al-ʿAlāʾī",
+    "name_ar": "صلاح الدين العلائي"
+  },
+  "726": {
+    "name": "Muḥammad b. Isḥāq",
+    "name_ar": "محمد بن إسحاق"
+  },
+  "727": {
+    "name": "Abū Marwān Ibn Ḥayyān al-Qurṭubī",
+    "name_ar": "أبو مروان ابن حيان القرطبي"
+  },
+  "728": {
+    "name": "Ibn ʿArabshāh",
+    "name_ar": "ابن عربشاه"
+  },
+  "731": {
+    "name": "Ibn Khaldun",
+    "name_ar": "ابن خلدون"
+  },
+  "732": {
+    "name": "Abū al-Faraj al-Iṣbahānī",
+    "name_ar": "أبو الفرج الأصبهاني"
+  },
+  "733": {
+    "name": "Ibn al-Ḥāʾik al-Hamadānī",
+    "name_ar": "ابن الحائك الهمداني"
+  },
+  "734": {
+    "name": "Abū al-Fidāʾ",
+    "name_ar": "أبو الفداء"
+  },
+  "735": {
+    "name": "al-Muṭahhar b. Ṭāhir al-Maqdisī",
+    "name_ar": "المطهر بن طاهر المقدسي"
+  },
+  "736": {
+    "name": "al-Yaʿqūbī",
+    "name_ar": "اليعقوبي"
+  },
+  "739": {
+    "name": "Ibn al-ʿIbrī",
+    "name_ar": "ابن العبري"
+  },
+  "741": {
+    "name": "al-Yūnīnī, Abū al-Fatḥ",
+    "name_ar": "اليونيني، أبو الفتح"
+  },
+  "742": {
+    "name": "al-Nuʿaymi",
+    "name_ar": "النعيمي"
+  },
+  "743": {
+    "name": "al-Ṣūlī",
+    "name_ar": "الصولي"
+  },
+  "744": {
+    "name": "al-Itlīdī",
+    "name_ar": "الإتليدي"
+  },
+  "745": {
+    "name": "Ibn al-Ḍiyāʾ",
+    "name_ar": "ابن الضياء"
+  },
+  "749": {
+    "name": "Ibn al-Qalānisī",
+    "name_ar": "ابن القلانسي"
+  },
+  "751": {
+    "name": "Ibn al-Kindi",
+    "name_ar": "ابن الكندي"
+  },
+  "752": {
+    "name": "Ibn Faḍl Allāh al-ʿUmrī",
+    "name_ar": "ابن فضل الله العمري"
+  },
+  "754": {
+    "name": "Abū Shāmah al-Maqdisī",
+    "name_ar": "أبو شامة المقدسي"
+  },
+  "755": {
+    "name": "Abū l-Baqāʾ al-Ḥillī",
+    "name_ar": "أبو البقاء الحلي"
+  },
+  "756": {
+    "name": "al-Samhudī",
+    "name_ar": "السمهودي"
+  },
+  "760": {
+    "name": "al-Maqdisī al-Bishārī",
+    "name_ar": "المقدسي البشاري"
+  },
+  "762": {
+    "name": "Ibn Khurdādhbah",
+    "name_ar": "ابن خرداذبه"
+  },
+  "763": {
+    "name": "Ibn Battuta",
+    "name_ar": "ابن بطوطة"
+  },
+  "764": {
+    "name": "Ibn Jubayr",
+    "name_ar": "ابن جبير"
+  },
+  "765": {
+    "name": "al-Ḥamawī, Yāqūt",
+    "name_ar": "الحموي، ياقوت"
+  },
+  "766": {
+    "name": "al-Idrīsī",
+    "name_ar": "الإدريسي"
+  },
+  "767": {
+    "name": "Zakariyyā al-Qazwīnī",
+    "name_ar": "زكريا القزويني"
+  },
+  "769": {
+    "name": "Ibn Saʿīd al-Maghribī",
+    "name_ar": "ابن سعيد المغربي"
+  },
+  "770": {
+    "name": "Ibn al-Wardi al-Jadd, Zayn al-Din",
+    "name_ar": "ابن الوردي الجد، زين الدين"
+  },
+  "771": {
+    "name": "Nāṣir-i Khusraw",
+    "name_ar": "ناصر خسرو"
+  },
+  "772": {
+    "name": "Ibn Faḍlān",
+    "name_ar": "ابن فضلان"
+  },
+  "773": {
+    "name": "Abū ʿUbayd al-Bakrī",
+    "name_ar": "أبو عبيد البكري"
+  },
+  "775": {
+    "name": "al-Iṣṭakhrī",
+    "name_ar": "الإصطخري"
+  },
+  "779": {
+    "name": "Nishwān al-Ḥimyarī",
+    "name_ar": "نشوان الحميري"
+  },
+  "780": {
+    "name": "ʿAlī b. al-Ḥasan al-Khazrajī",
+    "name_ar": "علي بن الحسن الخزرجي"
+  },
+  "781": {
+    "name": "Ibn ʿIdhārī al-Marrākushī",
+    "name_ar": "ابن عذاري المراكشي"
+  },
+  "783": {
+    "name": "ʿĀtiq al-Balādī",
+    "name_ar": "عاتق البلادي"
+  },
+  "784": {
+    "name": "Abū ʿAlī al-Qālī",
+    "name_ar": "أبو علي القالي"
+  },
+  "789": {
+    "name": "Abū al-Qāsim al-Zajjājī",
+    "name_ar": "أبو القاسم الزجاجي"
+  },
+  "793": {
+    "name": "Usāma b. Muqaddim",
+    "name_ar": "أسامة بن منقذ"
+  },
+  "799": {
+    "name": "Ibn al-Muʿtazz",
+    "name_ar": "ابن المعتز"
+  },
+  "804": {
+    "name": "Ibn al-Athir, Diya al-Din Abu al-Fath",
+    "name_ar": "ابن الأثير، ضياء الدين أبو الفتح"
+  },
+  "808": {
+    "name": "Ibn Abi al-Usbuʿ",
+    "name_ar": "ابن أبي الأصبع"
+  },
+  "813": {
+    "name": "Ibn Ḥabīb al-Ḥalabī",
+    "name_ar": "ابن حبيب الحلبي"
+  },
+  "817": {
+    "name": "al-Aṣmaʿī",
+    "name_ar": "الأصمعي"
+  },
+  "820": {
+    "name": "Ibn Durayd",
+    "name_ar": "ابن دريد"
+  },
+  "826": {
+    "name": "Thaʿlab",
+    "name_ar": "ثعلب"
+  },
+  "830": {
+    "name": "Ibn Jinnī",
+    "name_ar": "ابن جني"
+  },
+  "837": {
+    "name": "al-ʿImād al-Aṣbahānī al-Kātib",
+    "name_ar": "العماد الأصبهاني الكاتب"
+  },
+  "847": {
+    "name": "al-Jawālīqī",
+    "name_ar": "الجواليقي"
+  },
+  "854": {
+    "name": "Abū Ḥātim al-Sijistānī",
+    "name_ar": "أبو حاتم السجستاني"
+  },
+  "874": {
+    "name": "Ibn Sīda",
+    "name_ar": "ابن سيده"
+  },
+  "883": {
+    "name": "al-Khalīl b. Aḥmad al-Farāhīdī",
+    "name_ar": "الخليل بن أحمد الفراهيدي"
+  },
+  "884": {
+    "name": "al-Jurjānī, al-Sharīf",
+    "name_ar": "الجرجاني، الشريف"
+  },
+  "886": {
+    "name": "al-Sakkākī",
+    "name_ar": "السكاكي"
+  },
+  "888": {
+    "name": "Abū Naṣr al-Jawharī",
+    "name_ar": "أبو نصر الجوهري"
+  },
+  "890": {
+    "name": "Jalāl al-Dīn al-Qazwīnī",
+    "name_ar": "جلال الدين القزويني"
+  },
+  "891": {
+    "name": "Ibn Um Qasim al-Muradi",
+    "name_ar": "ابن أم قاسم المرادي"
+  },
+  "892": {
+    "name": "Ibn Fāris",
+    "name_ar": "ابن فارس"
+  },
+  "893": {
+    "name": "Ibn Hishām al-Naḥwī",
+    "name_ar": "ابن هشام النحوي"
+  },
+  "894": {
+    "name": "Abū al-Barakāt al-Anbārī",
+    "name_ar": "أبو البركات الأنباري"
+  },
+  "896": {
+    "name": "Zayn al-Dīn al-Rāzī",
+    "name_ar": "زين الدين الرازي"
+  },
+  "898": {
+    "name": "Abū ʿAmr al-Shaybānī",
+    "name_ar": "أبو عمرو الشيباني"
+  },
+  "900": {
+    "name": "Burhan al-Din Ibn Muflih al-Hafid",
+    "name_ar": "برهان الدين ابن مفلح الحفيد"
+  },
+  "901": {
+    "name": "al-ʾAzharī",
+    "name_ar": "الأزهري"
+  },
+  "902": {
+    "name": "Abū Ḥafṣ al-Nasafī",
+    "name_ar": "أبو حفص النسفي"
+  },
+  "903": {
+    "name": "al-Mutarrizi",
+    "name_ar": "المطرزي"
+  },
+  "904": {
+    "name": "al-Fayyūmī",
+    "name_ar": "الفيومي"
+  },
+  "905": {
+    "name": "al-Raṣṣāʿ",
+    "name_ar": "الرصاع"
+  },
+  "906": {
+    "name": "Murtaḍá al-Zubaydī",
+    "name_ar": "مرتضى الزبيدي"
+  },
+  "907": {
+    "name": "ʿAbd al-Raḥmān Ḥabannaka al-Maydānī",
+    "name_ar": "عبد الرحمن حبنكة الميداني"
+  },
+  "908": {
+    "name": "al-ʿUmriṭī",
+    "name_ar": "العمريطي"
+  },
+  "915": {
+    "name": "al-Ṣabbān",
+    "name_ar": "الصبان"
+  },
+  "921": {
+    "name": "Ṣāliḥ b. Ḥumayd",
+    "name_ar": "صالح بن حميد"
+  },
+  "938": {
+    "name": "ʿAbd al-Raḥmān b. Muḥammad al-Ḥamd",
+    "name_ar": "عبد الرحمن بن محمد الحمد"
+  },
+  "939": {
+    "name": "ʿAbd al-Raḥmān al-Muzaynī",
+    "name_ar": "عبد الرحمن المزيني"
+  },
+  "941": {
+    "name": "ʾAḥmad Mukhtār ʿUmar",
+    "name_ar": "أحمد مختار عمر"
+  },
+  "943": {
+    "name": "Hāzim Ḥaydar",
+    "name_ar": "حازم حيدر"
+  },
+  "946": {
+    "name": "Ḥāmid b. Sālim ʿĀyiḍ al-Ḥarbī",
+    "name_ar": "حامد بن سالم عايض الحربي"
+  },
+  "947": {
+    "name": "ʾIbrāhīm Āl Huwaymil",
+    "name_ar": "إبراهيم آل هويمل"
+  },
+  "948": {
+    "name": "ʿAlī b. Sulaymān al-ʿUbayd",
+    "name_ar": "علي بن سليمان العبيد"
+  },
+  "949": {
+    "name": "ʿAbd al-Qayyūm ʿAbd al-Ghafūr al-Sindī",
+    "name_ar": "عبد القيوم عبد الغفور السندي"
+  },
+  "958": {
+    "name": "Sulaymān al-ʿĀyid",
+    "name_ar": "سليمان العايد"
+  },
+  "961": {
+    "name": "Jamāl al-Dīn al-Maṭarī",
+    "name_ar": "جمال الدين المطري"
+  },
+  "966": {
+    "name": "Muḥammad Mihr ʿAlī",
+    "name_ar": "محمد مهر علي"
+  },
+  "969": {
+    "name": "F. ʿAbd al-Raḥīm",
+    "name_ar": "ف. عبد الرحيم"
+  },
+  "971": {
+    "name": "al-Shāhid al-Būshīkhī",
+    "name_ar": "الشاهد البوشيخي"
+  },
+  "972": {
+    "name": "Muḥammad b. ʿAbd al-Raḥmān al-Shāyiʿ",
+    "name_ar": "محمد بن عبد الرحمن الشايع"
+  },
+  "973": {
+    "name": "ʿAbd al-Wadūd Maqbūl Ḥanīf",
+    "name_ar": "عبد الودود مقبول حنيف"
+  },
+  "974": {
+    "name": "Muḥammad ʿUmar Ḥūwayya",
+    "name_ar": "محمد عمر حويه"
+  },
+  "976": {
+    "name": "Ṣāliḥ b. Naṣr al-Khuzaym",
+    "name_ar": "صالح بن ناصر الخزيم"
+  },
+  "978": {
+    "name": "Fahd al-Rūmī",
+    "name_ar": "فهد الرومي"
+  },
+  "979": {
+    "name": "ʾAḥmad al-Kharraṭ",
+    "name_ar": "أحمد الخراط"
+  },
+  "982": {
+    "name": "Ibn Abī al-Fatḥ",
+    "name_ar": "ابن أبي الفتح"
+  },
+  "985": {
+    "name": "Muḥammad Saʿīd al-Būṭī",
+    "name_ar": "محمد سعيد البوطي"
+  },
+  "988": {
+    "name": "Majd al-Dīn Ibn Taymiyya",
+    "name_ar": "مجد الدين بن تيمية"
+  },
+  "991": {
+    "name": "Bahāʾ al-Dīn al-Maqdisī",
+    "name_ar": "بهاء الدين المقدسي"
+  },
+  "992": {
+    "name": "ʿAbd al-Fatāḥ al-Qāḍī",
+    "name_ar": "عبد الفتاح القاضي"
+  },
+  "995": {
+    "name": "al-Zarqānī, Muḥammad b. ʿAbd al-Bāqī",
+    "name_ar": "الزرقاني، محمد بن عبد الباقي"
+  },
+  "997": {
+    "name": "Mannāʿ al-Qaṭṭān",
+    "name_ar": "مناع القطان"
+  },
+  "998": {
+    "name": "ʿAṭiyya Qābil Naṣr",
+    "name_ar": "عطية قابل نصر"
+  },
+  "999": {
+    "name": "Muḥammad b. Muḥammad al-ʿĀwajī",
+    "name_ar": "محمد بن محمد العواجي"
+  },
+  "1000": {
+    "name": "Ibrāhīm b. Muḥammad al-Madkhalī",
+    "name_ar": "إبراهيم بن محمد المدخلي"
+  },
+  "1001": {
+    "name": "Ibrāhīm b. Ibrāhīm Qiraybī",
+    "name_ar": "إبراهيم بن إبراهيم قريبي"
+  },
+  "1002": {
+    "name": "Hāfiẓ b. Muḥammad Ḥikmī",
+    "name_ar": "حافظ بن محمد حكمي"
+  },
+  "1003": {
+    "name": "ʾAkram al-ʿUmari",
+    "name_ar": "أكرم العمري"
+  },
+  "1004": {
+    "name": "Musfir al-Dhmayni",
+    "name_ar": "مسفر الدميني"
+  },
+  "1005": {
+    "name": "Brik al-ʿUmari",
+    "name_ar": "بريك العمري"
+  },
+  "1006": {
+    "name": "Sulaymān al-Suwaykit",
+    "name_ar": "سليمان السويكت"
+  },
+  "1007": {
+    "name": "Ibn Badrān",
+    "name_ar": "ابن بدران"
+  },
+  "1010": {
+    "name": "al-Juwaynī, Abū al-Maʿālī",
+    "name_ar": "الجويني، أبو المعالي"
+  },
+  "1012": {
+    "name": "Sulaymān al-Nadwī",
+    "name_ar": "سليمان الندوي"
+  },
+  "1013": {
+    "name": "Abū al-Muẓaffar al-Samaʿānī",
+    "name_ar": "أبو المظفر السمعاني"
+  },
+  "1014": {
+    "name": "Taqī al-Dīn al-Nadwī",
+    "name_ar": "تقي الدين الندوي"
+  },
+  "1015": {
+    "name": "ʿAbd Allāh b. Muḥammad b. ʿAbd al-Wahhāb",
+    "name_ar": "عبد الله بن محمد بن عبد الوهاب"
+  },
+  "1016": {
+    "name": "Muḥammad al-Khuḍarī",
+    "name_ar": "محمد الخضري"
+  },
+  "1019": {
+    "name": "ʿAbd al-Raḥmān al-Sunaydī",
+    "name_ar": "عبد الرحمن السنيدي"
+  },
+  "1020": {
+    "name": "Ḍayf Allāh al-Zahrānī",
+    "name_ar": "ضيف الله الزهراني"
+  },
+  "1021": {
+    "name": "ʾAḥmad ʾIbrāhīm al-Sharīf",
+    "name_ar": "أحمد إبراهيم الشريف"
+  },
+  "1022": {
+    "name": "Walid b. Blihaysh al-ʿUmarī",
+    "name_ar": "وليد بن بليهش العمرى"
+  },
+  "1023": {
+    "name": "al-ʿumrānī",
+    "name_ar": "العمراني"
+  },
+  "1024": {
+    "name": "Bashīr ʿAlī ʿUmar",
+    "name_ar": "بشير علي عمر"
+  },
+  "1025": {
+    "name": "Muḥammad b. Muḥammad al-Mukhṭār al-Shinqiṭī",
+    "name_ar": "محمد بن محمد المختار الشنقيطي"
+  },
+  "1026": {
+    "name": "Muṣṭafā al-ʿAdawī",
+    "name_ar": "مصطفى العدوي"
+  },
+  "1028": {
+    "name": "ʿAṭiyya Sālim",
+    "name_ar": "عطية سالم"
+  },
+  "1042": {
+    "name": "Ṣāliḥ b. Muḥammad al-Luḥaydān",
+    "name_ar": "صالح بن محمد اللحيدان"
+  },
+  "1046": {
+    "name": "Ṣāliḥ b. ʿAbd al-Samīʿ al-Azharī",
+    "name_ar": "صالح بن عبد السميع الأزهري"
+  },
+  "1047": {
+    "name": "al-Qāḍī ʿAbd al-Wahhāb",
+    "name_ar": "القاضي عبد الوهاب"
+  },
+  "1048": {
+    "name": "Burhān al-Dīn al-Abnāsī",
+    "name_ar": "برهان الدين الأبناسي"
+  },
+  "1049": {
+    "name": "ʿAbd al-Laṭīf Āl al-Shaykh",
+    "name_ar": "عبد اللطيف آل الشيخ"
+  },
+  "1052": {
+    "name": "Wahbah al-Zuhayli",
+    "name_ar": "وهبة الزحيلي"
+  },
+  "1058": {
+    "name": "al-Taqī al-Fāsī",
+    "name_ar": "التقي الفاسي"
+  },
+  "1061": {
+    "name": "ʿAbd al-ʿAzīz al-Qāriʾ",
+    "name_ar": "عبد العزيز القارئ"
+  },
+  "1062": {
+    "name": "al-Shāṭibī al-Muqriʾ",
+    "name_ar": "الشاطبي المقرئ"
+  },
+  "1063": {
+    "name": "Ibn al-Bārizī",
+    "name_ar": "ابن البارزي"
+  },
+  "1066": {
+    "name": "Ibrāhīm b. Muḥammad Nūr Sayf",
+    "name_ar": "إبراهيم بن محمد نور سيف"
+  },
+  "1067": {
+    "name": "Jawād ʿAlī",
+    "name_ar": "جواد علي"
+  },
+  "1068": {
+    "name": "ʿAbd al-ʿAziz b. ʿAbd Allāh Āl al-Shaykh",
+    "name_ar": "عبد العزيز بن عبد الله آل الشيخ"
+  },
+  "1071": {
+    "name": "ʿAlāʾ al-Dīn Mughulṭāʾī",
+    "name_ar": "علاء الدين مغلطاي"
+  },
+  "1077": {
+    "name": "H̱amūd b. ʿAbd Allāh al-Tuwayjirī",
+    "name_ar": "حمود بن عبد الله التويجري"
+  },
+  "1079": {
+    "name": "Abū Muḥammad al-Barbahaarī",
+    "name_ar": "أبو محمد البربهاري"
+  },
+  "1082": {
+    "name": "Muḥammad b. ʿAbd Allāh Ghabbān al-Ṣubḥī",
+    "name_ar": "محمد بن عبد الله غبان الصبحي"
+  },
+  "1083": {
+    "name": "Muḥammad b. Khalīfa al-Tamīmī",
+    "name_ar": "محمد بن خليفة التميمي"
+  },
+  "1085": {
+    "name": "ʿAbd al-Majīd b. Sālim al-Mashʿabī",
+    "name_ar": "عبد المجيد بن سالم المشعبي"
+  },
+  "1095": {
+    "name": "al-Jūjūriy",
+    "name_ar": "الجوجري"
+  },
+  "1097": {
+    "name": "ʿAbbās Ḥasan",
+    "name_ar": "عباس حسن"
+  },
+  "1100": {
+    "name": "Ibn al-Qaṭṭān",
+    "name_ar": "ابن القطان"
+  },
+  "1103": {
+    "name": "al-Ṭūfī",
+    "name_ar": "الطوفي"
+  },
+  "1104": {
+    "name": "ʿAlī al-Ṣiyāḥ",
+    "name_ar": "علي الصياح"
+  },
+  "1105": {
+    "name": "Ibn Rushd al-Jadd",
+    "name_ar": "ابن رشد الجد"
+  },
+  "1106": {
+    "name": "al-Qāḍī Abū Yaʿlā Ibn al-Farāʾ",
+    "name_ar": "القاضي أبو يعلى ابن الفراء"
+  },
+  "1107": {
+    "name": "Saʿīd al-Afghānī",
+    "name_ar": "سعيد الأفغاني"
+  },
+  "1108": {
+    "name": "ʿAbd an-Nāṣir b. Khiḍr Mīlād",
+    "name_ar": "عبد الناصر بن خضر ميلاد"
+  },
+  "1109": {
+    "name": "ʿAwaḍ b. Rajāʾ al-ʿAwfī",
+    "name_ar": "عوض بن رجاء العوفي"
+  },
+  "1111": {
+    "name": "ʿAbd al-Muʿtāl al-Ṣaʿīdī",
+    "name_ar": "عبد المتعال الصعيدي"
+  },
+  "1118": {
+    "name": "Abū Bakr Kāfī",
+    "name_ar": "أبو بكر كافي"
+  },
+  "1121": {
+    "name": "Makkī b. Abī Ṭālib",
+    "name_ar": "مكي بن أبي طالب"
+  },
+  "1122": {
+    "name": "al-Fakhr al-Zaylaʿī",
+    "name_ar": "الفخر الزيلعي"
+  },
+  "1128": {
+    "name": "Muḥammad b. Maṭar al-Zahrānī",
+    "name_ar": "محمد بن مطر الزهراني"
+  },
+  "1129": {
+    "name": "ʿAlī b. Ḥasan al-Ḥalabī",
+    "name_ar": "علي بن حسن الحلبي"
+  },
+  "1130": {
+    "name": "Ibn al-Wardi al-Ḥafīd, Sirāj al-Dīn",
+    "name_ar": "ابن الوردي الحفيد، سراج الدين"
+  },
+  "1132": {
+    "name": "al-Badr Ibn Jamaʿa",
+    "name_ar": "البدر ابن جماعة"
+  },
+  "1134": {
+    "name": "Isḥāq b. Manṣūr al-Kūsaj",
+    "name_ar": "إسحاق بن منصور الكوسج"
+  },
+  "1135": {
+    "name": "Ibrāhīm al-Lāḥim",
+    "name_ar": "إبراهيم اللاحم"
+  },
+  "1138": {
+    "name": "Muḥammad al-Ṭayyib al-Najjār",
+    "name_ar": "محمد الطيب النجار"
+  },
+  "1145": {
+    "name": "ʾAḥmad Shākir",
+    "name_ar": "أحمد شاكر"
+  },
+  "1153": {
+    "name": "Muḥammad Abū Zahra",
+    "name_ar": "محمد أبو زهرة"
+  },
+  "1154": {
+    "name": "ʿAbd al-Jabbār Sharārah",
+    "name_ar": "عبد الجبار شرارة"
+  },
+  "1156": {
+    "name": "ʿAbd al-Karīm al-Khuḍayr",
+    "name_ar": "عبد الكريم الخضير"
+  },
+  "1158": {
+    "name": "al-Sīrāfī, Abū Saʿīd",
+    "name_ar": "السيرافي، أبو سعيد"
+  },
+  "1171": {
+    "name": "ʿAbbas al-Madani",
+    "name_ar": "عباس المدني"
+  },
+  "1173": {
+    "name": "Ibn Lālī Bālī",
+    "name_ar": "ابن لالي بالي"
+  },
+  "1176": {
+    "name": "Abū al-Ḥasanāt al-Laknawī",
+    "name_ar": "أبو الحسنات اللكنوي"
+  },
+  "1180": {
+    "name": "Maḥmūd Muḥammad Gharīb",
+    "name_ar": "محمود محمد غريب"
+  },
+  "1182": {
+    "name": "Abū Aḥmad al-Karrājī al-Qaṣṣāb",
+    "name_ar": "أبو أحمد الكرجي القصاب"
+  },
+  "1190": {
+    "name": "al-Maḥbūbī Ṣadr al-Sharīʿa al-Aṣghar",
+    "name_ar": "المحبوبي صدر الشريعة الأصغر"
+  },
+  "1193": {
+    "name": "Ibn al-Anbārī",
+    "name_ar": "ابن الأنباري"
+  },
+  "1198": {
+    "name": "Ḥarb al-Kirmānī",
+    "name_ar": "حرب الكرماني"
+  },
+  "1199": {
+    "name": "Ibn Rashīd",
+    "name_ar": "ابن رشيد"
+  },
+  "1205": {
+    "name": "Abū al-Mundhir al-Minyāwī",
+    "name_ar": "أبو المنذر المنياوي"
+  },
+  "1206": {
+    "name": "Muḥammad Ismāʿīl al-Muqaddim",
+    "name_ar": "محمد إسماعيل المقدم"
+  },
+  "1207": {
+    "name": "ʿAbd al-ʿAẓīm al-Mundhirī",
+    "name_ar": "عبد العظيم المنذري"
+  },
+  "1213": {
+    "name": "ʾAḥmad al-Hāšimī",
+    "name_ar": "أحمد الهاشمي"
+  },
+  "1216": {
+    "name": "Ibn al-Ḥanbalī, Raḍī al-Dīn",
+    "name_ar": "ابن الحنبلي، رضي الدين"
+  },
+  "1217": {
+    "name": "al-Khaṭīb al-Tamartāshī",
+    "name_ar": "الخطيب التمرتاشي"
+  },
+  "1224": {
+    "name": "Muqbil b. Hadi al-Wadiʿi",
+    "name_ar": "مقبل بن هادي الوادعي"
+  },
+  "1226": {
+    "name": "Fayṣal Āl Mubārak",
+    "name_ar": "فيصل آل مبارك"
+  },
+  "1229": {
+    "name": "Ibn al-Qiṭṭāc al-Siqillī",
+    "name_ar": "ابن القطاع الصقلي"
+  },
+  "1230": {
+    "name": "al-Shidyaq",
+    "name_ar": "الشدياق"
+  },
+  "1239": {
+    "name": "Abū Ibrāhīm al-Fārābī",
+    "name_ar": "أبو إبراهيم الفارابي"
+  },
+  "1241": {
+    "name": "Aḥmad Taymūr Bāshā",
+    "name_ar": "أحمد تيمور باشا"
+  },
+  "1245": {
+    "name": "Ibn Malik",
+    "name_ar": "ابن مالك"
+  },
+  "1263": {
+    "name": "Ṣubḥī al-Ṣāliḥ",
+    "name_ar": "صبحي الصالح"
+  },
+  "1264": {
+    "name": "Abū Shujāʿ",
+    "name_ar": "أبو شجاع"
+  },
+  "1265": {
+    "name": "al-Sharnbalālī",
+    "name_ar": "الشرنبلالي"
+  },
+  "1268": {
+    "name": "Muḥammad al-Ḥabash",
+    "name_ar": "محمد الحبش"
+  },
+  "1269": {
+    "name": "Maḥmūd aṭ-Ṭaḥḥān",
+    "name_ar": "محمود الطحان"
+  },
+  "1275": {
+    "name": "Abū Dharr al-Khashnī",
+    "name_ar": "أبو ذر الخشني"
+  },
+  "1276": {
+    "name": "ʿAbd al-Ghanī al-Maydānī",
+    "name_ar": "عبد الغني الميداني"
+  },
+  "1279": {
+    "name": "al-Barakawi",
+    "name_ar": "البركوي"
+  },
+  "1281": {
+    "name": "Ibn Naṣir al-Dīn al-Dimashqī",
+    "name_ar": "ابن ناصر الدين الدمشقي"
+  },
+  "1292": {
+    "name": "Abū Mūsá al-Madanī",
+    "name_ar": "أبو موسى المديني"
+  },
+  "1297": {
+    "name": "Hānī Fuqayh",
+    "name_ar": "هانى فقيه"
+  },
+  "1300": {
+    "name": "Qāsim al-Saraqusṭī",
+    "name_ar": "قاسم السرقسطي"
+  },
+  "1308": {
+    "name": "Khālid al-Jiraysī",
+    "name_ar": "خالد الجريسي"
+  },
+  "1310": {
+    "name": "Ibn ʿAskar",
+    "name_ar": "ابن عسكر"
+  },
+  "1313": {
+    "name": "ʿAbd al-Karīm al-Nimla",
+    "name_ar": "عبد الكريم النملة"
+  },
+  "1320": {
+    "name": "Muḥammad b. Sīdī Muḥammad al-Amīn",
+    "name_ar": "محمد بن سيدي محمد الأمين"
+  },
+  "1321": {
+    "name": "Rukn al-Dīn al-Asturābādhī",
+    "name_ar": "ركن الدين الأستراباذي"
+  },
+  "1326": {
+    "name": "Nawawi al-Jawi",
+    "name_ar": "نووي الجاوي"
+  },
+  "1332": {
+    "name": "Ibn Juzayy al-Kalbī",
+    "name_ar": "ابن جزي الكلبي"
+  },
+  "1340": {
+    "name": "Saʿdī b. Mahdī al-Hāshimī",
+    "name_ar": "سعدي بن مهدي الهاشمي"
+  },
+  "1341": {
+    "name": "Abū Zurʿa al-Rāzī",
+    "name_ar": "أبو زرعة الرازي"
+  },
+  "1343": {
+    "name": "Muḥammad Najib al-Muṭīʿī",
+    "name_ar": "محمد نجيب المطيعي"
+  },
+  "1344": {
+    "name": "ʾAḥmad b. Muḥammad al-Ḥajjājī",
+    "name_ar": "أحمد بن محمد الحجاجي"
+  },
+  "1345": {
+    "name": "Manṣūr b. ʿAbd al-Ḥamīd al-Najjār",
+    "name_ar": "منصور بن عبد الحميد النجار"
+  },
+  "1346": {
+    "name": "al-Marjānī",
+    "name_ar": "المرجاني"
+  },
+  "1350": {
+    "name": "Abū al-ʿArab al-Tamīmī",
+    "name_ar": "أبو العرب التميمي"
+  },
+  "1355": {
+    "name": "Shihāb al-Dīn al-Ramlī",
+    "name_ar": "شهاب الدين الرملي"
+  },
+  "1356": {
+    "name": "al-Zarkashi al-Ḥanbalī",
+    "name_ar": "الزركشي الحنبلي"
+  },
+  "1359": {
+    "name": "ʿAbd al-Salām Muqbil al-Majīdī",
+    "name_ar": "عبد السلام مقبل المجيدي"
+  },
+  "1361": {
+    "name": "Abū al-Rabīʿ al-Kalāʿī",
+    "name_ar": "أبو الربيع الكلاعي"
+  },
+  "1362": {
+    "name": "Hasan b. Muhammad Mashshat",
+    "name_ar": "حسن بن محمد مشاط"
+  },
+  "1363": {
+    "name": "Muḥammad Yaḥyā Ḥulw",
+    "name_ar": "محمد يحيى حلو"
+  },
+  "1365": {
+    "name": "ʿAbd al-Majīd al-Zandānī",
+    "name_ar": "عبد المجيد الزندانى"
+  },
+  "1366": {
+    "name": "al-Diyār Bakrī",
+    "name_ar": "الديار بكري"
+  },
+  "1367": {
+    "name": "al-Qāḍī ʿAbd al-Jabbār",
+    "name_ar": "القاضى عبد الجبار"
+  },
+  "1369": {
+    "name": "Hasan Huseyn",
+    "name_ar": "حسن حسين"
+  },
+  "1370": {
+    "name": "Buhruq al-Yamanī",
+    "name_ar": "بحرق اليمني"
+  },
+  "1371": {
+    "name": "Haykal, Muḥammad Ḥusayn",
+    "name_ar": "هيكل، محمد حسين"
+  },
+  "1372": {
+    "name": "Sadr al-ʾAfāḍil al-Khwārazmī",
+    "name_ar": "صدر الأفاضل الخوارزمي"
+  },
+  "1373": {
+    "name": "ʿAbd al-Fatāḥ Muṣayliḥī",
+    "name_ar": "عبد الفتاح مصيلحي"
+  },
+  "1374": {
+    "name": "Imād al-Dīn Khalīl",
+    "name_ar": "عماد الدين خليل"
+  },
+  "1375": {
+    "name": "Maḥmūd Shīt Khitṭāb",
+    "name_ar": "محمود شيت خطاب"
+  },
+  "1376": {
+    "name": "Ḥusayn Ḥusaynī Maʿdī",
+    "name_ar": "حسين حسينى معدى"
+  },
+  "1377": {
+    "name": "Nūr al-Dīn al-Ḥalabī",
+    "name_ar": "نور الدين الحلبي"
+  },
+  "1378": {
+    "name": "Muḥammad Abū Shihba",
+    "name_ar": "محمد أبو شهبة"
+  },
+  "1380": {
+    "name": "ʿAbd al-Shāfī Muḥammad ʿAbd al-Laṭīf",
+    "name_ar": "عبد الشافى محمد عبد اللطيف"
+  },
+  "1381": {
+    "name": "Muḥammad Ḥasan al-Ḥimṣī",
+    "name_ar": "محمد حسن الحمصي"
+  },
+  "1382": {
+    "name": "ʾAḥmad b. ʿAbd al-Fatāḥ Zawāwī",
+    "name_ar": "أحمد بن عبد الفتاح زواوى"
+  },
+  "1383": {
+    "name": "Muʾallif al-ʿUmda fī Iʿrāb al-Burda",
+    "name_ar": "مؤلف العمدة في إعراب البردة"
+  },
+  "1384": {
+    "name": "al-Sayyid al-Jumayli",
+    "name_ar": "السيد الجميلى"
+  },
+  "1385": {
+    "name": "ʿAbd al-Karīm Biyyārah",
+    "name_ar": "عبد الكريم بيارة"
+  },
+  "1387": {
+    "name": "Sāmī ʿĀmirī",
+    "name_ar": "سامى عامرى"
+  },
+  "1388": {
+    "name": "William Montgomery Watt",
+    "name_ar": "ويليام مونتغمري وات"
+  },
+  "1390": {
+    "name": "Abū Madyan al-Fāsī",
+    "name_ar": "أبو مدين الفاسى"
+  },
+  "1391": {
+    "name": "Muḥammad Ḥasan Sharāb",
+    "name_ar": "محمد حسن شراب"
+  },
+  "1393": {
+    "name": "ʿAbd Allāh ʿAbbādī al-Laḥjī",
+    "name_ar": "عبد الله عبادى اللحجى"
+  },
+  "1395": {
+    "name": "al-Qasṭalānī",
+    "name_ar": "القسطلاني"
+  },
+  "1396": {
+    "name": "ʿAbd al-Laṭīf ʿĀshūr",
+    "name_ar": "عبد اللطيف عاشور"
+  },
+  "1397": {
+    "name": "Rifāʿa aṭ-Ṭahṭāwī",
+    "name_ar": "رفاعة الطهطاوى"
+  },
+  "1398": {
+    "name": "Yūsuf al-Nabhanī",
+    "name_ar": "يوسف النبهاني"
+  },
+  "1400": {
+    "name": "Muḥammad Shawqī al-Fingirī",
+    "name_ar": "محمد شوقى الفنجرى"
+  },
+  "1401": {
+    "name": "Shaʿbān Ismāʿīl",
+    "name_ar": "شعبان إسماعيل"
+  },
+  "1406": {
+    "name": "Shawqi Ḍayf",
+    "name_ar": "شوقي ضيف"
+  },
+  "1407": {
+    "name": "Anwar al-Jundī",
+    "name_ar": "أنور الجندي"
+  },
+  "1418": {
+    "name": "Marḍī al-ʿAnazī",
+    "name_ar": "مرضي العنزي"
+  },
+  "1419": {
+    "name": "Muḥammad Taqī al-ʿUthmānī",
+    "name_ar": "محمد تقي العثماني"
+  },
+  "1423": {
+    "name": "Mashhur Al Salman",
+    "name_ar": "مشهور آل سلمان"
+  },
+  "1426": {
+    "name": "Quṭrub",
+    "name_ar": "قطرب"
+  },
+  "1431": {
+    "name": "MuHammad b. Saʿd al-Shuwayʿir",
+    "name_ar": "محمد بن سعد الشويعر"
+  },
+  "1433": {
+    "name": "Muḥammad Muḥibb al-Dīn Abū Zayd",
+    "name_ar": "محمد محب الدين أبو زيد"
+  },
+  "1435": {
+    "name": "ʾAkram al-Dulaymi",
+    "name_ar": "أكرم الدليمي"
+  },
+  "1436": {
+    "name": "Ibn Khalawayh",
+    "name_ar": "ابن خالويه"
+  },
+  "1438": {
+    "name": "Ḥamzah ʿAbd Allāh al-Mulaybārī",
+    "name_ar": "حمزة عبد الله المليباري"
+  },
+  "1439": {
+    "name": "ʿUbayd Allāh al-Sijzī",
+    "name_ar": "عبيد الله السجزي"
+  },
+  "1441": {
+    "name": "al-Bināʾ",
+    "name_ar": "البناء"
+  },
+  "1444": {
+    "name": "Muḥammad Fahd Khārūf",
+    "name_ar": "محمد فهد خاروف"
+  },
+  "1454": {
+    "name": "al-Marghīnānī",
+    "name_ar": "المرغيناني"
+  },
+  "1459": {
+    "name": "Muḥammad Kāmil al-Fīqī",
+    "name_ar": "محمد كامل الفقي"
+  },
+  "1464": {
+    "name": "Ibrāhīm ʿAbduh",
+    "name_ar": "إبراهيم عبده"
+  },
+  "1465": {
+    "name": "Muḥammad al-Bahī",
+    "name_ar": "محمد البهي"
+  },
+  "1466": {
+    "name": "Kamal al-Dīn ʿAbd al-Ghanī al-Mirsī",
+    "name_ar": "كمال الدين عبد الغني المرسي"
+  },
+  "1468": {
+    "name": "Ruʾūf Shalabī",
+    "name_ar": "رؤوف شلبي"
+  },
+  "1470": {
+    "name": "Muḥammad Yusrī Ibrāhīm",
+    "name_ar": "محمد يسري إبراهيم"
+  },
+  "1472": {
+    "name": "al-Ashmūnī, Abū al-Ḥasan",
+    "name_ar": "الأشموني، أبو الحسن"
+  },
+  "1473": {
+    "name": "Jamāl al-Dīn al-Malti",
+    "name_ar": "جمال الدين الملطي"
+  },
+  "1479": {
+    "name": "Muḥammad Bayūmī Mahrān",
+    "name_ar": "محمد بيومى مهران"
+  },
+  "1482": {
+    "name": "Muḥammad ʿAbd al-ʿAzīz al-Najjār",
+    "name_ar": "محمد عبد العزيز النجار"
+  },
+  "1485": {
+    "name": "Jūda Ḥusnayn Jūda",
+    "name_ar": "جودة حسنين جودة"
+  },
+  "1489": {
+    "name": "Sulaymān b. Ṣāliḥ al-Thunayān",
+    "name_ar": "سليمان بن صالح الثنيان"
+  },
+  "1492": {
+    "name": "Muḥammad Abū al-Maḥāsin ʿUṣfūr",
+    "name_ar": "محمد أبو المحاسن عصفور"
+  },
+  "1493": {
+    "name": "al-Sayyid Rizq al-Ṭawīl",
+    "name_ar": "السيد رزق الطويل"
+  },
+  "1495": {
+    "name": "Sālim b. ʿAbd Allāh al-Khalaf",
+    "name_ar": "سالم بن عبد الله الخلف"
+  },
+  "1496": {
+    "name": "al-Isnawī",
+    "name_ar": "الإسنوي"
+  },
+  "1498": {
+    "name": "ʾAḥmad al-Shāyib",
+    "name_ar": "أحمد الشايب"
+  },
+  "1499": {
+    "name": "Ibn al-Siraj",
+    "name_ar": "ابن السراج"
+  },
+  "1501": {
+    "name": "Ibn al-Ṣāʾigh",
+    "name_ar": "ابن الصائغ"
+  },
+  "1503": {
+    "name": "Muḥammad Maḥmūd Muḥammaden",
+    "name_ar": "محمد محمود محمدين"
+  },
+  "1505": {
+    "name": "Muḥammad Ḥāmid al-Fīqī",
+    "name_ar": "محمد حامد الفقي"
+  },
+  "1506": {
+    "name": "Muṣṭafā Musaʿad",
+    "name_ar": "مصطفى مسعد"
+  },
+  "1508": {
+    "name": "Marwān Kajak",
+    "name_ar": "مروان كجك"
+  },
+  "1510": {
+    "name": "Muḥammad al-ʿUrayfī",
+    "name_ar": "محمد العريفي"
+  },
+  "1511": {
+    "name": "Saʿūd b. Muḥammad al-Bashar",
+    "name_ar": "سعود بن محمد البشر"
+  },
+  "1514": {
+    "name": "ʿAbd Allāh al-Raḥīlī",
+    "name_ar": "عبد الله الرحيلي"
+  },
+  "1516": {
+    "name": "Khālid al-Darrīs",
+    "name_ar": "خالد الدريس"
+  },
+  "1517": {
+    "name": "Muḥammad b. ʿAbd al-Karīm b. ʿUbayd",
+    "name_ar": "محمد بن عبد الكريم بن عبيد"
+  },
+  "1520": {
+    "name": "Badr al-Dīn al-Baʿlī",
+    "name_ar": "بدر الدين البعلي"
+  },
+  "1527": {
+    "name": "Sulaymān b. Sālim al-Suḥaymī",
+    "name_ar": "سليمان بن سالم السحيمي"
+  },
+  "1539": {
+    "name": "ʿAbd Allāh al-Ṭayyār",
+    "name_ar": "عبد الله الطيار"
+  },
+  "1546": {
+    "name": "ʿAbd al-Karīm b. Zayd ʿAkkawī",
+    "name_ar": "عبد الكريم بن زيد عكوي"
+  },
+  "1548": {
+    "name": "ʿĀmir b. Ḥasan Ṣabrī",
+    "name_ar": "عامر بن حسن صبري"
+  },
+  "1549": {
+    "name": "Farḥāna bt. ʿAlī Shwayta",
+    "name_ar": "فرحانة بنت علي شويتة"
+  },
+  "1550": {
+    "name": "Muḥammad b. Jamīl Mubārak",
+    "name_ar": "محمد بن جميل مبارك"
+  },
+  "1551": {
+    "name": "ʿAbd Allāh al-ʿIjlān",
+    "name_ar": "عبد الله العجلان"
+  },
+  "1552": {
+    "name": "ʿAbd Allāh b. Saʿd al-Ruwayshid",
+    "name_ar": "عبد الله بن سعد الرويشد"
+  },
+  "1555": {
+    "name": "ʿAbd al-Wahhāb Abū Sulaymān",
+    "name_ar": "عبد الوهاب أبو سليمان"
+  },
+  "1565": {
+    "name": "Aḥmad b. Muḥammad al-Ḥimlawī",
+    "name_ar": "أحمد بن محمد الحملاوي"
+  },
+  "1566": {
+    "name": "Muḥammad Yaʿqūb al-Dahlawī",
+    "name_ar": "محمد يعقوب الدهلوي"
+  },
+  "1569": {
+    "name": "Muḥammad b. Ẓāfir al-Shahrī",
+    "name_ar": "محمد بن ظافر الشهري"
+  },
+  "1570": {
+    "name": "Muḥammad Maḥmūd Bakkār",
+    "name_ar": "محمد محمود بكار"
+  },
+  "1571": {
+    "name": "ʿAbd al-Ghafūr al-Balūshī",
+    "name_ar": "عبد الغفور البلوشي"
+  },
+  "1573": {
+    "name": "ʿAbd al-ʿAzīz ʿUtayq",
+    "name_ar": "عبد العزيز عتيق"
+  },
+  "1574": {
+    "name": "Waṣī Allāh ʿAbbās",
+    "name_ar": "وصى الله عباس"
+  },
+  "1575": {
+    "name": "Ṣāliḥ Ḥāmid al-Rifāʿī",
+    "name_ar": "صالح حامد الرفاعي"
+  },
+  "1576": {
+    "name": "ʿAbd al-ʿAzīz Muḥammad Fāriḥ",
+    "name_ar": "عبد العزيز محمد فارح"
+  },
+  "1581": {
+    "name": "Muḥammad Ajmal al-Iṣlāḥī",
+    "name_ar": "محمد أجمل الإصلاحي"
+  },
+  "1582": {
+    "name": "Ḥusnā bint Bakrī Najjār",
+    "name_ar": "حسناء بنت بكري نجار"
+  },
+  "1583": {
+    "name": "Aḥmad b. Muḥammad Ḥamīd",
+    "name_ar": "أحمد بن محمد حميد"
+  },
+  "1584": {
+    "name": "Nāṣir b. Ibrāhīm al-ʿUbūdī",
+    "name_ar": "ناصر بن إبراهيم العبودي"
+  },
+  "1585": {
+    "name": "Aḥmad b. Maʿbad ʿAbd al-Karīm",
+    "name_ar": "أحمد بن معبد عبد الكريم"
+  },
+  "1586": {
+    "name": "ʾAḥmad ʿUmar Hāshim",
+    "name_ar": "أحمد عمر هاشم"
+  },
+  "1587": {
+    "name": "Rifʿat b. Fawzī ʿAbd al-Muṭṭalib",
+    "name_ar": "رفعت بن فوزي عبد المطلب"
+  },
+  "1588": {
+    "name": "Sulaymān b. Ḥamad al-ʿŪda",
+    "name_ar": "سليمان بن حمد العودة"
+  },
+  "1590": {
+    "name": "Muḥammad ʿAjjāj al-Khaṭīb",
+    "name_ar": "محمد عجاج الخطيب"
+  },
+  "1591": {
+    "name": "Ibn Ājurrūm",
+    "name_ar": "ابن آجروم"
+  },
+  "1592": {
+    "name": "Ibn Kemal Pasha",
+    "name_ar": "ابن كمال باشا"
+  },
+  "1593": {
+    "name": "Ibrahim b. Salih al-Handud",
+    "name_ar": "إبراهيم بن صالح الحندود"
+  },
+  "1594": {
+    "name": "ʿAzīzu Muḥammad al-Maghribī",
+    "name_ar": "عزيزو محمد المغربي"
+  },
+  "1601": {
+    "name": "ʿAbd Allāh b. ʿAbd al-Wāḥid al-Khamīs",
+    "name_ar": "عبد الله بن عبد الواحد الخميس"
+  },
+  "1605": {
+    "name": "Muḥammad ʿAbd al-ʿAzīz Aḥmad al-ʿAlī",
+    "name_ar": "محمد عبد العزيز أحمد العلي"
+  },
+  "1606": {
+    "name": "Muḥammad b. ʿAbd al-ʿAzīz al-Sudays",
+    "name_ar": "محمد بن عبد العزيز السديس"
+  },
+  "1612": {
+    "name": "Ibn Mujāhid",
+    "name_ar": "ابن مجاهد"
+  },
+  "1614": {
+    "name": "Manṣūr al-Ṭablāwī",
+    "name_ar": "منصور الطبلاوي"
+  },
+  "1616": {
+    "name": "Ibn Zinjalah",
+    "name_ar": "ابن زنجلة"
+  },
+  "1622": {
+    "name": "al-Shāshī, Abū Bakr",
+    "name_ar": "الشاشي، أبو بكر"
+  },
+  "1623": {
+    "name": "al-Ḥasan al-Baṣrī",
+    "name_ar": "الحسن البصري"
+  },
+  "1625": {
+    "name": "ʿIlm al-Dīn al-Barzālī",
+    "name_ar": "علم الدين البرزالي"
+  },
+  "1631": {
+    "name": "ʿAbd al-ʿAziz Ṭariḥ Sharf",
+    "name_ar": "عبد العزيز طريح شرف"
+  },
+  "1633": {
+    "name": "Yūsuf ʿAbd al-Majīd Fāyid",
+    "name_ar": "يوسف عبد المجيد فايد"
+  },
+  "1635": {
+    "name": "Muḥammad ʿĪd",
+    "name_ar": "محمد عيد"
+  },
+  "1637": {
+    "name": "Nūr al-Dīn ʿAṭtar",
+    "name_ar": "نور الدين عتر"
+  },
+  "1648": {
+    "name": "Dr. Maḥmūd b. Ibrāhīm al-Khaṭīb",
+    "name_ar": "د. محمود بن إبراهيم الخطيب"
+  },
+  "1649": {
+    "name": "Saʿīd Aḥmad Ḥāfiẓ Sharīdaḥ",
+    "name_ar": "سعيد أحمد حافظ شريدح"
+  },
+  "1650": {
+    "name": "ʿAbd Allāh b. ʿAbd al-ʿAzīz al-Jubrīn",
+    "name_ar": "عبد الله بن عبد العزيز الجبرين"
+  },
+  "1651": {
+    "name": "ʿAbd al-Bāsiṭ ʿAbd al-Razzāq Badr",
+    "name_ar": "عبد الباسط عبد الرزاق بدر"
+  },
+  "1652": {
+    "name": "Mahdi b. Rizqallāh Aḥmad",
+    "name_ar": "مهدي بن رزق الله أحمد"
+  },
+  "1654": {
+    "name": "Ibn al-ʿImād al-Ḥanbalī",
+    "name_ar": "ابن العماد الحنبلي"
+  },
+  "1656": {
+    "name": "Wālid Imām al-Ḥaramayn al-Juwaynī",
+    "name_ar": "والد إمام الحرمين الجويني"
+  },
+  "1676": {
+    "name": "Ibn Balban al-Ḥanbalī",
+    "name_ar": "ابن بلبان الحنبلي"
+  },
+  "1677": {
+    "name": "Bafḍal al-Ḥaḍramī",
+    "name_ar": "بافضل الحضرمي"
+  },
+  "1678": {
+    "name": "Ibn Ruslan",
+    "name_ar": "ابن رسلان"
+  },
+  "1680": {
+    "name": "Muḥammad al-Zuhri al-Ghamrawi",
+    "name_ar": "محمد الزهري الغمراوي"
+  },
+  "1681": {
+    "name": "Ibrahim al-Halabi",
+    "name_ar": "إبراهيم الحلبي"
+  },
+  "1682": {
+    "name": "al-Saghdi",
+    "name_ar": "السغدي"
+  },
+  "1684": {
+    "name": "Ibn al-Shiḥna, Lisān al-Dīn",
+    "name_ar": "ابن الشحنة، لسان الدين"
+  },
+  "1685": {
+    "name": "Ibn al-Ḥājib",
+    "name_ar": "ابن الحاجب"
+  },
+  "1686": {
+    "name": "al-Khazarjī al-Minbijī",
+    "name_ar": "الخزرجي المنبجي"
+  },
+  "1687": {
+    "name": "Ibn Farāḥ",
+    "name_ar": "ابن فرح"
+  },
+  "1688": {
+    "name": "Ibn Hubayra",
+    "name_ar": "ابن هبيرة"
+  },
+  "1689": {
+    "name": "al-Wansharisi",
+    "name_ar": "الونشريسي"
+  },
+  "1702": {
+    "name": "Ibn Ḥamdān",
+    "name_ar": "ابن حمدان"
+  },
+  "1711": {
+    "name": "al-Ashmūnī, al-Muqriʾ",
+    "name_ar": "الأشموني، المقرئ"
+  },
+  "1714": {
+    "name": "ʿAbd al-Karīm Jarād",
+    "name_ar": "عبد الكريم جراد"
+  },
+  "1717": {
+    "name": "ʿAbd al-Bāsiṭ al-Mulattī",
+    "name_ar": "عبد الباسط الملطي"
+  },
+  "1718": {
+    "name": "al-ʿIzz Ibn Jamāʿa",
+    "name_ar": "العز ابن جماعة"
+  },
+  "1720": {
+    "name": "al-Ḥamawī, Ibn Naẓīf",
+    "name_ar": "الحموي، ابن نظيف"
+  },
+  "1721": {
+    "name": "al-Maqdisī, Muḥammad b. ʿAbd al-Malik",
+    "name_ar": "المقدسي، محمد بن عبد الملك"
+  },
+  "1722": {
+    "name": "al-Ṣinnāhājī",
+    "name_ar": "الصنهاجي"
+  },
+  "1723": {
+    "name": "Mujīr al-Dīn al-ʿUlaymī",
+    "name_ar": "مجير الدين العليمي"
+  },
+  "1724": {
+    "name": "ʾAḥmad b. Khālid al-Nāṣirī",
+    "name_ar": "أحمد بن خالد الناصري"
+  },
+  "1725": {
+    "name": "al-Baṣrawī",
+    "name_ar": "البصروي"
+  },
+  "1726": {
+    "name": "Muḥammad Farīd Bek",
+    "name_ar": "محمد فريد بك"
+  },
+  "1727": {
+    "name": "al-Wazīr al-Ḥasanī",
+    "name_ar": "الوزير الحسني"
+  },
+  "1728": {
+    "name": "ʿAbd al-Wahhāb al-Burihiy",
+    "name_ar": "عبد الوهاب البريهي"
+  },
+  "1729": {
+    "name": "Ṣafī al-Dīn al-Bukhārī",
+    "name_ar": "صفي الدين البخاري"
+  },
+  "1732": {
+    "name": "Ibn ʿAbd al-Ḥakam al-Faqīh",
+    "name_ar": "ابن عبد الحكم الفقيه"
+  },
+  "1733": {
+    "name": "Ibn ʿAbd al-Ḥakam al-Muʾarrikh",
+    "name_ar": "ابن عبد الحكم المؤرخ"
+  },
+  "1741": {
+    "name": "Ibn Ḥadīdah",
+    "name_ar": "ابن حديدة"
+  },
+  "1745": {
+    "name": "al-Malik al-Manṣūr",
+    "name_ar": "الملك المنصور"
+  },
+  "1750": {
+    "name": "Ibn al-Bannā",
+    "name_ar": "ابن البنا"
+  },
+  "1757": {
+    "name": "al-Shaqqīr",
+    "name_ar": "الشقيري"
+  },
+  "1758": {
+    "name": "Abu ʿUmar al-Zahid al-Mutarriz Ghulām Thaʿlab",
+    "name_ar": "أبو عمر الزاهد المطرز غلام ثعلب"
+  },
+  "1761": {
+    "name": "Ibn Bri",
+    "name_ar": "ابن بري"
+  },
+  "1763": {
+    "name": "Khalid al-Azhari",
+    "name_ar": "خالد الأزهري"
+  },
+  "1764": {
+    "name": "Khwāharzāda Badr al-Dīn al-Kurddarī",
+    "name_ar": "خواهر زاده بدر الدين الكردري"
+  },
+  "1765": {
+    "name": "Ibn Qāʾid",
+    "name_ar": "ابن قائد"
+  },
+  "1766": {
+    "name": "Ibn al-Warrāq",
+    "name_ar": "ابن الوراق"
+  },
+  "1767": {
+    "name": "Abū l-Baqāʾ al-Kafawī",
+    "name_ar": "أبو البقاء الكفوي"
+  },
+  "1768": {
+    "name": "al-Aḥmad Nakrī",
+    "name_ar": "الأحمد نكري"
+  },
+  "1769": {
+    "name": "al-Tusawwuliy",
+    "name_ar": "التسولي"
+  },
+  "1770": {
+    "name": "al-Ḥaddād al-Mahdawi",
+    "name_ar": "الحداد المهدوي"
+  },
+  "1775": {
+    "name": "Thābit b. Abī Thābit",
+    "name_ar": "ثابت بن أبي ثابت"
+  },
+  "1776": {
+    "name": "al-Daqīqī",
+    "name_ar": "الدقيقي"
+  },
+  "1777": {
+    "name": "Muḥammad b. al-Sayyid Ḥasan",
+    "name_ar": "محمد بن السيد حسن"
+  },
+  "1778": {
+    "name": "al-Labbābīdī",
+    "name_ar": "اللبابيدي"
+  },
+  "1779": {
+    "name": "al-Kawkabānī",
+    "name_ar": "الكوكباني"
+  },
+  "1780": {
+    "name": "Ibn al-Ajradābī",
+    "name_ar": "ابن الأجدابي"
+  },
+  "1781": {
+    "name": "ʿAbd al-Malik b. Ḥabīb",
+    "name_ar": "عبد الملك بن حبيب"
+  },
+  "1783": {
+    "name": "al-Liblī",
+    "name_ar": "اللبلي"
+  },
+  "1789": {
+    "name": "Muḥammad al-ʿArabī al-Qarawī al-Mālikī",
+    "name_ar": "محمد العربي القروي المالكي"
+  },
+  "1790": {
+    "name": "al-Dumarī",
+    "name_ar": "الدميري"
+  },
+  "1792": {
+    "name": "al-Muʾayyad al-ʿAlawī",
+    "name_ar": "المؤيد العلوي"
+  },
+  "1812": {
+    "name": "Muḥammad Ḍiyāʾ al-Raḥmān al-Aʿẓamī",
+    "name_ar": "محمد ضياء الرحمن الأعظمي"
+  },
+  "1814": {
+    "name": "Marzūq b. Hayyās al-Zahrānī",
+    "name_ar": "مرزوق بن هياس الزهراني"
+  },
+  "1815": {
+    "name": "ʿAbd al-Qādir b. Ḥabīb Allāh al-Sindī",
+    "name_ar": "عبد القادر بن حبيب الله السندي"
+  },
+  "1818": {
+    "name": "Muṣṭafā Aḥmad al-Nammās",
+    "name_ar": "مصطفى أحمد النماس"
+  },
+  "1822": {
+    "name": "Aḥmad ʿAlī Ṭāhā Rayyān",
+    "name_ar": "أحمد علي طه ريان"
+  },
+  "1823": {
+    "name": "Aḥmad Muḥammad ʿAbd Allāh",
+    "name_ar": "أحمد محمد عبد الله"
+  },
+  "1824": {
+    "name": "Muḥammad ʿAbd al-Maqṣūd Jābir Allāh",
+    "name_ar": "محمد عبد المقصود جاب الله"
+  },
+  "1828": {
+    "name": "Ibrāhīm Muḥammad Ḥasan al-Jamal",
+    "name_ar": "إبراهيم محمد حسن الجمل"
+  },
+  "1835": {
+    "name": "al-ʾAbharī",
+    "name_ar": "الأبهري"
+  },
+  "1850": {
+    "name": "Muḥammad b. ʿAbd al-ʿAzīz al-Musnad",
+    "name_ar": "محمد بن عبد العزيز المسند"
+  },
+  "1887": {
+    "name": "Sirāj al-Dīn al-Qazwīnī",
+    "name_ar": "سراج الدين القزويني"
+  },
+  "1897": {
+    "name": "Ibn Shihāb al-Zuhri",
+    "name_ar": "ابن شهاب الزهري"
+  },
+  "1904": {
+    "name": "Burhān al-Dīn al-Nājī",
+    "name_ar": "برهان الدين الناجي"
+  },
+  "1920": {
+    "name": "ʿAbd Allāh al-Jadīʿ",
+    "name_ar": "عبد الله الجديع"
+  },
+  "1923": {
+    "name": "Muḥammad Yūsuf al-Kāndahilawī",
+    "name_ar": "محمد يوسف الكاندهلوي"
+  },
+  "1925": {
+    "name": "ʾAḥmad Murshid",
+    "name_ar": "أحمد مرشد"
+  },
+  "1926": {
+    "name": "Burhān al-Dīn Ibn Māza al-Bukhārī",
+    "name_ar": "برهان الدين ابن مازه البخاري"
+  },
+  "1928": {
+    "name": "Ibn al-ʿUmranī",
+    "name_ar": "ابن العمراني"
+  },
+  "1930": {
+    "name": "Ibn al-Faqīh",
+    "name_ar": "ابن الفقيه"
+  },
+  "1931": {
+    "name": "al-Harawī, Abū al-Ḥasan",
+    "name_ar": "الهروي، أبو الحسن"
+  },
+  "1932": {
+    "name": "Muʾallif Ḥudūd al-ʿĀlam min al-Mashriq ilá al-Maghrib",
+    "name_ar": "مؤلف حدود العالم من المشرق إلى المغرب"
+  },
+  "1933": {
+    "name": "Abū Zayd al-Sīrāfī",
+    "name_ar": "أبو زيد السيرافي"
+  },
+  "1934": {
+    "name": "Shaʿbān al-ʿAwda",
+    "name_ar": "شعبان العودة"
+  },
+  "1935": {
+    "name": "Isḥāq b. al-Ḥusayn al-Munajjim",
+    "name_ar": "إسحاق بن الحسين المنجم"
+  },
+  "1936": {
+    "name": "Binyamin al-Tutili",
+    "name_ar": "بنيامين التطيلي"
+  },
+  "1937": {
+    "name": "Muʾallif al-Istibṣār fī ʿAjāʾib al-Amṣār",
+    "name_ar": "مؤلف الاستبصار في عجائب الأمصار"
+  },
+  "1941": {
+    "name": "Ibn Ḥawqal",
+    "name_ar": "ابن حوقل"
+  },
+  "1942": {
+    "name": "al-Mihallabī, al-Ḥasan b. Aḥmad",
+    "name_ar": "المهلبي، الحسن بن أحمد"
+  },
+  "1944": {
+    "name": "Zayn al-Dīn Ibn al-Muwaffaq",
+    "name_ar": "زين الدين ابن الموفق"
+  },
+  "1945": {
+    "name": "Kāmil al-Ghazī",
+    "name_ar": "كامل الغزي"
+  },
+  "1946": {
+    "name": "al-Suwaydī",
+    "name_ar": "السويدي"
+  },
+  "1958": {
+    "name": "Abū Uwais al-Kurdī",
+    "name_ar": "أبو أويس الكردي"
+  },
+  "1967": {
+    "name": "al-Mārg̲h̲anī al-Tūnisī",
+    "name_ar": "المارغني التونسي"
+  },
+  "1968": {
+    "name": "ʾAḥmad Muḥarram al-Shaykh Nāji",
+    "name_ar": "أحمد محرم الشيخ ناجي"
+  },
+  "1973": {
+    "name": "Ṣāliḥ b. Zābin al-Marzūqī al-Baqamī",
+    "name_ar": "صالح بن زابن المرزوقي البقمي"
+  },
+  "1975": {
+    "name": "Muḥammad b. Ḥammūd al-Wāʾilī",
+    "name_ar": "محمد بن حمود الوائلي"
+  },
+  "1978": {
+    "name": "Bāsim Fayṣal al-Jawābirah",
+    "name_ar": "باسم فيصل الجوابرة"
+  },
+  "1982": {
+    "name": "Muḥammad ʿAbd al-Khāliq ʿAẓīma",
+    "name_ar": "محمد عبد الخالق عضيمة"
+  },
+  "1984": {
+    "name": "Muḥammad Muḥammad Abū Zūhū",
+    "name_ar": "محمد محمد أبو زهو"
+  },
+  "1985": {
+    "name": "Ibn ʿUṣfūr",
+    "name_ar": "ابن عصفور"
+  },
+  "2003": {
+    "name": "ʿAbd al-Rashīd ʿAbd al-ʿAzīz Sālim",
+    "name_ar": "عبد الرشيد عبد العزيز سالم"
+  },
+  "2006": {
+    "name": "Ibn ʿĀshir",
+    "name_ar": "ابن عاشر"
+  },
+  "2008": {
+    "name": "ʿAbd al-Fatāḥ Shalabī",
+    "name_ar": "عبد الفتاح شلبي"
+  },
+  "2011": {
+    "name": "Ibn al-Bādish",
+    "name_ar": "ابن الباذش"
+  },
+  "2012": {
+    "name": "ʿAlī al-Jāram",
+    "name_ar": "علي الجارم"
+  },
+  "2014": {
+    "name": "Hāmid ʿAwnī",
+    "name_ar": "حامد عونى"
+  },
+  "2018": {
+    "name": "ʿAbd Allāh al-Khaṭīb",
+    "name_ar": "عبد الله الخطيب"
+  },
+  "2019": {
+    "name": "Nūr bint Ḥasan Qārūt",
+    "name_ar": "نور بنت حسن قاروت"
+  },
+  "2020": {
+    "name": "Muḥammad b. ʿAbd Allāh Bā Jumʿān",
+    "name_ar": "محمد بن عبد الله باجمعان"
+  },
+  "2021": {
+    "name": "Ruqayya bint Naṣr Allāh Niyāz",
+    "name_ar": "رقية بنت نصر الله نياز"
+  },
+  "2022": {
+    "name": "Abū Lubāba b. al-Ṭāhir Ḥusayn",
+    "name_ar": "أبو لبابة بن الطاهر حسين"
+  },
+  "2023": {
+    "name": "al-Ḥusayn b. Muḥammad Āyt Saʿīd",
+    "name_ar": "الحسين بن محمد آيت سعيد"
+  },
+  "2024": {
+    "name": "Shaykha bt. Mufarrij al-Mufarrij",
+    "name_ar": "شيخة بنت مفرج المفرج"
+  },
+  "2025": {
+    "name": "Khalil b. Ibrahim Mulla Khāṭir",
+    "name_ar": "خليل بن إبراهيم ملا خاطر"
+  },
+  "2029": {
+    "name": "Luṭfī ʿAbd al-Wahhāb",
+    "name_ar": "لطفي عبد الوهاب"
+  },
+  "2032": {
+    "name": "Abū ʿAbd Allāh al-Qaḥṭānī",
+    "name_ar": "أبو عبد الله القحطاني"
+  },
+  "2033": {
+    "name": "al-Ghaznawī, Sirāj al-Dīn",
+    "name_ar": "الغزنوي، سراج الدين"
+  },
+  "2034": {
+    "name": "Sayf b. ʿUmar",
+    "name_ar": "سيف بن عمر"
+  },
+  "2036": {
+    "name": "Ibn al-Muhamili",
+    "name_ar": "ابن المحاملي"
+  },
+  "2039": {
+    "name": "al-Maqdisī, Muḥammad b. Aḥmad",
+    "name_ar": "المقدسي، محمد بن أحمد"
+  },
+  "2040": {
+    "name": "ʿAbd al-Malik b. Bakr Qāḍī",
+    "name_ar": "عبد الملك بن بكر قاضي"
+  },
+  "2046": {
+    "name": "ʿAbd al-ʿAzīz Ṣāliḥ",
+    "name_ar": "عبد العزيز صالح"
+  },
+  "2047": {
+    "name": "Ṣāliḥ b. Aḥmad Riḍā",
+    "name_ar": "صالح بن أحمد رضا"
+  },
+  "2048": {
+    "name": "Tawfīq Brū",
+    "name_ar": "توفيق برو"
+  },
+  "2050": {
+    "name": "Muḥammad b. Kirān",
+    "name_ar": "محمد بنكيران"
+  },
+  "2051": {
+    "name": "Muḥammad Sabtān",
+    "name_ar": "محمد سبتان"
+  },
+  "2052": {
+    "name": "Aḥmad Abū al-Wafāʾ",
+    "name_ar": "أحمد أبو الوفا"
+  },
+  "2057": {
+    "name": "ʾAḥmad ʾAḥmad Ghulūsh",
+    "name_ar": "أحمد أحمد غلوش"
+  },
+  "2061": {
+    "name": "Munīr Sulṭān",
+    "name_ar": "منير سلطان"
+  },
+  "2063": {
+    "name": "ʿAbd Allāh Darwīsh",
+    "name_ar": "عبد الله درويش"
+  },
+  "2066": {
+    "name": "Muḥammad Muḥammad Abū Mūsā",
+    "name_ar": "محمد محمد أبو موسى"
+  },
+  "2069": {
+    "name": "Dīqnūqūz",
+    "name_ar": "ديكنقوز"
+  },
+  "2072": {
+    "name": "Zuhayr al-Nāṣir",
+    "name_ar": "زهير الناصر"
+  },
+  "2074": {
+    "name": "Muḥammad b. Ibrāhīm al-Ghāmidī",
+    "name_ar": "محمد بن إبراهيم الغامدي"
+  },
+  "2076": {
+    "name": "ʿĪd b. Safar al-Ḥujaylī",
+    "name_ar": "عيد بن سفر الحجيلي"
+  },
+  "2078": {
+    "name": "Ṭāriq b. ʿAbd Allāh Ḥajjār",
+    "name_ar": "طارق بن عبد الله حجار"
+  },
+  "2079": {
+    "name": "al-Shihāb al-Abdhī",
+    "name_ar": "الشهاب الأبذي"
+  },
+  "2080": {
+    "name": "Ibrāhīm al-ʿUbayd",
+    "name_ar": "إبراهيم العبيد"
+  },
+  "2085": {
+    "name": "Muḥammad b. Saʿd Āl Saʿūd",
+    "name_ar": "محمد بن سعد آل سعود"
+  },
+  "2086": {
+    "name": "Abū ʿAyāshah Muḥammad al-Bayūmī",
+    "name_ar": "أبو عياشة محمد البيومي"
+  },
+  "2087": {
+    "name": "al-Balqīnī",
+    "name_ar": "البلقيني"
+  },
+  "2090": {
+    "name": "ʿAwwād al-Muʿtaq",
+    "name_ar": "عواد المعتق"
+  },
+  "2091": {
+    "name": "ʿAbd al-ʿAziz al-ʿUthaym",
+    "name_ar": "عبد العزيز العثيم"
+  },
+  "2092": {
+    "name": "ʿAwwāḍ al-ʿUmarī",
+    "name_ar": "عواض العمري"
+  },
+  "2094": {
+    "name": "ʿAbd Allāh al-Sahlī",
+    "name_ar": "عبد الله السهلي"
+  },
+  "2098": {
+    "name": "Ḥamzah al-Nashartī",
+    "name_ar": "حمزة النشرتي"
+  },
+  "2100": {
+    "name": "Muḥammad al-Majdhūb",
+    "name_ar": "محمد المجذوب"
+  },
+  "2106": {
+    "name": "Jamil ʿAbd Allah Muḥammad al-Miṣri",
+    "name_ar": "جميل عبد الله محمد المصري"
+  },
+  "2107": {
+    "name": "Shafīq Jāsim Aḥmad Maḥmūd",
+    "name_ar": "شفيق جاسر أحمد محمود"
+  },
+  "2108": {
+    "name": "ʿAbd Allāh al-Qarnī",
+    "name_ar": "عبد الله القرني"
+  },
+  "2110": {
+    "name": "Ḥamd b. Ḥammād al-Ḥammād",
+    "name_ar": "حمد بن حماد الحماد"
+  },
+  "2114": {
+    "name": "Sulaymān b. Salīm Allāh al-Raḥīlī",
+    "name_ar": "سليمان بن سليم الله الرحيلي"
+  },
+  "2115": {
+    "name": "Hasan Musa al-Shaʿir",
+    "name_ar": "حسن موسى الشاعر"
+  },
+  "2116": {
+    "name": "ʿAbd al-Munʿim al-Sayyid Najm",
+    "name_ar": "عبد المنعم السيد نجم"
+  },
+  "2117": {
+    "name": "Fayhan Shali al-Mutayri",
+    "name_ar": "فيحان شالي المطيري"
+  },
+  "2122": {
+    "name": "Muḥammad Billō Aḥmad Abū Bakr",
+    "name_ar": "محمد بيلو أحمد أبو بكر"
+  },
+  "2123": {
+    "name": "Sulaymān al-Lāḥim",
+    "name_ar": "سليمان اللاحم"
+  },
+  "2124": {
+    "name": "Muḥammad Ṭāhir Ḥakīm",
+    "name_ar": "محمد طاهر حكيم"
+  },
+  "2127": {
+    "name": "Ibrāhīm Muḥammad Sīrsīq",
+    "name_ar": "إبراهيم محمد سرسيق"
+  },
+  "2128": {
+    "name": "Dhayb al-Qaḥṭānī",
+    "name_ar": "ذيب القحطاني"
+  },
+  "2131": {
+    "name": "Aḥmad ʿUbayd al-Kibīsī",
+    "name_ar": "أحمد عبيد الكبيسي"
+  },
+  "2142": {
+    "name": "Muḥammad b. Nāṣir al-Suḥaybānī",
+    "name_ar": "محمد بن ناصر السحيباني"
+  },
+  "2151": {
+    "name": "Muḥammad b. Nāṣir al-ʿAbūdī",
+    "name_ar": "محمد بن ناصر العبودي"
+  },
+  "2154": {
+    "name": "Muḥammad Ibrāhīm Barnāwī",
+    "name_ar": "محمد إبراهيم برناوي"
+  },
+  "2156": {
+    "name": "Muḥammad al-Sayyid al-Wakīl",
+    "name_ar": "محمد السيد الوكيل"
+  },
+  "2159": {
+    "name": "Hasan Muẓaffar Rizq",
+    "name_ar": "حسن مظفر رزق"
+  },
+  "2162": {
+    "name": "ʿAbd Allāh b. Nāṣir al-Shaqārī",
+    "name_ar": "عبد الله بن ناصر الشقاري"
+  },
+  "2167": {
+    "name": "Ḥamad b. Muḥammad al-Ṣaʿīdī",
+    "name_ar": "حمد بن محمد الصعيدي"
+  },
+  "2170": {
+    "name": "Dukhayl b. Salih al-Luḥaydān",
+    "name_ar": "دخيل بن صالح اللحيدان"
+  },
+  "2171": {
+    "name": "ʿAbd al-Wahhāb b. Ṭawīla",
+    "name_ar": "عبد الوهاب بن طويلة"
+  },
+  "2174": {
+    "name": "Yaḥyā b. Aḥmad ʿArīshī",
+    "name_ar": "يحيى بن أحمد عريشي"
+  },
+  "2178": {
+    "name": "ʾAḥmad b. Muḥammad b. ʾAḥmad al-Qurashī",
+    "name_ar": "أحمد بن محمد بن أحمد القرشي"
+  },
+  "2182": {
+    "name": "Najm ʿAbd al-Raḥmān Khalaf",
+    "name_ar": "نجم عبد الرحمن خلف"
+  },
+  "2183": {
+    "name": "Dardīr Muḥammad Abū al-Suʿūd",
+    "name_ar": "دردير محمد أبو السعود"
+  },
+  "2254": {
+    "name": "Muḥammad ʿAbd Allāh ʿInān",
+    "name_ar": "محمد عبد الله عنان"
+  },
+  "2274": {
+    "name": "Ibn al-Ḥaṭṭāb Abū ʿAbd Allāh al-Rāzī",
+    "name_ar": "ابن الحطاب أبو عبد الله الرازي"
+  },
+  "2282": {
+    "name": "Mūsá Shāhīn Lāshīn",
+    "name_ar": "موسى شاهين لاشين"
+  },
+  "2293": {
+    "name": "Muḥammad Maẓhar Ṣiddīqī",
+    "name_ar": "محمد مظهر صديقي"
+  },
+  "2294": {
+    "name": "Muḥammad b. Qāsim al-Ghazī",
+    "name_ar": "محمد بن قاسم الغزي"
+  },
+  "2296": {
+    "name": "Willem Durrant",
+    "name_ar": "ول ديورانت"
+  },
+  "2302": {
+    "name": "Batūl Jundiyya",
+    "name_ar": "بتول جندية"
+  },
+  "2306": {
+    "name": "Shihata Ṣaqr",
+    "name_ar": "شحاتة صقر"
+  },
+  "2312": {
+    "name": "ʿAbd Allāh al-Mīmūnī",
+    "name_ar": "عبد الله الميموني"
+  },
+  "2313": {
+    "name": "Ṣāliḥ al-Lāḥim",
+    "name_ar": "صالح اللاحم"
+  },
+  "2318": {
+    "name": "Ṣāliḥ Āl Manṣūr",
+    "name_ar": "صالح آل منصور"
+  },
+  "2320": {
+    "name": "Ḥassān al-Sayf",
+    "name_ar": "حسان السيف"
+  },
+  "2322": {
+    "name": "ʿAbd Allāh al-Saʿd",
+    "name_ar": "عبد الله السعد"
+  },
+  "2324": {
+    "name": "ʾAshhab",
+    "name_ar": "أشهب"
+  },
+  "2325": {
+    "name": "Ḥasan Tawfīq al-ʿAdl",
+    "name_ar": "حسن توفيق العدل"
+  },
+  "2327": {
+    "name": "Kurāʿ an-Naml",
+    "name_ar": "كراع النمل"
+  },
+  "2330": {
+    "name": "al-ʾAmīr Muḥammad ʿAlī",
+    "name_ar": "الأمير محمد علي"
+  },
+  "2331": {
+    "name": "ʿAbd al-Laṭīf al-Baghdādī",
+    "name_ar": "عبد اللطيف البغدادي"
+  },
+  "2339": {
+    "name": "ʿAbd al-Bārī al-ʿUshmāwī",
+    "name_ar": "عبد الباري العشماوي"
+  },
+  "2340": {
+    "name": "ʾAḥmad b. Turkī al-Mālikī",
+    "name_ar": "أحمد بن تركي المالكي"
+  },
+  "2342": {
+    "name": "Muḥammad Kurd ʿAlī",
+    "name_ar": "محمد كرد علي"
+  },
+  "2344": {
+    "name": "Rīnhārt Dūzī",
+    "name_ar": "رينهارت دوزي"
+  },
+  "2353": {
+    "name": "Saʿd al-Mirṣāfī",
+    "name_ar": "سعد المرصفي"
+  },
+  "2354": {
+    "name": "ʿAbd al-ʿAẓīm al-Dīb",
+    "name_ar": "عبد العظيم الديب"
+  },
+  "2357": {
+    "name": "Waḥīd ʿAbd al-Salām Bālī",
+    "name_ar": "وحيد عبد السلام بالي"
+  },
+  "2358": {
+    "name": "ʾAḥmad b. ʿUmar al-Ḥāzimī",
+    "name_ar": "أحمد بن عمر الحازمي"
+  },
+  "2368": {
+    "name": "Aḥmad Maʿmūr al-ʿAsīrī",
+    "name_ar": "أحمد معمور العسيري"
+  },
+  "2369": {
+    "name": "Muḥammad Kabrīt",
+    "name_ar": "محمد كبريت"
+  },
+  "2370": {
+    "name": "Ibn al-Naqīb",
+    "name_ar": "ابن النقيب"
+  },
+  "2371": {
+    "name": "Saʿīd Bāʿashan",
+    "name_ar": "سعيد باعشن"
+  },
+  "2372": {
+    "name": "ʿAbd al-ʿAzīz al-Khayyāṭ",
+    "name_ar": "عبد العزيز الخياط"
+  },
+  "2373": {
+    "name": "Mubārak al-Mīlī",
+    "name_ar": "مبارك الميلي"
+  },
+  "2375": {
+    "name": "Muṣṭafā al-Sibāʿī",
+    "name_ar": "مصطفى السباعي"
+  },
+  "2386": {
+    "name": "Ḥusayn al-Maghribī",
+    "name_ar": "حسين المغربي"
+  },
+  "2387": {
+    "name": "Ibn Madaa",
+    "name_ar": "ابن مضاء"
+  },
+  "2388": {
+    "name": "Muḥammad Raʾfat Saʿīd",
+    "name_ar": "محمد رأفت سعيد"
+  },
+  "2390": {
+    "name": "al-Sīrāfī, Abū Muḥammad",
+    "name_ar": "السيرافي، أبو محمد"
+  },
+  "2395": {
+    "name": "Ibn al-Fahham",
+    "name_ar": "ابن الفحام"
+  },
+  "2396": {
+    "name": "ʿAbd al-Qādir al-Muḥammadī",
+    "name_ar": "عبد القادر المحمدي"
+  },
+  "2400": {
+    "name": "al-QalānSī",
+    "name_ar": "القلانسي"
+  },
+  "2408": {
+    "name": "Abū ʿAlī al-Fārsī",
+    "name_ar": "أبو علي الفارسي"
+  },
+  "2411": {
+    "name": "Ibn Mihran",
+    "name_ar": "ابن مهران"
+  },
+  "2412": {
+    "name": "Shakir Dheeb Fayyad",
+    "name_ar": "شاكر ذيب فياض"
+  },
+  "2414": {
+    "name": "Jāmiʿat al-Madīna al-ʿĀlamiyya",
+    "name_ar": "جامعة المدينة العالمية"
+  },
+  "2420": {
+    "name": "Muḥammad b. al-Qāsim al-Sabtī",
+    "name_ar": "محمد بن القاسم السبتي"
+  },
+  "2424": {
+    "name": "ʿAlī aṭ-Ṭanṭāwī",
+    "name_ar": "علي الطنطاوي"
+  },
+  "2426": {
+    "name": "Ṭalḥa Muḥammad al-Masīr",
+    "name_ar": "طلحة محمد المسير"
+  },
+  "2427": {
+    "name": "Yūsuf al-Marʿashlī",
+    "name_ar": "يوسف المرعشلي"
+  },
+  "2430": {
+    "name": "ʿAlī b. Ghāzī al-Tuwayjirī",
+    "name_ar": "علي بن غازي التويجري"
+  },
+  "2434": {
+    "name": "ʿAbd al-Karīm b. ʿAbd Allāh Ḥamza",
+    "name_ar": "عبد الكريم بن عبد الله حمزة"
+  },
+  "2435": {
+    "name": "ʿAbd al-Badīʿ al-Nayrabānī",
+    "name_ar": "عبد البديع النيرباني"
+  },
+  "2443": {
+    "name": "Shawqī Bashīr",
+    "name_ar": "شوقي بشير"
+  },
+  "2446": {
+    "name": "Muḥammad al-Khalīlī",
+    "name_ar": "محمد الخليلي"
+  },
+  "2447": {
+    "name": "Maḥmūd ʿAlī Bassah",
+    "name_ar": "محمود علي بسة"
+  },
+  "2448": {
+    "name": "al-ʾAhwāzī",
+    "name_ar": "الأهوازي"
+  },
+  "2450": {
+    "name": "Muḥammad Aʿlā al-Tahanawi",
+    "name_ar": "محمد أعلى التهانوي"
+  },
+  "2453": {
+    "name": "ʿIzzat Shuhata Karar",
+    "name_ar": "عزت شحاتة كرار"
+  },
+  "2455": {
+    "name": "ʾAḥmad Maḥmūd ʿAbd al-Samīʿ al-Ḥifiyyān",
+    "name_ar": "أحمد محمود عبد السميع الحفيان"
+  },
+  "2456": {
+    "name": "Muḥammad Salem Muḥaysin",
+    "name_ar": "محمد سالم محيسن"
+  },
+  "2457": {
+    "name": "Muṣṭafā Dīb al-Baghā",
+    "name_ar": "مصطفى ديب البغا"
+  },
+  "2459": {
+    "name": "ʿAlī al-Munṭaṣir al-Kattānī",
+    "name_ar": "علي المنتصر الكتاني"
+  },
+  "2462": {
+    "name": "Firyāl Zakariyyā al-ʿAbd",
+    "name_ar": "فريال زكريا العبد"
+  },
+  "2465": {
+    "name": "ʿAbd al-Ghanī ʿAbd al-Khāliq",
+    "name_ar": "عبد الغني عبد الخالق"
+  },
+  "2466": {
+    "name": "ʿAbd al-Ḥalīm Maḥmūd",
+    "name_ar": "عبد الحليم محمود"
+  },
+  "2474": {
+    "name": "Munqidh al-Saqqār",
+    "name_ar": "منقذ السقار"
+  },
+  "2475": {
+    "name": "Abū Ḥafṣ al-Nishshār",
+    "name_ar": "أبو حفص النشار"
+  },
+  "2477": {
+    "name": "Ḥamdī Kawkab",
+    "name_ar": "حمدي كوكب"
+  },
+  "2480": {
+    "name": "ʿAbd Allāh b. ʿUmar al-Ḥaḍramī",
+    "name_ar": "عبد الله بن عمر الحضرمي"
+  },
+  "2481": {
+    "name": "Ibn Naṣir al-Salāmī",
+    "name_ar": "ابن ناصر السلامي"
+  },
+  "2482": {
+    "name": "al-Ḥasan b. Muḥammad al-Ghassāl",
+    "name_ar": "الحسن بن محمد الغسال"
+  },
+  "2489": {
+    "name": "Ibn al-Qāṣiḥ",
+    "name_ar": "ابن القاصح"
+  },
+  "2496": {
+    "name": "ʿAlī Allāh Abū al-Wafāʾ",
+    "name_ar": "على الله أبو الوفا"
+  },
+  "2497": {
+    "name": "Ibn al-Salār",
+    "name_ar": "ابن السلار"
+  },
+  "2498": {
+    "name": "Abū Muḥammad al-Wāsiṭī",
+    "name_ar": "أبو محمد الواسطي"
+  },
+  "2499": {
+    "name": "Muḥammad ʿAbbās al-Bāzz",
+    "name_ar": "محمد عباس الباز"
+  },
+  "2508": {
+    "name": "al-Mukhtār al-Mashrī al-Maqrūsh",
+    "name_ar": "المختار المشري المقروش"
+  },
+  "2510": {
+    "name": "Abū Mālik b. ʿAbd al-Wahhāb",
+    "name_ar": "أبو مالك بن عبد الوهاب"
+  },
+  "2511": {
+    "name": "al-Nawwari, Muhibb al-Din",
+    "name_ar": "النويري، محب الدين"
+  },
+  "2516": {
+    "name": "Ibn Sirāj al-Andalusī",
+    "name_ar": "ابن سراج الأندلسي"
+  },
+  "2518": {
+    "name": "Munīr al-Ghaḍbān",
+    "name_ar": "منير الغضبان"
+  },
+  "2522": {
+    "name": "Muḥammad Bāy Bilʿālam",
+    "name_ar": "محمد باي بلعالم"
+  },
+  "2524": {
+    "name": "Sālim al-Bahnasāwī",
+    "name_ar": "سالم البهنساوي"
+  },
+  "2526": {
+    "name": "Mājid Aḥmad Niyāzī al-Darrwish",
+    "name_ar": "ماجد أحمد نيازي الدرويش"
+  },
+  "2529": {
+    "name": "Ibn al-ʿAjami, Shihab al-Din",
+    "name_ar": "ابن العجمي، شهاب الدين"
+  },
+  "2533": {
+    "name": "Abū Faiṣal al-Badrānī",
+    "name_ar": "أبو فيصل البدراني"
+  },
+  "2535": {
+    "name": "al-Burhān al-Ṭarābulusī",
+    "name_ar": "البرهان الطرابلسي"
+  },
+  "2538": {
+    "name": "Abū ʿĀṣim al-Barakātī",
+    "name_ar": "أبو عاصم البركاتي"
+  },
+  "2540": {
+    "name": "Ghānim Ghālib Ghānim",
+    "name_ar": "غانم غالب غانم"
+  },
+  "2542": {
+    "name": "ʿAbd al-Raḥmān b. Wahf al-Qaḥṭānī",
+    "name_ar": "عبد الرحمن بن وهف القحطاني"
+  },
+  "2552": {
+    "name": "Ibn al-ʿIynī",
+    "name_ar": "ابن العيني"
+  },
+  "2558": {
+    "name": "Ibn Abī Taghlib",
+    "name_ar": "ابن أبي تغلب"
+  },
+  "2559": {
+    "name": "Ibn ʿAmmār al-Mālikī",
+    "name_ar": "ابن عمار المالكي"
+  },
+  "2569": {
+    "name": "ʿUqayl al-Khuzaʿi",
+    "name_ar": "عقيل القضاعي"
+  },
+  "2572": {
+    "name": "al-Kirmani, Abu l-ʿAlaʾ",
+    "name_ar": "الكرماني، أبو العلاء"
+  },
+  "2576": {
+    "name": "Dubayyan al-Dubayyan",
+    "name_ar": "دبيان الدبيان"
+  },
+  "2579": {
+    "name": "ʿAbd al-Ghanī al-Labdī",
+    "name_ar": "عبد الغني اللبدي"
+  },
+  "2583": {
+    "name": "Ibrāhīm b. ʿAbd Allāh al-Mudayhiš",
+    "name_ar": "إبراهيم بن عبد الله المديهش"
+  },
+  "2593": {
+    "name": "Abū Yaʿlā al-Zawāwī",
+    "name_ar": "أبو يعلى الزواوي"
+  },
+  "2594": {
+    "name": "ʿAbd al-Laṭīf Sulṭānī",
+    "name_ar": "عبد اللطيف سلطاني"
+  },
+  "2598": {
+    "name": "Ahmad b. Sahl al-Razi",
+    "name_ar": "أحمد بن سهل الرازي"
+  },
+  "2603": {
+    "name": "Abu al-Tahir Ibn Bashir",
+    "name_ar": "أبو الطاهر ابن بشير"
+  },
+  "2605": {
+    "name": "al-Māzirī",
+    "name_ar": "المازري"
+  },
+  "2606": {
+    "name": "Rāʾid b. Ḥamdān al-Ḥāzimī",
+    "name_ar": "رائد بن حمدان الحازمي"
+  },
+  "2607": {
+    "name": "Muṣṭafā al-Izmīrī",
+    "name_ar": "مصطفى الإزميري"
+  },
+  "2609": {
+    "name": "Abū al-Wafāʾ Ibn ʿAqīl",
+    "name_ar": "أبو الوفاء ابن عقيل"
+  },
+  "2610": {
+    "name": "Majhūlūn",
+    "name_ar": "مجهولون"
+  },
+  "2614": {
+    "name": "al-Ṭayyibī",
+    "name_ar": "الطيبي"
+  },
+  "2618": {
+    "name": "Abū ʾAsmāʾ Muḥammad b. Ṭāhā",
+    "name_ar": "أبو أسماء محمد بن طه"
+  },
+  "2625": {
+    "name": "Abū al-Qāsim Saʿd Allāh",
+    "name_ar": "أبو القاسم سعد الله"
+  },
+  "2626": {
+    "name": "al-Zubayrī, Muḥammad al-ʿArabī",
+    "name_ar": "الزبيري، محمد العربي"
+  },
+  "2628": {
+    "name": "Muḥammad Ilyās al-Fālūḏa",
+    "name_ar": "محمد إلياس الفالوذة"
+  },
+  "2630": {
+    "name": "Muḥammad al-Ṣawiyānī",
+    "name_ar": "محمد الصوياني"
+  },
+  "2632": {
+    "name": "al-Rijrājī, ʿAlī b. Saʿīd",
+    "name_ar": "الرجراجي، علي بن سعيد"
+  },
+  "2634": {
+    "name": "Bahram al-Dimiri",
+    "name_ar": "بهرام الدميري"
+  },
+  "2640": {
+    "name": "Khālid b. Ibrāhīm al-Ṣuqʿubī",
+    "name_ar": "خالد بن إبراهيم الصقعبي"
+  },
+  "2645": {
+    "name": "Ḥalīma Sāl",
+    "name_ar": "حليمة سال"
+  },
+  "2646": {
+    "name": "ʿAlāʾ al-Dīn al-Ḥaṣkafī",
+    "name_ar": "علاء الدين الحصكفي"
+  },
+  "2649": {
+    "name": "Ibn Yaʿīsh",
+    "name_ar": "ابن يعيش"
+  },
+  "2650": {
+    "name": "Ḥamdān Khūjah",
+    "name_ar": "حمدان خوجة"
+  },
+  "2651": {
+    "name": "Muḥammad Sulaymān al-Manṣūrfūrī",
+    "name_ar": "محمد سليمان المنصورفوري"
+  },
+  "2652": {
+    "name": "ʾAḥmad Bay",
+    "name_ar": "أحمد باي"
+  },
+  "2654": {
+    "name": "Ibn al-Rifʿa",
+    "name_ar": "ابن الرفعة"
+  },
+  "2655": {
+    "name": "Abū ʿAlī b. Abī Mūsā al-Hāshimī",
+    "name_ar": "أبو علي بن أبي موسى الهاشمي"
+  },
+  "2657": {
+    "name": "ʿĀdil Shāhīn",
+    "name_ar": "عادل شاهين"
+  },
+  "2658": {
+    "name": "Sirāj al-Dīn Ibn Najīm",
+    "name_ar": "سراج الدين ابن نجيم"
+  },
+  "2659": {
+    "name": "al-Sirmirī",
+    "name_ar": "السرمري"
+  },
+  "2660": {
+    "name": "Sālim Jamāl al-Hindāwī",
+    "name_ar": "سالم جمال الهنداوي"
+  },
+  "2666": {
+    "name": "al-T̲h̲amānīnī",
+    "name_ar": "الثمانيني"
+  },
+  "2667": {
+    "name": "al-Qudūrī",
+    "name_ar": "القدوري"
+  },
+  "2668": {
+    "name": "al-Jazūlī, Abū Mūsā",
+    "name_ar": "الجزولي، أبو موسى"
+  },
+  "2674": {
+    "name": "Aḥmad al-Zūmān",
+    "name_ar": "أحمد الزومان"
+  },
+  "2676": {
+    "name": "al-Zarqānī, ʿAbd al-Bāqī",
+    "name_ar": "الزرقاني، عبد الباقي"
+  },
+  "2677": {
+    "name": "ʿAbd al-Salām al-Shuwayʿir",
+    "name_ar": "عبد السلام الشويعر"
+  },
+  "2680": {
+    "name": "ʿAbd Allāh b. Māniʿ al-Rūqī",
+    "name_ar": "عبد الله بن مانع الروقي"
+  },
+  "2681": {
+    "name": "Yūsuf b. Jūdah al-Dāwudī",
+    "name_ar": "يوسف بن جودة الداودي"
+  },
+  "2683": {
+    "name": "Muḥammad Qadrī Bāshā",
+    "name_ar": "محمد قدري باشا"
+  },
+  "2686": {
+    "name": "al-Anṭākī, Yaḥyā b. Saʿīd",
+    "name_ar": "الأنطاكي، يحيى بن سعيد"
+  },
+  "2688": {
+    "name": "Maḥmūd al-Mallāḥ",
+    "name_ar": "محمود الملاح"
+  },
+  "2689": {
+    "name": "Ibn Naji al-Tanukhi",
+    "name_ar": "ابن ناجي التنوخي"
+  },
+  "2691": {
+    "name": "Ibn al-Jallab",
+    "name_ar": "ابن الجلاب"
+  },
+  "2692": {
+    "name": "al-Qāḍī Abū al-Aṣbagh b. Sahl",
+    "name_ar": "القاضي أبو الأصبغ ابن سهل"
+  },
+  "2693": {
+    "name": "Ibn Shas",
+    "name_ar": "ابن شاس"
+  },
+  "2694": {
+    "name": "Ibn Ghazi",
+    "name_ar": "ابن غازي"
+  },
+  "2695": {
+    "name": "al-Jubbay",
+    "name_ar": "الجبي"
+  },
+  "2696": {
+    "name": "Ibn al-Qaṣṣār",
+    "name_ar": "ابن القصار"
+  },
+  "2697": {
+    "name": "Ibn Walād",
+    "name_ar": "ابن ولاد"
+  },
+  "2704": {
+    "name": "al-ʿIzz b. Jamāʿa al-Ḥafīd",
+    "name_ar": "العز ابن جماعة الحفيد"
+  },
+  "2705": {
+    "name": "Baṭṭāl al-Rukbī",
+    "name_ar": "بطال الركبي"
+  },
+  "2707": {
+    "name": "ʿAbd Allāh b. Fawzān al-Fawzān",
+    "name_ar": "عبد الله بن فوزان الفوزان"
+  },
+  "2718": {
+    "name": "Nāṣir b. Mashri al-Ghāmidī",
+    "name_ar": "ناصر بن مشري الغامدي"
+  },
+  "2719": {
+    "name": "Muḥammad b. ʿAbd al-ʿAzīz al-Khuḍayrī",
+    "name_ar": "محمد بن عبد العزيز الخضيري"
+  },
+  "2720": {
+    "name": "al-Walīd b. ʿAbd al-Raḥmān al-Firyān",
+    "name_ar": "الوليد بن عبد الرحمن الفريان"
+  },
+  "2721": {
+    "name": "Fahd b. Yaḥyā al-ʿAmmārī",
+    "name_ar": "فهد بن يحيى العماري"
+  },
+  "2723": {
+    "name": "ʿAbd al-Raḥīm al-Hāshim",
+    "name_ar": "عبد الرحيم الهاشم"
+  },
+  "2725": {
+    "name": "Muḥammad b. ʿAlī Ḥalāwa",
+    "name_ar": "محمد بن علي حلاوة"
+  },
+  "2729": {
+    "name": "Ṣāliḥ al-Sulṭān",
+    "name_ar": "صالح السلطان"
+  },
+  "2732": {
+    "name": "ʿAqīl b. Sālim al-Shahri",
+    "name_ar": "عقيل بن سالم الشهري"
+  },
+  "2733": {
+    "name": "ʿAbd Allāh b. Ṭāhir",
+    "name_ar": "عبد الله بن طاهر"
+  },
+  "2735": {
+    "name": "ʾIbrāhīm al-ʿAlī",
+    "name_ar": "إبراهيم العلي"
+  },
+  "2736": {
+    "name": "Maḥmūd Maqdīsh",
+    "name_ar": "محمود مقديش"
+  },
+  "2737": {
+    "name": "Jumʿa Fathi ʿAbd al-Ḥalīm",
+    "name_ar": "جمعة فتحي عبد الحليم"
+  },
+  "2738": {
+    "name": "Maḥmūd ʿAbd al-Munʿim al-ʿAbd",
+    "name_ar": "محمود عبد المنعم العبد"
+  },
+  "2739": {
+    "name": "Fayṣal Āl Ṣubḥān",
+    "name_ar": "فيصل آل صبحان"
+  },
+  "2741": {
+    "name": "Bassām al-ʿAsalī",
+    "name_ar": "بسام العسلي"
+  },
+  "2743": {
+    "name": "ʾAḥmad Maṭlūb",
+    "name_ar": "أحمد مطلوب"
+  },
+  "2746": {
+    "name": "al-GhuFayli, ʿAbdallāh b. Manṣūr",
+    "name_ar": "الغفيلي، عبد الله بن منصور"
+  },
+  "2747": {
+    "name": "Amīn al-Shiqāwī",
+    "name_ar": "أمين الشقاوي"
+  },
+  "2748": {
+    "name": "Ẓāhir Shawkat al-Bayātī",
+    "name_ar": "ظاهر شوكت البياتي"
+  },
+  "2749": {
+    "name": "Ibn Waṣil",
+    "name_ar": "ابن واصل"
+  },
+  "2750": {
+    "name": "ʿAbd al-Muḥsin al-Qāsim",
+    "name_ar": "عبد المحسن القاسم"
+  },
+  "2753": {
+    "name": "Ziyād b. ʿĀbid al-Mashūkhī",
+    "name_ar": "زياد بن عابد المشوخي"
+  },
+  "2754": {
+    "name": "Aḥmad b. Nāṣir al-Ṭayyār",
+    "name_ar": "أحمد بن ناصر الطيار"
+  },
+  "2756": {
+    "name": "al-Lakhmī, Abū al-Ḥasan",
+    "name_ar": "اللخمي، أبو الحسن"
+  },
+  "2759": {
+    "name": "Nizār Rayyān",
+    "name_ar": "نزار ريان"
+  },
+  "2760": {
+    "name": "Qāḍīzāda",
+    "name_ar": "قاضي زاده"
+  },
+  "2761": {
+    "name": "Ibn Duqmaq, Ṣārim al-Dīn",
+    "name_ar": "ابن دقماق، صارم الدين"
+  },
+  "2762": {
+    "name": "al-ʿAbbāsī al-Ṣafadī",
+    "name_ar": "العباسي الصفدي"
+  },
+  "2764": {
+    "name": "al-Kashnāwī, Abū Bakr",
+    "name_ar": "الكشناوي، أبو بكر"
+  },
+  "2765": {
+    "name": "Muḥammad Aḥmad Qāsim",
+    "name_ar": "محمد أحمد قاسم"
+  },
+  "2766": {
+    "name": "al-Maʿāfirī, Saʿīd",
+    "name_ar": "المعافري، سعيد"
+  },
+  "2767": {
+    "name": "Nadīm Ḥusayn Duʿkūr",
+    "name_ar": "نديم حسين دعكور"
+  },
+  "2771": {
+    "name": "ʿAbd Allāh al-Muʿaydiy",
+    "name_ar": "عبد الله المعيدي"
+  },
+  "2774": {
+    "name": "al-Subkī, Bahāʾ al-Dīn",
+    "name_ar": "السبكي، بهاء الدين"
+  },
+  "2780": {
+    "name": "Riyāḍ b. Rāshid Āl Rashūd",
+    "name_ar": "رياض بن راشد آل رشود"
+  },
+  "2781": {
+    "name": "Ibn Yunus al-Siqilli",
+    "name_ar": "ابن يونس الصقلي"
+  },
+  "2787": {
+    "name": "al-Bandanījī",
+    "name_ar": "البندنيجي"
+  },
+  "2791": {
+    "name": "al-Khalūtī",
+    "name_ar": "الخلوتي"
+  },
+  "2802": {
+    "name": "Aḥmad al-Shāfiʿī",
+    "name_ar": "أحمد الشافعي"
+  },
+  "2804": {
+    "name": "Burhān al-Dīn Ibn al-Qayyim",
+    "name_ar": "برهان الدين ابن القيم"
+  },
+  "2806": {
+    "name": "Muḥammad b. Saʿdān al-Ḍarīr",
+    "name_ar": "محمد بن سعدان الضرير"
+  },
+  "2807": {
+    "name": "Muḥammad b. Ḥasan al-ʿAjīmī",
+    "name_ar": "محمد بن حسن العجيمي"
+  },
+  "2809": {
+    "name": "Ahmad b. Muhammad al-Shinnqiti",
+    "name_ar": "أحمد بن محمد الشنقيطي"
+  },
+  "2810": {
+    "name": "Nāẓir al-Jaysh",
+    "name_ar": "ناظر الجيش"
+  },
+  "2811": {
+    "name": "Ibn Bahīj",
+    "name_ar": "ابن بهيج"
+  },
+  "2815": {
+    "name": "al-Qāḍī al-Ḥusayn",
+    "name_ar": "القاضي الحسين"
+  },
+  "2816": {
+    "name": "ʿAbd al-Qādir al-Jīlānī",
+    "name_ar": "عبد القادر الجيلاني"
+  },
+  "2817": {
+    "name": "Ibn Būzizah",
+    "name_ar": "ابن بزيزة"
+  },
+  "2818": {
+    "name": "ʿAlī Mubārak",
+    "name_ar": "علي مبارك"
+  },
+  "2820": {
+    "name": "ʿAbd al-Razzāq al-Kindī",
+    "name_ar": "عبد الرزاق الكندي"
+  },
+  "2825": {
+    "name": "Badr al-Dīn Ibn Mālik",
+    "name_ar": "بدر الدين ابن مالك"
+  },
+  "2828": {
+    "name": "Aḥmad b. ʿAbd Allāh al-Baʿlī",
+    "name_ar": "أحمد بن عبد الله البعلي"
+  },
+  "2829": {
+    "name": "Ibn Makki",
+    "name_ar": "ابن مكي"
+  },
+  "2834": {
+    "name": "Ibn al-Dawādārī",
+    "name_ar": "ابن الدواداري"
+  },
+  "2835": {
+    "name": "Saʿīd Ḥawā",
+    "name_ar": "سعيد حوى"
+  },
+  "2846": {
+    "name": "Aḥmad al-Manjūr",
+    "name_ar": "أحمد المنجور"
+  },
+  "2850": {
+    "name": "Shaykhzāda",
+    "name_ar": "شيخ زاده"
+  },
+  "2859": {
+    "name": "al-Makūdī",
+    "name_ar": "المكودي"
+  },
+  "2861": {
+    "name": "al-ʾAshkhar al-Yamanī",
+    "name_ar": "الأشخر اليمني"
+  },
+  "2866": {
+    "name": "al-Harawī, Abū ʿUbayd",
+    "name_ar": "الهروي، أبو عبيد"
+  },
+  "2867": {
+    "name": "Ibn al-Munaǧǧā, Abū al-Barakāt",
+    "name_ar": "ابن المنجى، أبو البركات"
+  },
+  "2869": {
+    "name": "ʿAbd al-ʿAzīz b. ʿAbd Allāh",
+    "name_ar": "عبد العزيز بن عبد الله"
+  },
+  "2874": {
+    "name": "Rajab ʿAbd al-Jawād Ibrāhīm",
+    "name_ar": "رجب عبد الجواد إبراهيم"
+  },
+  "2876": {
+    "name": "Muḥammad Ḥasan Jabal",
+    "name_ar": "محمد حسن جبل"
+  },
+  "2879": {
+    "name": "Muḥammad b. ʿAbd al-Muʿṭī",
+    "name_ar": "محمد بن عبد المعطي"
+  },
+  "2882": {
+    "name": "Ibn al-Qūṭiyya",
+    "name_ar": "ابن القوطية"
+  },
+  "2883": {
+    "name": "ʾAḥmad Riḍā",
+    "name_ar": "أحمد رضا"
+  },
+  "2885": {
+    "name": "Ibn al-Khashshāb",
+    "name_ar": "ابن الخشاب"
+  },
+  "2889": {
+    "name": "Jamāl al-Dīn al-Fākihī",
+    "name_ar": "جمال الدين الفاكهي"
+  },
+  "2893": {
+    "name": "Abū Bakr Ibn al-Labbād",
+    "name_ar": "أبو بكر ابن اللباد"
+  },
+  "2895": {
+    "name": "Ibn al-Khabbāz",
+    "name_ar": "ابن الخباز"
+  },
+  "2896": {
+    "name": "Ibn Iyāz al-Naḥwī",
+    "name_ar": "ابن إياز النحوي"
+  },
+  "2898": {
+    "name": "Ibn Babadhadh",
+    "name_ar": "ابن بابشاذ"
+  },
+  "2901": {
+    "name": "Ibn al-Tayyib",
+    "name_ar": "ابن الطيب"
+  },
+  "2902": {
+    "name": "al-Amīr Muḥammad al-Sunbāwī al-Mālikī",
+    "name_ar": "الأمير محمد السنباوي المالكي"
+  },
+  "2905": {
+    "name": "Mūsā b. Rāshid al-ʿĀzimī",
+    "name_ar": "موسى بن راشد العازمي"
+  },
+  "2920": {
+    "name": "Badr Nāṣir Musharriʿ al-Subayʿi",
+    "name_ar": "بدر ناصر مشرع السبيعي"
+  },
+  "2927": {
+    "name": "ʿUthmān Ibn Jāmiʿ",
+    "name_ar": "عثمان ابن جامع"
+  },
+  "2930": {
+    "name": "ʿAbd al-Raqīb al-Shāmī",
+    "name_ar": "عبد الرقيب الشامي"
+  },
+  "2932": {
+    "name": "Ibn al-Muhibb al-Samit",
+    "name_ar": "ابن المحب الصامت"
+  },
+  "2937": {
+    "name": "Ibn al-ʿAqūlī",
+    "name_ar": "ابن العاقولي"
+  },
+  "2940": {
+    "name": "al-Jirāʿī",
+    "name_ar": "الجراعي"
+  },
+  "2948": {
+    "name": "al-ʿAlāʾ al-Asmandī",
+    "name_ar": "العلاء الأسمندي"
+  },
+  "2949": {
+    "name": "ʿUthmān b. al-Makkī al-Tūzirī",
+    "name_ar": "عثمان بن المكي التوزري"
+  },
+  "2954": {
+    "name": "Turki Balḥamar",
+    "name_ar": "تركي بلحمر"
+  },
+  "2958": {
+    "name": "Ibn Ḥajjī",
+    "name_ar": "ابن حجي"
+  },
+  "2971": {
+    "name": "ʿAbd al-Qādir al-Majlīsī",
+    "name_ar": "عبد القادر المجلسي"
+  },
+  "2973": {
+    "name": "ʿAbd al-Raḥmān b. ʿAbd al-ʿAzīz al-ʿUql",
+    "name_ar": "عبد الرحمن بن عبد العزيز العقل"
+  },
+  "2975": {
+    "name": "Ibrāhīm b. ʿUbayd Āl ʿAbd al-Muḥsin",
+    "name_ar": "إبراهيم بن عبيد آل عبد المحسن"
+  },
+  "2976": {
+    "name": "al-Dīwānī",
+    "name_ar": "الديواني"
+  },
+  "2977": {
+    "name": "al-ʿIṣām al-Isfarāyīnī",
+    "name_ar": "العصام الأسفراييني"
+  },
+  "2981": {
+    "name": "al-Ḥusayn b. Yūsuf al-Dujayli",
+    "name_ar": "الحسين بن يوسف الدجيلي"
+  },
+  "2985": {
+    "name": "Ibn ʿAbd al-Ḥaqq al-ʿUmari",
+    "name_ar": "ابن عبد الحق العمري"
+  },
+  "2987": {
+    "name": "ʿAbd al-ʿAziz al-ʿIdan",
+    "name_ar": "عبد العزيز العيدان"
+  },
+  "2988": {
+    "name": "Ṣafī al-Dīn ʿAbd al-Muʾmin al-Qaṭīʿī",
+    "name_ar": "صفي الدين عبد المؤمن القطيعي"
+  },
+  "2989": {
+    "name": "ʾAnas b. ʿĀdil al-Yatāmā",
+    "name_ar": "أنس بن عادل اليتامى"
+  },
+  "3015": {
+    "name": "Muḥammad b. Salīm al-Majlisī",
+    "name_ar": "محمد بن سالم المجلسي"
+  },
+  "3025": {
+    "name": "Bahjat ʿAbd al-Waḥid Ṣāliḥ",
+    "name_ar": "بهجت عبد الواحد صالح"
+  },
+  "3026": {
+    "name": "Ibn Farḥūn, Badr al-Dīn",
+    "name_ar": "ابن فرحون، بدر الدين"
+  },
+  "3027": {
+    "name": "al-Tattāʾī",
+    "name_ar": "التتائي"
+  },
+  "3038": {
+    "name": "Hasan Ismaʿil ʿAbd al-Razzaq",
+    "name_ar": "حسن إسماعيل عبد الرازق"
+  },
+  "3039": {
+    "name": "Muḥammad ʿAlī Ṭāhā al-Durra",
+    "name_ar": "محمد علي طه الدرة"
+  },
+  "3040": {
+    "name": "Ismāʿīl al-Anṣārī",
+    "name_ar": "إسماعيل الأنصاري"
+  },
+  "3046": {
+    "name": "Ahmad Mahmud al-Shawábikah",
+    "name_ar": "أحمد محمود الشوابكة"
+  },
+  "3048": {
+    "name": "Muḥammad b. Ṭāhir al-Barzinjī",
+    "name_ar": "محمد بن طاهر البرزنجي"
+  },
+  "3051": {
+    "name": "Muḥammad Muḥyī al-Dīn Ḥamāda",
+    "name_ar": "محمد محيي الدين حمادة"
+  },
+  "3057": {
+    "name": "al-Ḥārith b. ʿAlī al-Ḥasanī",
+    "name_ar": "الحارث بن علي الحسني"
+  },
+  "3066": {
+    "name": "Muḥammad Abū al-Hudā al-Yaʿqūbī",
+    "name_ar": "محمد أبو الهدى اليعقوبي"
+  },
+  "3072": {
+    "name": "Aḥmad b. Nāṣir al-Qaʿīmī",
+    "name_ar": "أحمد بن ناصر القعيمي"
+  },
+  "3073": {
+    "name": "al-Mawāhibī",
+    "name_ar": "المواهبي"
+  },
+  "3079": {
+    "name": "Shafiʿ b. ʿAli",
+    "name_ar": "شافع بن علي"
+  },
+  "3085": {
+    "name": "al-Fāriḍī",
+    "name_ar": "الفارضي"
+  },
+  "3098": {
+    "name": "ʾAbū al-Maʿāṭī al-Shubrāwī",
+    "name_ar": "أبو المعاطي الشبراوي"
+  },
+  "3100": {
+    "name": "al-ʿAythāwī",
+    "name_ar": "العيثاوي"
+  },
+  "3110": {
+    "name": "ʾAmal ʾĀl Khamīsah",
+    "name_ar": "أمل آل خميسة"
+  },
+  "3117": {
+    "name": "Jalāl al-Dīn al-Qāyinī",
+    "name_ar": "جلال الدين القايني"
+  },
+  "3118": {
+    "name": "Muḥammad ʾAwrang ʿĀlam Kīr",
+    "name_ar": "محمد أورنك عالم كير"
+  },
+  "3119": {
+    "name": "Muḥammad Jawdat Fayyāḍ",
+    "name_ar": "محمد جودة فياض"
+  },
+  "3121": {
+    "name": "Muḥammad b. Salīm w. ʿAbdūn",
+    "name_ar": "محمد بن سالم ولد عدود"
+  },
+  "3122": {
+    "name": "Muḥammad al-Bishār",
+    "name_ar": "محمد البشار"
+  },
+  "3123": {
+    "name": "Abū Bakr al-Hāmilī",
+    "name_ar": "أبو بكر الهاملي"
+  },
+  "3135": {
+    "name": "ʿAbd al-Raḥmān al-Ḥamīzī",
+    "name_ar": "عبد الرحمن الحميزي"
+  },
+  "3139": {
+    "name": "ʾAbū Bakr al-Ḥaddād",
+    "name_ar": "أبو بكر الحداد"
+  },
+  "3144": {
+    "name": "Ḥātim al-Ḥājj",
+    "name_ar": "حاتم الحاج"
+  },
+  "3145": {
+    "name": "Muḥammad Yūsuf Ḥāfiẓ Abū Ṭalḥa",
+    "name_ar": "محمد يوسف حافظ أبو طلحة"
+  },
+  "3146": {
+    "name": "ʿAbd al-Ḥaqq al-Turkumānī",
+    "name_ar": "عبد الحق التركماني"
+  },
+  "3151": {
+    "name": "Ayyūb Ṣabrī Bāshā",
+    "name_ar": "أيوب صبري باشا"
+  },
+  "3154": {
+    "name": "ʿAbd Allāh al-Maqdisī",
+    "name_ar": "عبد الله المقدسي"
+  },
+  "3155": {
+    "name": "Muḥammad b. ʿAbd Allāh Āl al-Ḥusayn",
+    "name_ar": "محمد بن عبد الله آل حسين"
+  },
+  "3157": {
+    "name": "Muṣṭafā Smayṭ",
+    "name_ar": "مصطفى سميط"
+  },
+  "3158": {
+    "name": "Abū Bakr Khawqir",
+    "name_ar": "أبو بكر خوقير"
+  },
+  "3159": {
+    "name": "Ibn Humāt al-Dimashqī",
+    "name_ar": "ابن همات الدمشقي"
+  },
+  "3164": {
+    "name": "Yaḥyā al-Ghawthānī",
+    "name_ar": "يحيى الغوثانى"
+  }
+}

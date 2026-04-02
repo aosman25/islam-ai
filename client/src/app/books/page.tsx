@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Spinner } from "@/components/ui/spinner";
-import { cn, detectDirection, normalizeArabic } from "@/lib/utils";
+import { cn, detectDirection, normalizeSearch } from "@/lib/utils";
 import { getBooks, getAuthors, getCategories } from "@/lib/api";
 import { FilterSearchInput } from "@/components/ui/filter-search-input";
 import { GeometricPattern } from "@/components/ui/geometric-pattern";
@@ -28,38 +28,38 @@ import {
 /* ------------------------------------------------------------------ */
 /*  Category grouping                                                    */
 /* ------------------------------------------------------------------ */
-const CATEGORY_GROUPS: { name: string; subcategories: string[] }[] = [
+const CATEGORY_GROUPS: { name: string; subcategories_ar: string[] }[] = [
   {
-    name: "العقيدة",
-    subcategories: ["العقيدة", "الفرق والردود"],
+    name: "Creed",
+    subcategories_ar: ["العقيدة", "الفرق والردود"],
   },
   {
-    name: "الحديث وعلومه",
-    subcategories: ["كتب السنة", "شروح الحديث", "علوم الحديث", "التخريج والأطراف", "العلل والسؤلات الحديثية", "الجوامع"],
+    name: "Hadith & Its Sciences",
+    subcategories_ar: ["كتب السنة", "شروح الحديث", "علوم الحديث", "التخريج والأطراف", "العلل والسؤلات الحديثية", "الجوامع"],
   },
   {
-    name: "الفقه وأصوله",
-    subcategories: ["الفقه العام", "الفقه الحنفي", "الفقه المالكي", "الفقه الشافعي", "الفقه الحنبلي", "أصول الفقه", "علوم الفقه والقواعد الفقهية", "مسائل فقهية", "الفتاوى", "الفرائض والوصايا", "السياسة الشرعية والقضاء"],
+    name: "Fiqh & Its Foundations",
+    subcategories_ar: ["الفقه العام", "الفقه الحنفي", "الفقه المالكي", "الفقه الشافعي", "الفقه الحنبلي", "أصول الفقه", "علوم الفقه والقواعد الفقهية", "مسائل فقهية", "الفتاوى", "الفرائض والوصايا", "السياسة الشرعية والقضاء"],
   },
   {
-    name: "القرآن والتفسير",
-    subcategories: ["التفسير", "علوم القرآن وأصول التفسير", "التجويد والقراءات"],
+    name: "Quran & Tafsir",
+    subcategories_ar: ["التفسير", "علوم القرآن وأصول التفسير", "التجويد والقراءات"],
   },
   {
-    name: "السيرة والتاريخ",
-    subcategories: ["السيرة النبوية", "التاريخ", "التراجم والطبقات", "الأنساب", "البلدان والرحلات"],
+    name: "Biography & History",
+    subcategories_ar: ["السيرة النبوية", "التاريخ", "التراجم والطبقات", "الأنساب", "البلدان والرحلات"],
   },
   {
-    name: "اللغة والأدب",
-    subcategories: ["النحو والصرف", "البلاغة", "الأدب", "الغريب والمعاجم"],
+    name: "Language & Literature",
+    subcategories_ar: ["النحو والصرف", "البلاغة", "الأدب", "الغريب والمعاجم"],
   },
   {
-    name: "الرقائق والأخلاق",
-    subcategories: ["الرقائق والآداب والأذكار"],
+    name: "Spirituality & Ethics",
+    subcategories_ar: ["الرقائق والآداب والأذكار"],
   },
   {
-    name: "علوم أخرى",
-    subcategories: ["الطب", "علوم أخرى", "كتب عامة", "فهارس الكتب والأدلة"],
+    name: "Other Sciences",
+    subcategories_ar: ["الطب", "علوم أخرى", "كتب عامة", "فهارس الكتب والأدلة"],
   },
 ];
 
@@ -219,14 +219,13 @@ function BooksPage() {
       if (categoryParam) {
         const categoryNames = categoryParam.split(",");
         const matchingIds = cats
-          .filter((c) => categoryNames.includes(c.name))
+          .filter((c) => categoryNames.includes(c.name_ar ?? c.name))
           .map((c) => c.id);
         if (matchingIds.length > 0) {
           setSelectedCategories(matchingIds);
-          // Auto-expand groups containing selected categories
           const groupsToExpand = new Set<string>();
           for (const group of CATEGORY_GROUPS) {
-            if (group.subcategories.some((s) => categoryNames.includes(s))) {
+            if (group.subcategories_ar.some((s) => categoryNames.includes(s))) {
               groupsToExpand.add(group.name);
             }
           }
@@ -248,23 +247,27 @@ function BooksPage() {
   const totalPages = Math.ceil(total / limit);
   const activeFilters = selectedAuthors.length + selectedCategories.length;
 
-  const filteredAuthors = authors.filter((a) =>
-    normalizeArabic(a.name).includes(normalizeArabic(authorSearch))
-  );
+  const filteredAuthors = authors.filter((a) => {
+    const s = normalizeSearch(authorSearch);
+    return normalizeSearch(a.name).includes(s) ||
+      normalizeSearch(a.name_ar ?? "").includes(s);
+  });
 
   // Build grouped categories from backend data
   const groupedCategories = CATEGORY_GROUPS.map((group) => {
-    const subs = group.subcategories
-      .map((name) => categories.find((c) => c.name === name))
+    const subs = group.subcategories_ar
+      .map((arName) => categories.find((c) => c.name_ar === arName))
       .filter(Boolean) as Category[];
     return { ...group, subs };
   }).filter((g) => g.subs.length > 0);
 
   // For search: flatten and filter
   const filteredCategories = categorySearch
-    ? categories.filter((c) =>
-        normalizeArabic(c.name).includes(normalizeArabic(categorySearch))
-      )
+    ? categories.filter((c) => {
+        const s = normalizeSearch(categorySearch);
+        return normalizeSearch(c.name).includes(s) ||
+          normalizeSearch(c.name_ar ?? "").includes(s);
+      })
     : [];
 
   const toggleGroup = (groupName: string) => {
@@ -315,7 +318,7 @@ function BooksPage() {
                     }}
                     className="rounded border-border text-primary focus:ring-0 focus:ring-offset-0 h-4 w-4"
                   />
-                  <span className="text-sm text-foreground truncate flex-1" dir="rtl">
+                  <span className="text-sm text-foreground truncate flex-1">
                     {c.name}
                   </span>
                 </label>
@@ -372,7 +375,7 @@ function BooksPage() {
                           !isExpanded && "-rotate-90"
                         )}
                       />
-                      <span className="text-sm font-medium text-foreground truncate" dir="rtl">
+                      <span className="text-sm font-medium text-foreground truncate">
                         {group.name}
                       </span>
                     </button>
@@ -399,7 +402,7 @@ function BooksPage() {
                             }}
                             className="rounded border-border text-primary focus:ring-0 focus:ring-offset-0 h-4 w-4"
                           />
-                          <span className="text-sm text-foreground truncate flex-1" dir="rtl">
+                          <span className="text-sm text-foreground truncate flex-1">
                             {c.name}
                           </span>
                         </label>
@@ -451,10 +454,7 @@ function BooksPage() {
                 }}
                 className="rounded border-border text-primary focus:ring-0 focus:ring-offset-0 h-4 w-4"
               />
-              <span
-                className="text-sm text-foreground truncate flex-1"
-                dir={detectDirection(a.name)}
-              >
+              <span className="text-sm text-foreground truncate flex-1">
                 {a.name}
               </span>
             </label>
@@ -679,7 +679,6 @@ function BookCover({
   className?: string;
 }) {
   const palette = getCoverPalette(book.book_id);
-  const dir = detectDirection(book.book_name);
 
   // Simple hash for pattern variation
   const seed = book.book_id * 7 + 13;
@@ -805,31 +804,38 @@ function BookCover({
       {/* Title area — centered */}
       <div className="absolute inset-0 flex flex-col items-center justify-center px-[14%]">
         <div
-          className="w-8 h-px mb-4"
+          className="w-8 h-px mb-3"
           style={{ backgroundColor: palette.text, opacity: 0.25 }}
         />
         <h3
-          className="text-center text-sm font-bold leading-snug line-clamp-4"
+          className="text-center text-[11px] font-bold leading-snug line-clamp-3"
           style={{ color: palette.text }}
-          dir={dir}
         >
           {book.book_name}
         </h3>
+        {book.book_name_ar && (
+          <p
+            className="text-center text-[11px] leading-snug line-clamp-2 mt-1.5"
+            style={{ color: palette.text, opacity: 0.7 }}
+            dir="rtl"
+          >
+            {book.book_name_ar}
+          </p>
+        )}
         <div
-          className="w-8 h-px mt-4"
+          className="w-8 h-px mt-3"
           style={{ backgroundColor: palette.text, opacity: 0.25 }}
         />
       </div>
 
       {/* Author — bottom */}
-      {book.author_full && (
+      {book.author?.name && (
         <div className="absolute bottom-5 inset-x-0 flex justify-center px-[10%]">
           <p
             className="text-center text-[10px] leading-tight line-clamp-2"
             style={{ color: palette.text, opacity: 0.6 }}
-            dir={detectDirection(book.author_full)}
           >
-            {book.author_full}
+            {book.author.name}
           </p>
         </div>
       )}
@@ -868,29 +874,25 @@ function BookGridCard({ book }: { book: Book }) {
 /* ------------------------------------------------------------------ */
 
 function BookListCard({ book }: { book: Book }) {
-  const dir = detectDirection(book.book_name);
-  const authorDir = book.author_full ? detectDirection(book.author_full) : "ltr";
-
   return (
     <Link
       href={`/books/${book.book_id}`}
       className="group w-full border-b border-border bg-transparent px-2 py-4 transition-colors hover:bg-muted sm:px-3"
     >
-        {/* Title */}
-        <h3
-          className="text-base font-semibold text-foreground line-clamp-2"
-          dir={dir}
-        >
+        {/* Title: transliteration + Arabic */}
+        <h3 className="text-base font-semibold text-foreground line-clamp-2">
           {book.book_name}
         </h3>
+        {book.book_name_ar && (
+          <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1" dir="rtl">
+            {book.book_name_ar}
+          </p>
+        )}
 
-        {/* Author */}
-        {book.author_full && (
-          <p
-            className="text-muted-foreground text-xs mt-1"
-            dir={authorDir}
-          >
-            {book.author_full}
+        {/* Author (transliteration only) */}
+        {book.author?.name && (
+          <p className="text-muted-foreground text-xs mt-1">
+            {book.author.name}
           </p>
         )}
 
@@ -903,12 +905,12 @@ function BookListCard({ book }: { book: Book }) {
           )}
           {book.num_pages && (
             <span className="px-2 py-0.5 rounded-md bg-muted text-[11px] font-normal text-muted-foreground">
-              {book.num_pages} pages
+              {book.num_pages.match(/^\d+/)?.[0]} pages
             </span>
           )}
           {book.num_volumes && (
             <span className="px-2 py-0.5 rounded-md bg-muted text-[11px] font-normal text-muted-foreground">
-              {book.num_volumes} vol.
+              {book.num_volumes.match(/^\d+/)?.[0]} vol.
             </span>
           )}
         </div>

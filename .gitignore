@@ -9,3 +9,5 @@ islamic_library.csv
 *.db
 shamela4
 usul-dev
+tansis-main
+services/export-service/output/
