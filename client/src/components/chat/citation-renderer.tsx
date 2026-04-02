@@ -286,7 +286,7 @@ export function CitationGroupBadge({
   isArabicResponse?: boolean;
 }) {
   const { open } = useContext(OverlayContext);
-  useBookMetaLoaded();
+  const metaLoaded = useBookMetaLoaded();
 
   const label = useMemo(() => {
     if (sources.length === 0) return "";
@@ -301,7 +301,7 @@ export function CitationGroupBadge({
       }
     }
     return [...names].join(isArabicResponse ? "، " : ", ");
-  }, [sources, isArabicResponse]);
+  }, [sources, isArabicResponse, metaLoaded]);
 
   return (
     <button

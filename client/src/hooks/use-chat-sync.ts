@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { authClient } from "@/lib/auth/client";
 import { useChatStore } from "@/stores/chat-store";
 import { getConversations, getConversation, fetchChunks } from "@/lib/api";
@@ -67,7 +67,9 @@ async function resolveSources(messages: ChatMessage[]) {
 export function useChatSync() {
   const session = authClient.useSession();
   const user = session.data?.user;
+  const sessionPending = session.isPending;
   const syncingRef = useRef(false);
+  const [synced, setSynced] = useState(false);
 
   const { setAuth, loadChats, clearChats, isAuthenticated } = useChatStore();
 
@@ -82,7 +84,14 @@ export function useChatSync() {
 
   // Load first page of conversations on auth
   useEffect(() => {
-    if (!user?.id || syncingRef.current) return;
+    if (sessionPending) return;
+
+    if (!user?.id) {
+      setSynced(true);
+      return;
+    }
+
+    if (syncingRef.current) return;
     syncingRef.current = true;
 
     const sync = async () => {
@@ -104,10 +113,11 @@ export function useChatSync() {
       }
 
       syncingRef.current = false;
+      setSynced(true);
     };
 
     sync();
-  }, [user?.id]);
+  }, [user?.id, sessionPending]);
 
   // Load more conversations (for sidebar infinite scroll)
   const loadMoreConversations = useCallback(async () => {
@@ -205,5 +215,5 @@ export function useChatSync() {
     }
   }, []);
 
-  return { loadMoreConversations, loadMessages, loadOlderMessages };
+  return { synced, loadMoreConversations, loadMessages, loadOlderMessages };
 }

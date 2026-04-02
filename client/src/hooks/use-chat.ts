@@ -41,8 +41,8 @@ export function useChat() {
       // Block anonymous users at char limit
       if (useChatStore.getState().shouldBlockAnonymous()) return;
 
-      // Create or get chat
-      let chatId = activeChatId;
+      // Create or get chat (read fresh from store to avoid stale closure)
+      let chatId = useChatStore.getState().activeChatId;
       if (!chatId) {
         chatId = createChat(content);
       }
@@ -107,7 +107,7 @@ export function useChat() {
           query: content.trim(),
           chat_history: chatHistory.length > 0 ? chatHistory : undefined,
           stream: true,
-          top_k: 20,
+          top_k: 15,
           temperature: 1,
           max_tokens: 65536,
           reranker: "RRF",

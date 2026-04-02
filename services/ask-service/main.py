@@ -290,6 +290,11 @@ async def ask(request: AskRequest, http_request: Request):
         # Detect language of the query
         try:
             query_lang = detect_language(lang_model, request.query.strip())
+            logger.info(
+                "Query Lang",
+                query_lang=query_lang,
+            )
+
         except Exception as e:
             logger.error("Error detecting language of the query", error=str(e), request_id=request_id)
             raise HTTPException(

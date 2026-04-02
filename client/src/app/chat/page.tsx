@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { ChatSidebar } from "@/components/chat/chat-sidebar";
 import { MessageBubble } from "@/components/chat/message-bubble";
@@ -60,6 +60,7 @@ export default function ChatPage() {
 
 function ChatPageInner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialQuery = searchParams.get("q");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [input, setInput] = useState("");
@@ -69,7 +70,7 @@ function ChatPageInner() {
   const initialQuerySent = useRef(false);
 
   // Sync auth state and load conversations
-  const { loadMoreConversations, loadMessages, loadOlderMessages } = useChatSync();
+  const { synced, loadMoreConversations, loadMessages, loadOlderMessages } = useChatSync();
 
   const { messages, isLoading, sendMessage, stopGeneration } = useChat();
   const shouldBlock = useChatStore((s) => s.shouldBlockAnonymous());
@@ -84,13 +85,17 @@ function ChatPageInner() {
     }
   }, [activeChatId, loadMessages]);
 
-  // Handle initial query from URL
+  // Handle initial query from URL (wait for auth sync to avoid race condition)
   useEffect(() => {
-    if (initialQuery && !initialQuerySent.current) {
+    if (synced && initialQuery && !initialQuerySent.current) {
       initialQuerySent.current = true;
+      // Start a fresh chat so the query doesn't go into an existing conversation
+      useChatStore.getState().setActiveChat(null);
       sendMessage(initialQuery);
+      // Remove q param so refreshing doesn't re-send
+      router.replace("/chat", { scroll: false });
     }
-  }, [initialQuery, sendMessage]);
+  }, [synced, initialQuery, sendMessage, router]);
 
   // Scroll to bottom when user sends a message
   const prevMsgCount = useRef(0);

@@ -30,9 +30,9 @@ const SUGGESTED_QUERIES = [
 
 
 const CATEGORIES = [
-  { name: "Aqeedah", nameAr: "العقيدة", icon: Star, palette: { bg: "#c8d8ec", pattern: "#4a6fa0", text: "#1e3050" }, categories: ["العقيدة", "الفرق والردود"] },
+  { name: "Creed", nameAr: "العقيدة", icon: Star, palette: { bg: "#c8d8ec", pattern: "#4a6fa0", text: "#1e3050" }, categories: ["العقيدة", "الفرق والردود"] },
   { name: "Hadith", nameAr: "الحديث", icon: Scroll, palette: { bg: "#c2e0cc", pattern: "#38845a", text: "#14301e" }, categories: ["كتب السنة", "شروح الحديث", "علوم الحديث", "التخريج والأطراف", "العلل والسؤلات الحديثية"] },
-  { name: "Fiqh", nameAr: "الفقه", icon: GraduationCap, palette: { bg: "#dcc8e0", pattern: "#7a4a82", text: "#2e1434" }, categories: ["الفقه العام", "الفقه الحنفي", "الفقه المالكي", "الفقه الشافعي", "الفقه الحنبلي", "أصول الفقه", "علوم الفقه والقواعد الفقهية", "مسائل فقهية", "الفتاوى", "الفرائض والوصايا"] },
+  { name: "Jurisprudence", nameAr: "الفقة", icon: GraduationCap, palette: { bg: "#dcc8e0", pattern: "#7a4a82", text: "#2e1434" }, categories: ["الفقه العام", "الفقه الحنفي", "الفقه المالكي", "الفقه الشافعي", "الفقه الحنبلي", "أصول الفقه", "علوم الفقه والقواعد الفقهية", "مسائل فقهية", "الفتاوى", "الفرائض والوصايا"] },
   { name: "Tafsir", nameAr: "التفسير", icon: BookOpen, palette: { bg: "#e4d5c2", pattern: "#7a5c38", text: "#2e1e0e" }, categories: ["التفسير", "علوم القرآن وأصول التفسير", "التجويد والقراءات"] },
 ];
 
