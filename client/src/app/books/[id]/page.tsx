@@ -120,7 +120,11 @@ function BookViewerInner() {
   const [hasMore, setHasMore] = useState(true);
   const [hasBefore, setHasBefore] = useState(false);
   const [offset, setOffset] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (window.innerWidth >= 768) setSidebarOpen(true);
+  }, []);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("toc");
   const [showFootnotes, setShowFootnotes] = useState(false);
   const [seeking, setSeeking] = useState(false);
@@ -269,9 +273,9 @@ function BookViewerInner() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
         <div className="text-center">
-          <Spinner size="lg" />
+          <Spinner size="lg" className="mx-auto" />
           <p className="text-sm text-muted-foreground mt-4">Loading book...</p>
         </div>
       </div>
@@ -309,7 +313,32 @@ function BookViewerInner() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 w-full overflow-hidden">
+      <div className="flex-1 min-h-0 w-full overflow-hidden relative">
+        {/* Mobile sidebar drawer */}
+        {sidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 bg-foreground/20 backdrop-blur-sm z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        <div
+          className={cn(
+            "md:hidden fixed inset-y-0 right-0 z-30 w-[85vw] max-w-[320px] bg-card border-l border-border shadow-xl transition-transform duration-300 pt-12",
+            sidebarOpen ? "translate-x-0" : "translate-x-full"
+          )}
+        >
+          <ReaderSidebar
+            book={book}
+            tocEntries={tocEntries}
+            sidebarTab={sidebarTab}
+            onTabChange={setSidebarTab}
+            onNavigate={(pageId) => {
+              navigateToPage(pageId);
+              setSidebarOpen(false);
+            }}
+          />
+        </div>
+
         <PanelGroup
           orientation="horizontal"
           style={{ height: "100%", width: "100%" }}
@@ -317,7 +346,6 @@ function BookViewerInner() {
           {/* Reader Panel */}
           <Panel defaultSize={sidebarOpen ? "70%" : "100%"} minSize="50%">
             <div className="relative h-full">
-              {/* Reader Content */}
               <div
                 ref={readerRef}
                 className="h-full overflow-y-auto [overflow-anchor:none]"
@@ -328,7 +356,6 @@ function BookViewerInner() {
                   </div>
                 )}
 
-                {/* Book Info Section */}
                 <div className="w-full px-5 lg:px-8">
                   <div className="mx-auto max-w-4xl py-8">
                     <h1
@@ -351,9 +378,7 @@ function BookViewerInner() {
                   </div>
                 </div>
 
-                {/* Pages */}
                 <article className="max-w-4xl mx-auto px-5 md:px-12 lg:px-16 py-6">
-                  {/* Top sentinel for loading previous pages */}
                   <div ref={topSentinelRef} className="h-1" />
                   {loadingBefore && (
                     <div className="flex justify-center py-4">
@@ -384,23 +409,23 @@ function BookViewerInner() {
             </div>
           </Panel>
 
-          {/* Resize Handle */}
+          {/* Desktop sidebar panel */}
           {sidebarOpen && (
             <>
-              <ResizeHandle className="group relative flex w-2 items-center justify-center bg-border/50 transition-colors hover:bg-primary/20 active:bg-primary/30">
+              <ResizeHandle className="hidden md:flex group relative w-2 items-center justify-center bg-border/50 transition-colors hover:bg-primary/20 active:bg-primary/30">
                 <GripVertical
                   size={12}
                   className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
                 />
               </ResizeHandle>
 
-              {/* Sidebar Panel */}
               <Panel
                 defaultSize="30%"
                 minSize="15%"
                 maxSize="50%"
                 collapsible
                 collapsedSize={0}
+                className="hidden md:block"
               >
                 <ReaderSidebar
                   book={book}
@@ -690,8 +715,9 @@ function TocTreeNode({
       {/* Node trigger */}
       <button
         onClick={() => {
+          const wasExpanded = expandedIds.has(String(item.id));
           onToggle(String(item.id));
-          onSelect(item);
+          if (wasExpanded) onSelect(item);
         }}
         className={cn(
           "group relative w-full flex items-center py-2.5 text-sm transition-colors rounded-lg cursor-pointer",

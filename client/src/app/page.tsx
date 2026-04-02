@@ -14,10 +14,10 @@ import {
   GraduationCap,
   Scroll,
   Star,
-  Bot,
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GeometricBotIcon } from "@/components/chat/geometric-bot-icon";
 import { CitationGroupBadge, CitationOverlayProvider } from "@/components/chat/citation-renderer";
 import { PREVIEW_SOURCE_MAP } from "@/data/preview-sources";
 
@@ -367,9 +367,10 @@ function AnswerPreviewSection({ skipAnimations = false }: { skipAnimations?: boo
                     : "translateY(8px)",
               }}
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm">
-                <Bot size={15} className="text-white" />
-              </div>
+              <GeometricBotIcon
+                isAnimating={phase === "thinking" || phase === "streaming"}
+                size={36}
+              />
               <span className="text-xs font-medium text-muted-foreground">Athars AI</span>
               {/* Thinking indicator */}
               {phase === "thinking" && (

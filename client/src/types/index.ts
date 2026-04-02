@@ -127,6 +127,8 @@ export interface ChatMessage {
   categories?: string[];
   timestamp: number;
   isStreaming?: boolean;
+  streamPhase?: "searching" | "reading" | "generating";
+  streamStartedAt?: number;
 }
 
 export interface Chat {

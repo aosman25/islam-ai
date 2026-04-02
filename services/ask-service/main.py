@@ -452,7 +452,7 @@ async def ask(request: AskRequest, http_request: Request):
 
                 # Log response details for debugging
                 finish_reason = None
-                if hasattr(response, "candidates") and response.candidates:
+                if hasattr(response, "candidates") and response.candidates and len(response.candidates) > 0:
                     finish_reason = getattr(response.candidates[0], "finish_reason", None)
 
                 logger.info(

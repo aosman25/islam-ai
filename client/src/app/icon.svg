@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
+  <!-- Outer 8-pointed star -->
+  <path d="M50.00,10.00 L64.14,35.86 L90.00,50.00 L64.14,64.14 L50.00,90.00 L35.86,64.14 L10.00,50.00 L35.86,35.86Z" fill="#2d7a3a" opacity="0.35" stroke="#2d7a3a" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- Inner overlapping squares -->
+  <rect x="34" y="34" width="32" height="32" rx="2" fill="none" stroke="#2d7a3a" stroke-width="5.5" transform="rotate(45 50 50)"/>
+  <rect x="34" y="34" width="32" height="32" rx="2" fill="none" stroke="#2d7a3a" stroke-width="5.5"/>
+
+  <!-- Center dot -->
+  <circle cx="50" cy="50" r="8" fill="#2d7a3a"/>
+</svg>

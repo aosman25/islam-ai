@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { ChatMessage } from "@/types";
 import type { SourceData } from "@/types";
 import { cn, detectDirection } from "@/lib/utils";
-import { Bot } from "lucide-react";
+import { GeometricBotIcon } from "./geometric-bot-icon";
+import { Search, BookOpen, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -50,6 +51,56 @@ function processChildren(
   });
 }
 
+/* ── Elapsed timer ── */
+function ElapsedTime({ startedAt }: { startedAt: number }) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startedAt]);
+
+  if (elapsed < 1) return null;
+  return (
+    <span className="text-xs tabular-nums text-muted-foreground/60 ml-2">
+      {elapsed}s
+    </span>
+  );
+}
+
+/* ── Phase indicator ── */
+const PHASE_CONFIG = {
+  searching: { icon: Search, label: "Searching sources..." },
+  reading: { icon: BookOpen, label: "Reading documents..." },
+  generating: { icon: Sparkles, label: "Generating answer..." },
+} as const;
+
+function StreamPhaseIndicator({
+  phase,
+  startedAt,
+}: {
+  phase: "searching" | "reading" | "generating";
+  startedAt?: number;
+}) {
+  const config = PHASE_CONFIG[phase];
+  const Icon = config.icon;
+
+  return (
+    <div className="flex items-center gap-2 pt-0.5">
+      <Icon
+        size={14}
+        className="text-primary animate-pulse-gentle"
+      />
+      <span className="text-sm italic bg-gradient-to-r from-muted-foreground via-foreground to-muted-foreground bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
+        {config.label}
+      </span>
+      {startedAt && <ElapsedTime startedAt={startedAt} />}
+    </div>
+  );
+}
+
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const dir = detectDirection(message.content);
@@ -81,24 +132,45 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     );
   }
 
-  // Assistant message: full-width, no bubble
+  // Assistant message
   return (
-    <div className="flex gap-3 animate-slide-up">
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm mt-1">
-        <Bot size={16} className="text-white" />
-      </div>
+    <div
+      className={cn(
+        "flex gap-3 animate-slide-up rounded-xl transition-all duration-500",
+        isStreaming && !displayContent.trim() ? "items-center py-2 -mx-2 px-2 bg-primary/[0.03] shadow-[0_0_20px_-4px] shadow-primary/10" : isStreaming ? "items-start py-2 -mx-2 px-2 bg-primary/[0.03] shadow-[0_0_20px_-4px] shadow-primary/10" : "items-start"
+      )}
+    >
+      <GeometricBotIcon isAnimating={isStreaming} className={cn(displayContent.trim() && "mt-1")} />
 
-      <div className="flex-1 min-w-0 pt-1">
-        {isStreaming && !displayContent.trim() ? (
-          <div className="pt-0.5">
-            <span className="text-sm italic bg-gradient-to-r from-muted-foreground via-foreground to-muted-foreground bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer">
-              {hasCitations ? "Generating answer..." : "Searching sources..."}
+      <div className={cn("flex-1 min-w-0", displayContent.trim() && "pt-1")}>
+        {/* Phase indicator — shown before content arrives */}
+        {isStreaming && !displayContent.trim() && message.streamPhase && (
+          <StreamPhaseIndicator
+            phase={message.streamPhase}
+            startedAt={message.streamStartedAt}
+          />
+        )}
+
+        {/* Phase badge + timer — shown alongside content while generating */}
+        {isStreaming && displayContent.trim() && message.streamPhase && (
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-xs text-primary/70 font-medium flex items-center gap-1">
+              <Sparkles size={10} className="animate-pulse-gentle" />
+              Generating
             </span>
+            {message.streamStartedAt && (
+              <ElapsedTime startedAt={message.streamStartedAt} />
+            )}
           </div>
-        ) : (
+        )}
+
+        {displayContent.trim() && (
           <>
             <div
-              className="chat-markdown text-sm text-foreground"
+              className={cn(
+                "chat-markdown text-sm text-foreground",
+                isStreaming && "[&>*:last-child]:animate-[token-reveal_0.15s_ease-out]"
+              )}
               style={{
                 direction: dir,
                 textAlign: dir === "rtl" ? "right" : "left",
@@ -134,7 +206,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 {displayContent}
               </ReactMarkdown>
 
-              {message.isStreaming && (
+              {isStreaming && (
                 <span className="inline-block w-2 h-4 bg-primary ml-0.5 animate-pulse-gentle rounded-sm" />
               )}
             </div>
@@ -152,9 +224,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 export function TypingIndicator() {
   return (
     <div className="flex gap-3 animate-fade-in">
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm">
-        <Bot size={16} className="text-white" />
-      </div>
+      <GeometricBotIcon isAnimating />
       <div className="pt-1">
         <div className="flex items-center gap-1.5 py-2">
           <span className="typing-dot" />

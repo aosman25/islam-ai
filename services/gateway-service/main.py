@@ -343,9 +343,16 @@ async def process_query(request: GatewayRequest, http_request: Request):
 
         # Extract hypothetical passages, keywords, and categories
         first_result = optimize_data["results"][0] if optimize_data["results"] else {}
-        hypothetical_passages = first_result.get("hypothetical_passages", [request.query])
-        keywords = first_result.get("keywords", [request.query])
-        categories = first_result.get("categories", [])
+        hypothetical_passages = first_result.get("hypothetical_passages") or [request.query]
+        # Filter out empty/whitespace-only passages and fall back to original query
+        hypothetical_passages = [p for p in hypothetical_passages if p and p.strip()]
+        if not hypothetical_passages:
+            hypothetical_passages = [request.query]
+        keywords = first_result.get("keywords") or [request.query]
+        keywords = [k for k in keywords if k and k.strip()]
+        if not keywords:
+            keywords = [request.query]
+        categories = first_result.get("categories") or []
 
         # Build Milvus filter expression from categories
         category_filter = ""
@@ -380,6 +387,26 @@ async def process_query(request: GatewayRequest, http_request: Request):
         )
         embed_response.raise_for_status()
         embed_data = embed_response.json()
+
+        dense_list = embed_data.get("dense") or []
+        sparse_list = embed_data.get("sparse") or []
+        # Trim passages to match available embeddings (embed service may filter some out)
+        embed_count = min(len(dense_list), len(sparse_list))
+        if embed_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Embed service returned no embeddings",
+            )
+        if embed_count < len(hypothetical_passages):
+            logger.warning(
+                "Embedding count mismatch, trimming passages",
+                expected=len(hypothetical_passages),
+                got=embed_count,
+                request_id=request_id,
+            )
+            hypothetical_passages = hypothetical_passages[:embed_count]
+        embed_data["dense"] = dense_list[:embed_count]
+        embed_data["sparse"] = sparse_list[:embed_count]
 
         logger.info(
             "Embeddings generated",
@@ -448,6 +475,13 @@ async def process_query(request: GatewayRequest, http_request: Request):
             request_id=request_id,
         )
 
+        if not sources:
+            logger.warning("No sources found after search", request_id=request_id)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No relevant sources found for the query",
+            )
+
         # Step 4: Generate response using ask-service
         logger.info("Step 4: Generating response", request_id=request_id)
 
@@ -480,20 +514,25 @@ async def process_query(request: GatewayRequest, http_request: Request):
                 yield json.dumps(metadata_chunk) + "\n"
 
                 # Stream content chunks from ask-service
-                async with http_client.stream(
-                    "POST",
-                    f"{Config.ASK_SERVICE_URL}/ask",
-                    json=ask_payload,
-                    headers={"x-request-id": request_id},
-                ) as response:
-                    response.raise_for_status()
-                    async for chunk in response.aiter_text():
-                        if chunk:
-                            content_chunk = {
-                                "type": "content",
-                                "delta": chunk
-                            }
-                            yield json.dumps(content_chunk) + "\n"
+                try:
+                    async with http_client.stream(
+                        "POST",
+                        f"{Config.ASK_SERVICE_URL}/ask",
+                        json=ask_payload,
+                        headers={"x-request-id": request_id},
+                    ) as response:
+                        response.raise_for_status()
+                        async for chunk in response.aiter_text():
+                            if chunk:
+                                content_chunk = {
+                                    "type": "content",
+                                    "delta": chunk
+                                }
+                                yield json.dumps(content_chunk) + "\n"
+                except Exception as e:
+                    logger.error("Ask service streaming failed", error=str(e), request_id=request_id)
+                    error_chunk = {"type": "error", "message": "Generation failed. Please try again."}
+                    yield json.dumps(error_chunk) + "\n"
 
                 # Final chunk: Signal completion
                 done_chunk = {"type": "done"}

@@ -78,6 +78,8 @@ export function useChat() {
         content: "",
         timestamp: Date.now(),
         isStreaming: true,
+        streamPhase: "searching",
+        streamStartedAt: Date.now(),
       };
       addMessage(chatId, assistantMsg);
 
@@ -123,6 +125,7 @@ export function useChat() {
             updateMessage(chatId!, assistantMsgId, {
               sources,
               categories,
+              streamPhase: "reading",
             });
           }
 
@@ -130,6 +133,7 @@ export function useChat() {
             accumulatedContent += chunk.delta;
             updateMessage(chatId!, assistantMsgId, {
               content: accumulatedContent,
+              streamPhase: "generating",
             });
           }
 
@@ -139,6 +143,8 @@ export function useChat() {
               content: accumulatedContent,
               sources,
               categories,
+              streamPhase: undefined,
+              streamStartedAt: undefined,
             });
 
             // Persist to DB and cache sources

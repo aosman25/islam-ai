@@ -82,6 +82,7 @@ export function ChatSidebar({ open, onToggle, onLoadMore }: ChatSidebarProps) {
           onClick={() => {
             if (!isAuthenticated) clearChats();
             setActiveChat(null);
+            if (window.innerWidth < 768) onToggle();
           }}
           className={cn(
             "flex items-center gap-2.5 mt-3 mb-1 rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors whitespace-nowrap",
@@ -97,7 +98,7 @@ export function ChatSidebar({ open, onToggle, onLoadMore }: ChatSidebarProps) {
             open={open}
             chats={chats}
             activeChatId={activeChatId}
-            onSelect={setActiveChat}
+            onSelect={(id) => { setActiveChat(id); if (window.innerWidth < 768) onToggle(); }}
             onDelete={deleteChat}
             onRename={updateChatTitle}
             onLoadMore={onLoadMore}

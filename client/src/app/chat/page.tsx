@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { ChatSidebar } from "@/components/chat/chat-sidebar";
 import { MessageBubble } from "@/components/chat/message-bubble";
+import { GeometricBotIcon } from "@/components/chat/geometric-bot-icon";
 import { CitationOverlayProvider } from "@/components/chat/citation-renderer";
 import { useChat } from "@/hooks/use-chat";
 import { useChatSync } from "@/hooks/use-chat-sync";
@@ -21,6 +22,7 @@ import {
   MessageSquare,
   LogIn,
   PenSquare,
+  PanelLeftOpen,
 } from "lucide-react";
 
 const SUGGESTED_ACTIONS = [
@@ -62,7 +64,11 @@ function ChatPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialQuery = searchParams.get("q");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (window.innerWidth >= 768) setSidebarOpen(true);
+  }, []);
   const [input, setInput] = useState("");
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -185,6 +191,17 @@ function ChatPageInner() {
 
         {/* Main Chat Area */}
         <main className="flex flex-1 flex-col min-w-0">
+          {/* Mobile sidebar toggle */}
+          {!sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden absolute top-[4.5rem] left-3 z-20 p-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground shadow-sm transition-colors"
+              aria-label="Open sidebar"
+            >
+              <PanelLeftOpen size={18} />
+            </button>
+          )}
+
           {/* Messages / Greeting */}
           <div
             ref={messagesContainerRef}
@@ -321,16 +338,10 @@ function Greeting({ sendMessage }: { sendMessage: (q: string) => void }) {
     <div className="flex-1 flex items-center justify-center p-6">
       <div className="max-w-2xl w-full text-center">
         <div className="mb-10 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-md mb-6">
-            <MessageSquare size={28} className="text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground mb-3">
-            Assalamu Alaikum
+          <GeometricBotIcon size={72} className="mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground">
+            Ask me anything about Islam
           </h1>
-          <p className="text-muted-foreground text-base max-w-md mx-auto">
-            Ask any question about Islamic knowledge. I&apos;ll search through
-            classical texts and provide answers with source citations.
-          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
