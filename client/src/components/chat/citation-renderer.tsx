@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, createContext, useContext, useCallback } 
 import { createPortal } from "react-dom";
 import type { SourceData } from "@/types";
 import { cn, detectDirection } from "@/lib/utils";
-import { BookOpen, X, ExternalLink } from "lucide-react";
+import { BookOpen, X, ExternalLink, Languages, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 // ============================================================
@@ -105,6 +105,70 @@ export function stripIncompleteCitation(text: string): string {
 }
 
 // ============================================================
+// Translatable chunk — shows Arabic text with on-demand English translation
+// ============================================================
+
+function TranslatableChunk({ text }: { text: string }) {
+  const [translation, setTranslation] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
+
+  const handleTranslate = async () => {
+    if (translation) {
+      setShowTranslation((v) => !v);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (data.translated) {
+        setTranslation(data.translated);
+        setShowTranslation(true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div
+        className="bg-background border border-border rounded-xl p-4 max-h-48 overflow-y-auto"
+        style={{ direction: "rtl", textAlign: "right" }}
+      >
+        <p className="text-sm leading-[2.2] whitespace-pre-wrap text-foreground font-arabic">
+          {text}
+        </p>
+      </div>
+      {showTranslation && translation && (
+        <div className="bg-background border border-border rounded-xl p-4 max-h-48 overflow-y-auto">
+          <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+            {translation}
+          </p>
+        </div>
+      )}
+      <button
+        onClick={handleTranslate}
+        disabled={loading}
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+      >
+        {loading ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Languages className="w-3.5 h-3.5" />
+        )}
+        {loading ? "Translating…" : showTranslation ? "Hide translation" : "Translate to English"}
+      </button>
+    </div>
+  );
+}
+
+// ============================================================
 // Citation Overlay (portalled to body, centered on page)
 // ============================================================
 
@@ -189,14 +253,7 @@ function CitationOverlay({
               </div>
 
               {/* Citation text */}
-              <div
-                className="bg-background border border-border rounded-xl p-4 max-h-48 overflow-y-auto"
-                style={{ direction: "rtl", textAlign: "right" }}
-              >
-                <p className="text-sm leading-[2.2] whitespace-pre-wrap text-foreground font-arabic">
-                  {source.text}
-                </p>
-              </div>
+              <TranslatableChunk text={source.text} />
 
               {/* Open in viewer */}
               <Link
