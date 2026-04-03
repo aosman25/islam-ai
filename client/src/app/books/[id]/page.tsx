@@ -302,7 +302,7 @@ function BookViewerInner() {
   const tocEntries = (book.table_of_contents as TocEntry[] | null) ?? [];
 
   return (
-    <div className="h-svh w-svw flex flex-col overflow-hidden bg-background">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
       {/* Navigation Bar */}
       <ReaderNavBar
         book={book}

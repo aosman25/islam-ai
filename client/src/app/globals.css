@@ -479,9 +479,16 @@ textarea:focus-visible {
   line-height: 1.7;
 }
 
-.chat-markdown ul, .chat-markdown ol {
-  padding-left: 1.5rem;
+.chat-markdown ul {
+  padding-inline-start: 1.5rem;
   margin-bottom: 0.75em;
+  list-style-type: disc;
+}
+
+.chat-markdown ol {
+  padding-inline-start: 1.5rem;
+  margin-bottom: 0.75em;
+  list-style-type: decimal;
 }
 
 .chat-markdown li {
@@ -489,8 +496,8 @@ textarea:focus-visible {
 }
 
 .chat-markdown blockquote {
-  border-left: 3px solid var(--primary);
-  padding-left: 1rem;
+  border-inline-start: 3px solid var(--primary);
+  padding-inline-start: 1rem;
   margin: 1rem 0;
   color: var(--muted-foreground);
   font-style: italic;

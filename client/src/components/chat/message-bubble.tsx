@@ -200,6 +200,24 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                             )}
                           </li>
                         ),
+                        h2: ({ children }) => (
+                          <h2>
+                            {processChildren(
+                              children,
+                              message.sources!,
+                              isStreaming
+                            )}
+                          </h2>
+                        ),
+                        h3: ({ children }) => (
+                          <h3>
+                            {processChildren(
+                              children,
+                              message.sources!,
+                              isStreaming
+                            )}
+                          </h3>
+                        ),
                       }
                     : undefined
                 }

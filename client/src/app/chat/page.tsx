@@ -180,7 +180,7 @@ function ChatPageInner() {
 
   return (
     <CitationOverlayProvider>
-    <div className="flex h-dvh flex-col bg-background overflow-hidden">
+    <div className="flex fixed inset-0 flex-col bg-background overflow-hidden">
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
