@@ -815,7 +815,7 @@ function BookCover({
         </h3>
         {book.book_name_ar && (
           <p
-            className="text-center text-[11px] leading-snug line-clamp-2 mt-1.5"
+            className="text-center text-[11px] leading-snug line-clamp-2 mt-1.5 font-arabic"
             style={{ color: palette.text, opacity: 0.7 }}
             dir="rtl"
           >
@@ -884,7 +884,7 @@ function BookListCard({ book }: { book: Book }) {
           {book.book_name}
         </h3>
         {book.book_name_ar && (
-          <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1" dir="rtl">
+          <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1 font-arabic" dir="rtl">
             {book.book_name_ar}
           </p>
         )}

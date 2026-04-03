@@ -121,7 +121,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     return (
       <div className="flex justify-end animate-slide-up">
         <bdi
-          className="flex flex-col gap-1 bg-muted text-foreground rounded-3xl px-4 py-2 font-medium max-w-[80%] md:max-w-[70%]"
+          className={cn("flex flex-col gap-1 bg-muted text-foreground rounded-3xl px-4 py-2 font-medium max-w-[80%] md:max-w-[70%]", dir === "rtl" && "font-arabic")}
           dir={dir}
         >
           <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -137,7 +137,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     <div
       className={cn(
         "flex gap-3 animate-slide-up rounded-xl transition-all duration-500",
-        isStreaming && !displayContent.trim() ? "items-center py-2 -mx-2 px-2 bg-primary/[0.03] shadow-[0_0_20px_-4px] shadow-primary/10" : isStreaming ? "items-start py-2 -mx-2 px-2 bg-primary/[0.03] shadow-[0_0_20px_-4px] shadow-primary/10" : "items-start"
+        isStreaming && !displayContent.trim() ? "items-center py-2 -mx-2 px-2 bg-primary/[0.07] shadow-[0_0_24px_-2px] shadow-primary/25" : isStreaming ? "items-start py-2 -mx-2 px-2 bg-primary/[0.07] shadow-[0_0_24px_-2px] shadow-primary/25" : "items-start"
       )}
     >
       <GeometricBotIcon isAnimating={isStreaming} className={cn(displayContent.trim() && "mt-1")} />
@@ -169,6 +169,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             <div
               className={cn(
                 "chat-markdown text-sm text-foreground",
+                dir === "rtl" && "font-arabic",
                 isStreaming && "[&>*:last-child]:animate-[token-reveal_0.15s_ease-out]"
               )}
               style={{

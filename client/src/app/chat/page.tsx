@@ -180,7 +180,7 @@ function ChatPageInner() {
 
   return (
     <CitationOverlayProvider>
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background">
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
@@ -197,7 +197,7 @@ function ChatPageInner() {
           {!sidebarOpen && (
             <button
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden absolute top-[4.5rem] left-3 z-20 p-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground shadow-sm transition-colors"
+              className="md:hidden fixed top-[4.5rem] left-3 z-20 p-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground shadow-sm transition-colors"
               aria-label="Open sidebar"
             >
               <PanelLeftOpen size={18} />
@@ -264,12 +264,12 @@ function ChatPageInner() {
               e.preventDefault();
               handleSubmit();
             }}
-            className="mx-auto flex w-full min-h-0 flex-col px-4 md:max-w-3xl"
+            className="mx-auto flex w-full min-h-0 flex-col px-4 pb-[env(safe-area-inset-bottom)] md:max-w-3xl"
           >
             <div className="relative flex w-full flex-col gap-4">
               {/* Scroll to bottom */}
               {!isAtBottom && !isEmpty && (
-                <div className="absolute -top-12 left-1/2 z-50 -translate-x-1/2">
+                <div className="absolute -top-12 left-1/2 z-20 -translate-x-1/2">
                   <button
                     type="button"
                     className="rounded-full border border-border bg-background p-2 shadow-md hover:bg-muted transition-colors"

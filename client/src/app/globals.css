@@ -49,7 +49,7 @@
   --toaster-bg: oklch(0.24 0.06 155);
   --toaster-text: oklch(0.97 0.02 130);
 
-  --font-sans: var(--font-noto-sans), var(--font-noto-arabic), "DroidNaskh", arabesque, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-noto-sans), var(--font-noto-arabic), "Noto Sans Arabic", "DroidNaskh", arabesque, ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-amiri), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
