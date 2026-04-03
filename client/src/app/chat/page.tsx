@@ -180,7 +180,7 @@ function ChatPageInner() {
 
   return (
     <CitationOverlayProvider>
-    <div className="flex h-dvh flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background overflow-hidden">
       <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
@@ -218,7 +218,7 @@ function ChatPageInner() {
                 ))}
               </div>
             )}
-            <div ref={messagesEndRef} className="min-h-6 shrink-0" />
+            <div ref={messagesEndRef} className="min-h-32 md:min-h-6 shrink-0" />
           </div>
 
           {/* Auth Prompt — replaces input when blocked */}
@@ -264,9 +264,9 @@ function ChatPageInner() {
               e.preventDefault();
               handleSubmit();
             }}
-            className="mx-auto flex w-full min-h-0 flex-col px-4 pb-[env(safe-area-inset-bottom)] md:max-w-3xl"
+            className="mx-auto flex w-full min-h-0 flex-col px-4 md:max-w-3xl fixed bottom-0 left-0 right-0 md:static md:pb-[env(safe-area-inset-bottom)]"
           >
-            <div className="relative flex w-full flex-col gap-4">
+            <div className="relative flex w-full flex-col gap-0 md:gap-4">
               {/* Scroll to bottom */}
               {!isAtBottom && !isEmpty && (
                 <div className="absolute -top-12 left-1/2 z-20 -translate-x-1/2">
@@ -291,10 +291,10 @@ function ChatPageInner() {
                   placeholder="Ask about Islamic knowledge..."
                   dir={dir}
                   rows={2}
-                  autoFocus
+                  autoFocus={typeof window !== "undefined" && window.innerWidth >= 768}
                   className={cn(
-                    "w-full resize-none rounded-3xl border border-border bg-background px-5 pt-5 pb-16 text-base shadow-[0px_16px_32px_0px_#0000000A] placeholder:text-muted-foreground focus:outline-none focus-visible:!outline-none focus-visible:!rounded-3xl focus:shadow-[0px_16px_32px_0px_#0000001A] min-h-24 max-h-[65dvh] overflow-y-auto transition-shadow duration-300",
-                    "md:rounded-b-3xl rounded-b-none border-b-0 md:border-b",
+                    "w-full resize-none rounded-3xl border border-border bg-background px-5 pt-5 pb-16 text-base placeholder:text-muted-foreground focus:outline-none focus-visible:!outline-none min-h-24 max-h-[65dvh] overflow-y-auto transition-shadow duration-300",
+                    "md:rounded-b-3xl rounded-b-none border-b-0 md:border-b md:shadow-[0px_16px_32px_0px_#0000000A] md:focus:shadow-[0px_16px_32px_0px_#0000001A] focus-visible:!rounded-3xl md:focus-visible:!rounded-3xl focus-visible:!rounded-b-none md:focus-visible:!rounded-b-3xl",
                     dir === "rtl" && "text-right"
                   )}
                 />
