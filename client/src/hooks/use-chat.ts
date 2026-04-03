@@ -50,9 +50,19 @@ export function useChat() {
         .getState()
         .chats.find((c) => c.id === chatId);
       const priorMessages = freshChat?.messages ?? [];
+      const DETAILED_ANSWER_MARKER = "<!-- DETAILED_ANSWER -->";
       const chatHistory: ChatHistoryMessage[] = priorMessages
         .filter((m) => m.content.trim())
-        .map((m) => ({ role: m.role, content: m.content }));
+        .map((m) => {
+          let content = m.content;
+          if (m.role === "assistant") {
+            const markerIdx = content.indexOf(DETAILED_ANSWER_MARKER);
+            if (markerIdx !== -1) {
+              content = content.slice(0, markerIdx).trim();
+            }
+          }
+          return { role: m.role, content };
+        });
 
       // Add user message
       const userMsg: ChatMessage = {

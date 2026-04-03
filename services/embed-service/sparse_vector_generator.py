@@ -242,7 +242,7 @@ class ArabicBM25S:
         self._vocab = {token: idx for idx, token in enumerate(sorted(doc_frequencies.keys()))}
         self._idf = {token: math.log((self._doc_count - df + 0.5) / (df + 0.5) + 1) 
                      for token, df in doc_frequencies.items()}
-        if BM25S_AVAILABLE:
+        if BM25S_AVAILABLE and self._vocab:
             self._model = bm25s.BM25(method=self.config.method)
             self._model.index(self._corpus_tokens)
         self._fitted = True
