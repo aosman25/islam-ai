@@ -146,9 +146,11 @@ export function useChatSync() {
   }, []);
 
   // Load messages for a conversation (last 10)
+  const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
   const loadMessages = useCallback(async (chatId: string) => {
     const { userId } = useChatStore.getState();
-    if (!userId) return;
+    if (!userId || !isUuid(chatId)) return;
 
     const chat = useChatStore.getState().chats.find((c) => c.id === chatId);
     if (!chat || chat.messages.length > 0) return; // Already loaded
@@ -183,7 +185,7 @@ export function useChatSync() {
   // Load older messages for a conversation
   const loadOlderMessages = useCallback(async (chatId: string) => {
     const { userId } = useChatStore.getState();
-    if (!userId) return;
+    if (!userId || !isUuid(chatId)) return;
 
     const chat = useChatStore.getState().chats.find((c) => c.id === chatId);
     if (!chat || !chat.hasMoreMessages || chat.messages.length === 0) return;

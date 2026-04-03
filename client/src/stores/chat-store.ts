@@ -72,6 +72,7 @@ interface ChatStore {
     updates: Partial<ChatMessage>
   ) => void;
   updateChatTitle: (chatId: string, title: string) => void;
+  updateChatId: (oldId: string, newId: string) => void;
   loadChats: (chats: Chat[], cursor: string | null, hasMore: boolean) => void;
   appendChats: (chats: Chat[], cursor: string | null, hasMore: boolean) => void;
   prependMessages: (chatId: string, messages: ChatMessage[], hasMore: boolean) => void;
@@ -130,7 +131,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
       chats: state.chats.filter((c) => c.id !== id),
       activeChatId: state.activeChatId === id ? null : state.activeChatId,
     }));
-    if (isAuthenticated && userId) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isAuthenticated && userId && isUuid) {
       deleteConversation(userId, id).catch((e) =>
         console.error("Failed to delete conversation:", e)
       );
@@ -186,12 +188,22 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
         c.id === chatId ? { ...c, title } : c
       ),
     }));
-    if (isAuthenticated && userId) {
+    // Only call API if chatId is a server UUID (not a local generateId())
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(chatId);
+    if (isAuthenticated && userId && isUuid) {
       updateConversationTitle(userId, chatId, title).catch((e) =>
         console.error("Failed to update conversation title:", e)
       );
     }
   },
+
+  updateChatId: (oldId, newId) =>
+    set((state) => ({
+      chats: state.chats.map((c) =>
+        c.id === oldId ? { ...c, id: newId } : c
+      ),
+      activeChatId: state.activeChatId === oldId ? newId : state.activeChatId,
+    })),
 
   loadChats: (chats, cursor, hasMore) =>
     set({

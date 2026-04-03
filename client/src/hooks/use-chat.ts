@@ -247,7 +247,7 @@ async function persistMessages(
     const chat = useChatStore.getState().chats.find((c) => c.id === chatId);
 
     if (isNewChat) {
-      await createConversation(userId, {
+      const { id: serverId } = await createConversation(userId, {
         title: chat?.title || userContent.slice(0, 60),
         messages: [
           {
@@ -262,8 +262,13 @@ async function persistMessages(
           },
         ],
       });
+      if (serverId && serverId !== chatId) {
+        useChatStore.getState().updateChatId(chatId, serverId);
+      }
     } else {
-      await addMessages(userId, chatId, [
+      // Use activeChatId from store — it may have been updated from local to server UUID
+      const resolvedId = useChatStore.getState().activeChatId ?? chatId;
+      await addMessages(userId, resolvedId, [
         {
           role: "user",
           content: userContent,
