@@ -1,10 +1,12 @@
 import asyncio
+import json as json_module
 import logging
 import os
 import sys
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import List, Optional
 
 import httpx
@@ -76,6 +78,14 @@ def setup_logging():
 # Global variables
 http_client: Optional[httpx.AsyncClient] = None
 logger = structlog.get_logger()
+
+# Load athar (classical) author names for filtering
+_athar_authors_file = Path(__file__).parent / "athar_authors.json"
+with open(_athar_authors_file, encoding="utf-8") as _f:
+    _athar_data = json_module.load(_f)
+ATHAR_AUTHOR_NAMES: List[str] = [v["name_ar"] for v in _athar_data.values() if v.get("name_ar")]
+# Pre-build the Milvus filter expression once
+ATHAR_FILTER = 'author in [' + ', '.join(f'"{name}"' for name in ATHAR_AUTHOR_NAMES) + ']'
 
 
 # Application lifecycle
@@ -354,18 +364,22 @@ async def process_query(request: GatewayRequest, http_request: Request):
             keywords = [request.query]
         categories = first_result.get("categories") or []
 
-        # Build Milvus filter expression from categories
-        category_filter = ""
+        # Build Milvus filter expression from categories and athar mode
+        filter_parts = []
         if categories:
             escaped = [cat.replace('"', '\\"') for cat in categories]
-            category_filter = 'category in [' + ', '.join(f'"{c}"' for c in escaped) + ']'
+            filter_parts.append('category in [' + ', '.join(f'"{c}"' for c in escaped) + ']')
+        if request.athar_mode:
+            filter_parts.append(ATHAR_FILTER)
+        category_filter = " and ".join(filter_parts)
         logger.info(
             "Query optimized",
             passage_count=len(hypothetical_passages),
             keywords=keywords,
             keywords_count=len(keywords),
             categories=categories,
-            category_filter=category_filter,
+            athar_mode=request.athar_mode,
+            filter=category_filter,
             request_id=request_id,
         )
 

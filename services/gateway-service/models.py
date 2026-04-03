@@ -27,6 +27,10 @@ class GatewayRequest(BaseModel):
         default=8000, gt=0, le=65536, description="Maximum tokens in response"
     )
     stream: bool = Field(default=False, description="Enable streaming response")
+    athar_mode: bool = Field(
+        default=False,
+        description="When enabled, restricts search to classical Islamic scholars only"
+    )
     reranker: Literal["RRF", "Weighted"] = Field(
         default="Weighted",
         description="Reranking strategy: 'RRF' (Reciprocal Rank Fusion) or 'Weighted'"

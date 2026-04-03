@@ -54,12 +54,14 @@ interface ChatStore {
   userId: string | null;
   conversationsCursor: string | null;
   hasMoreConversations: boolean;
+  atharMode: boolean;
 
   // Getters
   getActiveChat: () => Chat | undefined;
   shouldBlockAnonymous: () => boolean;
 
   // Actions
+  setAtharMode: (enabled: boolean) => void;
   setAuth: (userId: string | null) => void;
   createChat: (firstMessage?: string) => string;
   deleteChat: (id: string) => void;
@@ -85,6 +87,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
   userId: null,
   conversationsCursor: null,
   hasMoreConversations: false,
+  atharMode: false,
 
   getActiveChat: () => {
     const { chats, activeChatId } = get();
@@ -98,6 +101,8 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
     if (!chat) return false;
     return chatCharSize(chat.messages) >= MAX_CHAT_CHARS;
   },
+
+  setAtharMode: (enabled) => set({ atharMode: enabled }),
 
   setAuth: (userId) =>
     set({

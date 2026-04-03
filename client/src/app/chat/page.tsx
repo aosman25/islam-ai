@@ -23,6 +23,7 @@ import {
   LogIn,
   PenSquare,
   PanelLeftOpen,
+  ScrollText,
 } from "lucide-react";
 
 const SUGGESTED_ACTIONS = [
@@ -82,6 +83,8 @@ function ChatPageInner() {
 
   const { messages, isLoading, sendMessage, stopGeneration } = useChat();
   const shouldBlock = useChatStore((s) => s.shouldBlockAnonymous());
+  const atharMode = useChatStore((s) => s.atharMode);
+  const setAtharMode = useChatStore((s) => s.setAtharMode);
   const activeChatId = useChatStore((s) => s.activeChatId);
   const activeChat = useChatStore((s) => s.getActiveChat());
   const loadingOlderRef = useRef(false);
@@ -300,7 +303,30 @@ function ChatPageInner() {
                 />
 
                 {/* Action buttons inside textarea */}
-                <div className="absolute right-0 bottom-0 left-0 flex flex-row justify-end gap-3 px-5 py-4">
+                <div className="absolute right-0 bottom-0 left-0 flex flex-row items-center justify-between gap-3 px-5 py-4">
+                  {/* Athar mode toggle */}
+                  <div className="group/athar relative">
+                    <button
+                      type="button"
+                      onClick={() => setAtharMode(!atharMode)}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                        atharMode
+                          ? "bg-primary/15 text-primary border border-primary/30"
+                          : "bg-muted text-muted-foreground border border-transparent hover:bg-muted/80"
+                      )}
+                    >
+                      <ScrollText size={14} />
+                      <span>Athar</span>
+                    </button>
+                    <div className="pointer-events-none absolute bottom-full left-0 mb-2 w-56 rounded-lg border border-border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md opacity-0 transition-opacity group-hover/athar:opacity-100">
+                      <p className="font-medium mb-0.5">Athar Mode</p>
+                      <p className="text-muted-foreground leading-relaxed">
+                        Limit search to classical Islamic scholars and their works, filtering out modern authors.
+                      </p>
+                    </div>
+                  </div>
+
                   {isLoading ? (
                     <button
                       type="button"

@@ -112,6 +112,8 @@ export function useChat() {
         }
       };
 
+      const atharMode = useChatStore.getState().atharMode;
+
       await gatewayQuery(
         {
           query: content.trim(),
@@ -120,6 +122,7 @@ export function useChat() {
           top_k: 15,
           temperature: 1,
           max_tokens: 65536,
+          athar_mode: atharMode,
           reranker: "RRF",
           reranker_params: [60],
         },

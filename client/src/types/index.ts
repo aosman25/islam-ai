@@ -94,6 +94,7 @@ export interface GatewayRequest {
   temperature?: number;
   max_tokens?: number;
   stream?: boolean;
+  athar_mode?: boolean;
   reranker?: "RRF" | "Weighted";
   reranker_params?: number | number[];
 }
