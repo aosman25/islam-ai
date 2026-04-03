@@ -343,7 +343,7 @@ textarea:focus-visible {
    ============================================================ */
 
 .font-arabic {
-  font-family: var(--font-amiri), var(--font-noto-arabic), "DroidNaskh", "Traditional Arabic", serif;
+  font-family: var(--font-noto-arabic), "Noto Sans Arabic", "DroidNaskh", "Traditional Arabic", var(--font-amiri), sans-serif;
   direction: rtl;
   text-align: right;
   line-height: 2.2;
