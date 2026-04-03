@@ -3,7 +3,7 @@ from models import AskRequest, ChatHistoryMessage, SourceData
 import os
 from fasttext.FastText import _FastText
 
-ASSISTANT_CONTENT_MAX_CHARS = 500
+DETAILED_ANSWER_MARKER = "<!-- DETAILED_ANSWER -->"
 
 
 def load_prompt_template(path: str = "prompt.txt") -> str:
@@ -45,8 +45,9 @@ def format_chat_history(chat_history: Optional[List[ChatHistoryMessage]]) -> str
             lines.append(f"المستخدم: {msg.content}")
         else:
             content = msg.content
-            if len(content) > ASSISTANT_CONTENT_MAX_CHARS:
-                content = content[:ASSISTANT_CONTENT_MAX_CHARS] + "..."
+            marker_idx = content.find(DETAILED_ANSWER_MARKER)
+            if marker_idx != -1:
+                content = content[:marker_idx].strip()
             lines.append(f"المساعد: {content}")
     lines.append("")  # blank line before current query
     return "\n".join(lines)

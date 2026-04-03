@@ -5,7 +5,7 @@ import type { ChatMessage } from "@/types";
 import type { SourceData } from "@/types";
 import { cn, detectDirection } from "@/lib/utils";
 import { GeometricBotIcon } from "./geometric-bot-icon";
-import { Search, BookOpen, Sparkles } from "lucide-react";
+import { Search, BookOpen, Sparkles, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -13,6 +13,17 @@ import {
   CitationRenderer,
   SourcesPanel,
 } from "./citation-renderer";
+
+const DETAILED_ANSWER_MARKER = "<!-- DETAILED_ANSWER -->";
+
+function splitAnswer(content: string): { simple: string; scholarly: string | null } {
+  const idx = content.indexOf(DETAILED_ANSWER_MARKER);
+  if (idx === -1) return { simple: content, scholarly: null };
+  return {
+    simple: content.slice(0, idx).trim(),
+    scholarly: content.slice(idx + DETAILED_ANSWER_MARKER.length).trim() || null,
+  };
+}
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -104,6 +115,7 @@ function StreamPhaseIndicator({
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const dir = detectDirection(message.content);
+  const [scholarlyExpanded, setScholarlyExpanded] = useState(false);
 
   const displayContent = useMemo(() => {
     if (message.isStreaming) {
@@ -111,6 +123,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     }
     return message.content;
   }, [message.content, message.isStreaming]);
+
+  const { simple, scholarly } = useMemo(
+    () => splitAnswer(displayContent),
+    [displayContent]
+  );
 
   const hasCitations =
     !isUser && message.sources && message.sources.length > 0;
@@ -137,7 +154,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     <div
       className={cn(
         "flex gap-3 animate-slide-up rounded-xl transition-all duration-500",
-        isStreaming && !displayContent.trim() ? "items-center py-2 -mx-2 px-2 bg-primary/[0.07] shadow-[0_0_24px_-2px] shadow-primary/25" : isStreaming ? "items-start py-2 -mx-2 px-2 bg-primary/[0.07] shadow-[0_0_24px_-2px] shadow-primary/25" : "items-start"
+        isStreaming && !displayContent.trim() ? "items-center py-2 -mx-2 px-2 bg-primary/[0.07] shadow-[0_0_24px_-2px] shadow-primary/25" : isStreaming && !scholarly ? "items-start py-2 -mx-2 px-2 bg-primary/[0.07] shadow-[0_0_24px_-2px] shadow-primary/25" : "items-start"
       )}
     >
       <GeometricBotIcon isAnimating={isStreaming} className={cn(displayContent.trim() && "mt-1")} />
@@ -151,8 +168,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           />
         )}
 
-        {/* Phase badge + timer — shown alongside content while generating */}
-        {isStreaming && displayContent.trim() && message.streamPhase && (
+        {/* Phase badge + timer — shown alongside content while generating (only before scholarly) */}
+        {isStreaming && displayContent.trim() && !scholarly && message.streamPhase && (
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-xs text-primary/70 font-medium flex items-center gap-1">
               <Sparkles size={10} className="animate-pulse-gentle" />
@@ -164,13 +181,13 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           </div>
         )}
 
-        {displayContent.trim() && (
+        {simple.trim() && (
           <>
             <div
               className={cn(
                 "chat-markdown text-sm text-foreground",
                 dir === "rtl" && "font-arabic",
-                isStreaming && "[&>*:last-child]:animate-[token-reveal_0.15s_ease-out]"
+                isStreaming && !scholarly && "[&>*:last-child]:animate-[token-reveal_0.15s_ease-out]"
               )}
               style={{
                 direction: dir,
@@ -222,13 +239,115 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                     : undefined
                 }
               >
-                {displayContent}
+                {simple}
               </ReactMarkdown>
 
-              {isStreaming && (
+              {isStreaming && !scholarly && (
                 <span className="inline-block w-2 h-4 bg-primary ml-0.5 animate-pulse-gentle rounded-sm" />
               )}
             </div>
+
+            {/* Scholarly detailed answer — collapsible */}
+            {scholarly && (
+              <div className={cn(
+                "mt-3 rounded-lg transition-all duration-500",
+                dir === "rtl" && "flex flex-col items-end",
+                isStreaming && "py-2 -mx-2 px-2 bg-primary/[0.05] shadow-[0_0_20px_-4px] shadow-primary/20 animate-pulse-gentle"
+              )}>
+                <button
+                  onClick={() => setScholarlyExpanded((v) => !v)}
+                  className={cn(
+                    "flex items-center gap-1.5 text-xs font-medium transition-colors px-2 py-1 rounded-md",
+                    isStreaming
+                      ? "text-primary bg-gradient-to-r from-primary/80 via-primary to-primary/80 bg-[length:200%_100%] bg-clip-text text-transparent animate-shimmer"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                    dir === "rtl" && "flex-row-reverse"
+                  )}
+                >
+                  <BookOpen size={13} className={cn(isStreaming && "text-primary animate-pulse-gentle")} />
+                  <span>{dir === "rtl" ? "عرض الإجابة التفصيلية" : "Show detailed answer"}</span>
+                  <ChevronDown
+                    size={13}
+                    className={cn(
+                      "transition-transform duration-200",
+                      scholarlyExpanded && "rotate-180",
+                      isStreaming && "text-primary animate-pulse-gentle"
+                    )}
+                  />
+                  {isStreaming && (
+                    <span className="text-xs text-primary/60 flex items-center gap-1 ml-1.5">
+                      <Sparkles size={10} className="animate-pulse-gentle" />
+                    </span>
+                  )}
+                </button>
+
+                {scholarlyExpanded && (
+                  <div
+                    className={cn(
+                      "mt-2 chat-markdown text-sm text-foreground",
+                      dir === "rtl" ? "font-arabic border-r-2 border-primary/20 pr-4" : "border-l-2 border-primary/20 pl-4",
+                      isStreaming && "[&>*:last-child]:animate-[token-reveal_0.15s_ease-out]"
+                    )}
+                    style={{
+                      direction: dir,
+                      textAlign: dir === "rtl" ? "right" : "left",
+                    }}
+                  >
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={
+                        hasCitations
+                          ? {
+                              p: ({ children }) => (
+                                <p>
+                                  {processChildren(
+                                    children,
+                                    message.sources!,
+                                    isStreaming
+                                  )}
+                                </p>
+                              ),
+                              li: ({ children }) => (
+                                <li>
+                                  {processChildren(
+                                    children,
+                                    message.sources!,
+                                    isStreaming
+                                  )}
+                                </li>
+                              ),
+                              h2: ({ children }) => (
+                                <h2>
+                                  {processChildren(
+                                    children,
+                                    message.sources!,
+                                    isStreaming
+                                  )}
+                                </h2>
+                              ),
+                              h3: ({ children }) => (
+                                <h3>
+                                  {processChildren(
+                                    children,
+                                    message.sources!,
+                                    isStreaming
+                                  )}
+                                </h3>
+                              ),
+                            }
+                          : undefined
+                      }
+                    >
+                      {scholarly}
+                    </ReactMarkdown>
+
+                    {isStreaming && (
+                      <span className="inline-block w-2 h-4 bg-primary ml-0.5 animate-pulse-gentle rounded-sm" />
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {hasCitations && !isStreaming && (
               <SourcesPanel sources={message.sources!} content={message.content} />
