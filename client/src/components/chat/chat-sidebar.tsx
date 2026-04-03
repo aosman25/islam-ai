@@ -16,6 +16,7 @@ import {
   PanelLeftOpen,
   LogIn,
   Loader2,
+  MoreVertical,
 } from "lucide-react";
 
 interface ChatSidebarProps {
@@ -30,11 +31,12 @@ export function ChatSidebar({ open, onToggle, onLoadMore }: ChatSidebarProps) {
 
   return (
     <>
-      {/* Backdrop (mobile) */}
+      {/* Backdrop (mobile) — also locks body scroll */}
       {open && (
         <div
-          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-30 md:hidden"
+          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-30 md:hidden touch-none overscroll-none"
           onClick={onToggle}
+          onTouchMove={(e) => e.preventDefault()}
         />
       )}
 
@@ -223,7 +225,9 @@ function ChatItem({
 }) {
   const [mode, setMode] = useState<"view" | "edit" | "confirmDelete">("view");
   const [editValue, setEditValue] = useState(chat.title);
+  const [menuOpen, setMenuOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (mode === "edit") {
@@ -231,6 +235,17 @@ function ChatItem({
       inputRef.current?.select();
     }
   }, [mode]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [menuOpen]);
 
   const handleRename = () => {
     const trimmed = editValue.trim();
@@ -314,7 +329,8 @@ function ChatItem({
           <p className="text-sm truncate min-w-0 flex-1 text-foreground">
             {truncate(chat.title, 40)}
           </p>
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Desktop: hover buttons */}
+          <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -334,6 +350,45 @@ function ChatItem({
             >
               <Trash2 size={12} />
             </button>
+          </div>
+          {/* Mobile: three-dot menu */}
+          <div ref={menuRef} className="relative md:hidden">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen(!menuOpen);
+              }}
+              className="flex-shrink-0 p-1 rounded text-muted-foreground"
+            >
+              <MoreVertical size={14} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[120px]">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    setEditValue(chat.title);
+                    setMode("edit");
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <Pencil size={12} />
+                  Rename
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    setMode("confirmDelete");
+                  }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Trash2 size={12} />
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
         </button>
       )}
