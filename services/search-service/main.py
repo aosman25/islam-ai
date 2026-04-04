@@ -233,6 +233,14 @@ async def process_embedding(
         fetch_limit = k
 
         reqs = []
+        logger.info(
+            "Processing embedding",
+            has_dense=embed.dense is not None,
+            has_sparse=embed.sparse is not None,
+            sparse_terms=len(embed.sparse) if embed.sparse else 0,
+            dense_dim=len(embed.dense) if embed.dense else 0,
+            request_id=request_id,
+        )
         if embed.dense is not None:
             search_param_dense = {
                 "data": [embed.dense],

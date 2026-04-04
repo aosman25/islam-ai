@@ -358,7 +358,7 @@ async def process_query(request: GatewayRequest, http_request: Request):
         first_result = optimize_data["results"][0] if optimize_data["results"] else {}
         hypothetical_passages = first_result.get("hypothetical_passages") or [request.query]
         # Filter out empty/whitespace-only passages and fall back to original query
-        hypothetical_passages = [p for p in hypothetical_passages if p and p.strip()]
+        hypothetical_passages = [p[:8000] for p in hypothetical_passages if p and p.strip()]
         if not hypothetical_passages:
             hypothetical_passages = [request.query]
         keywords = first_result.get("keywords") or [request.query]
@@ -390,6 +390,8 @@ async def process_query(request: GatewayRequest, http_request: Request):
         logger.info(
             "Step 2: Embedding passages",
             passage_count=len(hypothetical_passages),
+            passages=hypothetical_passages,
+            passage_lengths=[len(p) for p in hypothetical_passages],
             request_id=request_id,
         )
         embed_response = await http_client.post(

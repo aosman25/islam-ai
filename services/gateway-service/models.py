@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import List, Optional, Literal, Union
 
 
@@ -13,6 +13,15 @@ class GatewayRequest(BaseModel):
     """Request model for the gateway service"""
 
     query: str = Field(..., min_length=1, max_length=2000, description="User query")
+
+    @field_validator("query")
+    @classmethod
+    def query_must_not_be_blank(cls, v: str) -> str:
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("Query must not be blank")
+        return stripped
+
     chat_history: Optional[List[ChatHistoryMessage]] = Field(
         default=None,
         description="Previous conversation messages for context (last 10 messages / 5 turns)",
