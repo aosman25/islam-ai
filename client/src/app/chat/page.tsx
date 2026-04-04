@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, Suspense, useCallback } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { flushSync } from "react-dom";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
@@ -67,6 +67,7 @@ function ChatPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialQuery = searchParams.get("q");
+  const initialSuggested = searchParams.get("suggested") === "1";
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [sidebarInitialized, setSidebarInitialized] = useState(false);
@@ -118,26 +119,27 @@ function ChatPageInner() {
       initialQuerySent.current = true;
       // Start a fresh chat so the query doesn't go into an existing conversation
       useChatStore.getState().setActiveChat(null);
-      sendMessage(initialQuery);
+      sendMessage(initialQuery, { isSuggested: initialSuggested });
       // Remove q param so refreshing doesn't re-send
       router.replace("/chat", { scroll: false });
     }
   }, [synced, initialQuery, sendMessage, router]);
 
-  // Scroll to bottom when user sends a new message (not when older messages are prepended)
-  const prevLastMsgIdRef = useRef<string | null>(null);
+  // Scroll to bottom only when a new message is first added (not on content updates or prepends)
+  const prevMsgIdsRef = useRef<Set<string>>(new Set());
+  const prevFirstIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (messages.length === 0) return;
-    const lastMsg = messages[messages.length - 1];
-    if (
-      lastMsg.role === "user" &&
-      lastMsg.id !== prevLastMsgIdRef.current
-    ) {
-      prevLastMsgIdRef.current = lastMsg.id;
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    }
+    const firstId = messages[0]?.id ?? null;
+    const currentIds = new Set(messages.map((m) => m.id));
+    const hasNewAppended = [...currentIds].some((id) => !prevMsgIdsRef.current.has(id));
+    const wasPrepend = firstId !== prevFirstIdRef.current && prevFirstIdRef.current !== null;
+
+    prevMsgIdsRef.current = currentIds;
+    prevFirstIdRef.current = firstId;
+
+    if (wasPrepend || !hasNewAppended) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   // Auto-resize textarea
@@ -425,7 +427,7 @@ function ChatPageInner() {
   );
 }
 
-function Greeting({ sendMessage }: { sendMessage: (q: string) => void }) {
+function Greeting({ sendMessage }: { sendMessage: (q: string, opts?: { isSuggested?: boolean }) => void }) {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
       <div className="max-w-2xl w-full text-center">
@@ -441,7 +443,7 @@ function Greeting({ sendMessage }: { sendMessage: (q: string) => void }) {
             <button
               key={action.label}
               type="button"
-              onClick={() => sendMessage(action.query)}
+              onClick={() => sendMessage(action.query, { isSuggested: true })}
               className="group text-left p-3 rounded-xl border border-border bg-card hover:border-accent hover:bg-accent/30 shadow-sm hover:shadow-md transition-all duration-200"
             >
               <div className="flex items-center gap-2 mb-1.5">

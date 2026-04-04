@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useChatStore } from "@/stores/chat-store";
-import { gatewayQuery, createConversation, addMessages } from "@/lib/api";
+import { gatewayQuery, createConversation, addMessages, createAnonymousConversation, addAnonymousMessages } from "@/lib/api";
 import { cacheSources } from "@/lib/source-cache";
 import { generateId } from "@/lib/utils";
 import type {
@@ -33,7 +33,7 @@ export function useChat() {
   const messages = activeChat?.messages ?? [];
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, { isSuggested = false }: { isSuggested?: boolean } = {}) => {
       if (!content.trim() || isLoading) return;
 
       // Block anonymous users at char limit
@@ -103,9 +103,16 @@ export function useChat() {
 
       // Set up persist callback so stopGeneration can call it
       pendingPersistRef.current = () => {
-        if (isAuthenticated && userId && accumulatedContent) {
-          if (sources.length > 0) cacheSources(sources);
+        if (!accumulatedContent) return;
+        if (sources.length > 0) cacheSources(sources);
+
+        if (isAuthenticated && userId) {
           persistMessages(userId, chatId!, priorMessages.length === 0, content.trim(), {
+            userMsg,
+            assistantContent: accumulatedContent,
+          });
+        } else if (!(isSuggested && priorMessages.length === 0)) {
+          persistAnonymousMessages(chatId!, content.trim(), {
             userMsg,
             assistantContent: accumulatedContent,
           });
@@ -286,5 +293,51 @@ async function persistMessages(
     }
   } catch (error) {
     console.error("Failed to persist messages:", error);
+  }
+}
+
+/**
+ * Persist anonymous user + assistant messages to the DB in the background.
+ */
+const isUuid = (id: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+async function persistAnonymousMessages(
+  chatId: string,
+  userContent: string,
+  data: {
+    userMsg: ChatMessage;
+    assistantContent: string;
+  }
+) {
+  try {
+    const messagePair = [
+      {
+        role: "user" as const,
+        content: userContent,
+        timestamp: data.userMsg.timestamp,
+      },
+      {
+        role: "assistant" as const,
+        content: data.assistantContent,
+        timestamp: Date.now(),
+      },
+    ];
+
+    const resolvedId = useChatStore.getState().activeChatId ?? chatId;
+
+    // If the chat hasn't been persisted yet (local ID, not a server UUID), create it
+    if (!isUuid(resolvedId)) {
+      const { id: serverId } = await createAnonymousConversation({
+        messages: messagePair,
+      });
+      if (serverId && serverId !== resolvedId) {
+        useChatStore.getState().updateChatId(resolvedId, serverId);
+      }
+    } else {
+      await addAnonymousMessages(resolvedId, messagePair);
+    }
+  } catch (error) {
+    console.error("Failed to persist anonymous messages:", error);
   }
 }

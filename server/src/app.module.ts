@@ -6,8 +6,10 @@ import { AuthorsModule } from './authors/authors.module';
 import { BooksModule } from './books/books.module';
 import { PagesModule } from './pages/pages.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { AnonymousConversationsModule } from './anonymous-conversations/anonymous-conversations.module';
 import { Conversation } from './conversations/entities/conversation.entity';
 import { Message } from './conversations/entities/message.entity';
+import { AnonymousMessage } from './anonymous-conversations/entities/anonymous-message.entity';
 
 @Module({
   imports: [
@@ -31,7 +33,7 @@ import { Message } from './conversations/entities/message.entity';
       useFactory: (config: ConfigService) => ({
         type: 'postgres' as const,
         url: config.get('USERS_DATABASE_URI'),
-        entities: [Conversation, Message],
+        entities: [Conversation, Message, AnonymousMessage],
         synchronize: true,
       }),
     }),
@@ -40,6 +42,7 @@ import { Message } from './conversations/entities/message.entity';
     BooksModule,
     PagesModule,
     ConversationsModule,
+    AnonymousConversationsModule,
   ],
 })
 export class AppModule {}

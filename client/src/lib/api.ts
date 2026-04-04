@@ -199,6 +199,29 @@ export async function addMessages(
   });
 }
 
+// ============================================================
+// Anonymous Conversations (Master Server, no auth)
+// ============================================================
+
+export async function createAnonymousConversation(
+  data: { title?: string; messages?: unknown[] }
+): Promise<{ id: string }> {
+  return apiFetch<{ id: string }>(MASTER_BASE, "/anonymous-conversations", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function addAnonymousMessages(
+  conversationId: string,
+  messages: unknown[]
+): Promise<void> {
+  await apiFetch(MASTER_BASE, `/anonymous-conversations/${conversationId}/messages`, {
+    method: "POST",
+    body: JSON.stringify(messages),
+  });
+}
+
 
 // ============================================================
 // Local JSON data cache

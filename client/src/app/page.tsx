@@ -730,7 +730,7 @@ export default function HomePage() {
                   {SUGGESTED_QUERIES.map((q, i) => (
                     <button
                       key={q}
-                      onClick={() => handleSearch(q)}
+                      onClick={() => router.push(`/chat?q=${encodeURIComponent(q.trim())}&suggested=1`)}
                       className={cn(
                         "px-3.5 py-1.5 rounded-full border border-border/60 bg-background/60 backdrop-blur-sm text-xs text-muted-foreground hover:text-primary hover:border-primary/30 hover:bg-primary/[0.04] transition-all duration-200 cursor-pointer",
                         mounted || skipAnimations ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
