@@ -315,7 +315,8 @@ function ChatItem({
               if (e.key === "Enter") handleRename();
               if (e.key === "Escape") setMode("view");
             }}
-            className="flex-1 min-w-0 text-sm bg-transparent outline-none text-foreground px-1"
+            dir={detectDirection(editValue)}
+            className={cn("flex-1 min-w-0 text-sm bg-transparent outline-none text-foreground px-1", detectDirection(editValue) === "rtl" && "font-arabic-family text-right")}
           />
           <button
             onClick={handleRename}

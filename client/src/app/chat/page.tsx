@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, Suspense } from "react";
+import { useState, useRef, useEffect, Suspense, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { ChatSidebar } from "@/components/chat/chat-sidebar";
@@ -80,7 +81,7 @@ function ChatPageInner() {
   const initialQuerySent = useRef(false);
 
   // Sync auth state and load conversations
-  const { synced, loadingMessages, loadMoreConversations, loadMessages, loadOlderMessages } = useChatSync();
+  const { synced, loadingMessages, loadMoreConversations, loadMessages, fetchOlderMessages } = useChatSync();
 
   const { messages, isLoading, sendMessage, stopGeneration } = useChat();
   const shouldBlock = useChatStore((s) => s.shouldBlockAnonymous());
@@ -100,15 +101,16 @@ function ChatPageInner() {
     }
   }, [activeChatId, loadMessages]);
 
-  // Pin scroll to bottom after messages load for active chat (not for older messages)
+  // Pin scroll to bottom after initial messages load for active chat (not for older messages)
   const prevChatIdRef = useRef<string | null>(null);
+  const hasMessages = messages.length > 0;
   useEffect(() => {
-    if (activeChatId && activeChatId !== prevChatIdRef.current && messages.length > 0) {
+    if (activeChatId && activeChatId !== prevChatIdRef.current && hasMessages) {
       prevChatIdRef.current = activeChatId;
       const container = messagesContainerRef.current;
       if (container) container.scrollTop = container.scrollHeight;
     }
-  }, [activeChatId, messages]);
+  }, [activeChatId, hasMessages]);
 
   // Handle initial query from URL (wait for auth sync to avoid race condition)
   useEffect(() => {
@@ -122,12 +124,16 @@ function ChatPageInner() {
     }
   }, [synced, initialQuery, sendMessage, router]);
 
-  // Scroll to bottom when user sends a message
-  const prevMsgCount = useRef(0);
+  // Scroll to bottom when user sends a new message (not when older messages are prepended)
+  const prevLastMsgIdRef = useRef<string | null>(null);
   useEffect(() => {
-    const userMsgCount = messages.filter((m) => m.role === "user").length;
-    if (userMsgCount > prevMsgCount.current) {
-      prevMsgCount.current = userMsgCount;
+    if (messages.length === 0) return;
+    const lastMsg = messages[messages.length - 1];
+    if (
+      lastMsg.role === "user" &&
+      lastMsg.id !== prevLastMsgIdRef.current
+    ) {
+      prevLastMsgIdRef.current = lastMsg.id;
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
@@ -145,6 +151,7 @@ function ChatPageInner() {
 
   // Scroll-to-bottom visibility + load older messages on scroll up
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -163,18 +170,35 @@ function ChatPageInner() {
         activeChatId
       ) {
         loadingOlderRef.current = true;
-        const prevHeight = container.scrollHeight;
-        await loadOlderMessages(activeChatId);
-        // Maintain scroll position after prepending
-        requestAnimationFrame(() => {
-          container.scrollTop = container.scrollHeight - prevHeight;
-        });
+        // Show skeleton and adjust scroll so it doesn't shift the view
+        const preSkeletonHeight = container.scrollHeight;
+        const preSkeletonScroll = container.scrollTop;
+        flushSync(() => setLoadingOlder(true));
+        container.scrollTop = preSkeletonScroll + (container.scrollHeight - preSkeletonHeight);
+
+        const result = await fetchOlderMessages(activeChatId);
+        if (result) {
+          const prevScrollHeight = container.scrollHeight;
+          const prevScrollTop = container.scrollTop;
+          // flushSync forces React to commit DOM changes synchronously
+          // so we can adjust scrollTop immediately after
+          flushSync(() => {
+            useChatStore
+              .getState()
+              .prependMessages(activeChatId, result.messages, result.hasMore);
+            setLoadingOlder(false);
+          });
+          container.scrollTop = prevScrollTop + (container.scrollHeight - prevScrollHeight);
+        } else {
+          flushSync(() => setLoadingOlder(false));
+          container.scrollTop = preSkeletonScroll;
+        }
         loadingOlderRef.current = false;
       }
     };
     container.addEventListener("scroll", onScroll);
     return () => container.removeEventListener("scroll", onScroll);
-  }, [activeChatId, activeChat?.hasMoreMessages, loadOlderMessages]);
+  }, [activeChatId, activeChat?.hasMoreMessages, fetchOlderMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -237,6 +261,25 @@ function ChatPageInner() {
               <Greeting sendMessage={sendMessage} />
             ) : (
               <div className="mx-auto w-full max-w-3xl px-5 space-y-6">
+                {loadingOlder && (
+                  <div className="space-y-6">
+                    {/* User message skeleton */}
+                    <div className="flex justify-end">
+                      <div className="max-w-[80%] rounded-2xl bg-muted/60 px-4 py-3 animate-pulse">
+                        <div className="h-4 w-40 rounded bg-muted-foreground/15" />
+                      </div>
+                    </div>
+                    {/* Assistant message skeleton */}
+                    <div className="flex justify-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-muted/60 animate-pulse shrink-0" />
+                      <div className="max-w-[80%] space-y-2 animate-pulse">
+                        <div className="h-4 w-64 rounded bg-muted-foreground/15" />
+                        <div className="h-4 w-48 rounded bg-muted-foreground/15" />
+                        <div className="h-4 w-56 rounded bg-muted-foreground/15" />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {messages.map((msg) => (
                   <MessageBubble key={msg.id} message={msg} />
                 ))}

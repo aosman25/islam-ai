@@ -159,7 +159,7 @@ export function useChatSync() {
     setLoadingMessages(true);
     try {
       const detail = await getConversation(userId, chatId, {
-        messagesLimit: 10,
+        messagesLimit: 2,
       });
       const messages: ChatMessage[] = detail.messages.map((m) => ({
         id: m.id,
@@ -186,13 +186,13 @@ export function useChatSync() {
     }
   }, []);
 
-  // Load older messages for a conversation
-  const loadOlderMessages = useCallback(async (chatId: string) => {
+  // Fetch older messages for a conversation (does NOT commit to store — caller does that)
+  const fetchOlderMessages = useCallback(async (chatId: string) => {
     const { userId } = useChatStore.getState();
-    if (!userId || !isUuid(chatId)) return;
+    if (!userId || !isUuid(chatId)) return null;
 
     const chat = useChatStore.getState().chats.find((c) => c.id === chatId);
-    if (!chat || !chat.hasMoreMessages || chat.messages.length === 0) return;
+    if (!chat || !chat.hasMoreMessages || chat.messages.length === 0) return null;
 
     const oldestTimestamp = Math.min(
       ...chat.messages.map((m) => m.timestamp)
@@ -200,7 +200,7 @@ export function useChatSync() {
 
     try {
       const detail = await getConversation(userId, chatId, {
-        messagesLimit: 10,
+        messagesLimit: 2,
         before: oldestTimestamp,
       });
       const olderMessages: ChatMessage[] = detail.messages.map((m) => ({
@@ -214,13 +214,12 @@ export function useChatSync() {
 
       await resolveSources(olderMessages);
 
-      useChatStore
-        .getState()
-        .prependMessages(chatId, olderMessages, detail.hasMoreMessages);
+      return { messages: olderMessages, hasMore: detail.hasMoreMessages };
     } catch (error) {
       console.error("Failed to load older messages:", error);
+      return null;
     }
   }, []);
 
-  return { synced, loadingMessages, loadMoreConversations, loadMessages, loadOlderMessages };
+  return { synced, loadingMessages, loadMoreConversations, loadMessages, fetchOlderMessages };
 }

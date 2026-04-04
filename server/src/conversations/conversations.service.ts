@@ -81,11 +81,23 @@ export class ConversationsService {
     // Reverse so they're in chronological order
     messages.reverse();
 
+    // Check if there are older messages beyond what we fetched
+    let hasMoreMessages = false;
+    if (messages.length === messagesLimit) {
+      const oldestTimestamp = messages[0].timestamp;
+      const olderCount = await this.messagesRepo
+        .createQueryBuilder('m')
+        .where('m.conversation_id = :id', { id })
+        .andWhere('m.timestamp < :ts', { ts: String(oldestTimestamp) })
+        .getCount();
+      hasMoreMessages = olderCount > 0;
+    }
+
     return {
       ...conversation,
       messages,
       totalMessages,
-      hasMoreMessages: messages.length === messagesLimit && totalMessages > messagesLimit,
+      hasMoreMessages,
     };
   }
 
