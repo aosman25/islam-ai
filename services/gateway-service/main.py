@@ -144,6 +144,9 @@ app.add_middleware(
 @app.middleware("http")
 async def logging_middleware(request: Request, call_next):
     """Request/response logging and timing"""
+    if request.url.path in ("/health", "/ready"):
+        return await call_next(request)
+
     request_id = request.headers.get("x-request-id", f"req_{int(time.time() * 1000)}")
     start_time = time.time()
 
