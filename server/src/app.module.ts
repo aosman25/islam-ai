@@ -33,6 +33,7 @@ import { AnonymousMessage } from './anonymous-conversations/entities/anonymous-m
       useFactory: (config: ConfigService) => ({
         type: 'postgres' as const,
         url: config.get('USERS_DATABASE_URI'),
+        schema: 'public',
         entities: [Conversation, Message, AnonymousMessage],
         synchronize: true,
       }),
