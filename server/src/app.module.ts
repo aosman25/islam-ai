@@ -35,7 +35,7 @@ import { AnonymousMessage } from './anonymous-conversations/entities/anonymous-m
         url: config.get('USERS_DATABASE_URI'),
         schema: 'public',
         entities: [Conversation, Message, AnonymousMessage],
-        synchronize: true,
+        synchronize: false,
       }),
     }),
     CategoriesModule,
