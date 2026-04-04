@@ -115,7 +115,7 @@ function StreamPhaseIndicator({
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const dir = detectDirection(message.content);
-  const [scholarlyExpanded, setScholarlyExpanded] = useState(false);
+  const [scholarlyExpanded, setScholarlyExpanded] = useState(true);
 
   const displayContent = useMemo(() => {
     if (message.isStreaming) {

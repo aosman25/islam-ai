@@ -342,6 +342,25 @@ textarea:focus-visible {
    TYPOGRAPHY
    ============================================================ */
 
+/*
+ * Force Noto Sans Arabic for Arabic characters globally on mobile.
+ * This @font-face overrides the system sans-serif for the Arabic unicode range,
+ * so any element (sidebar, headers, etc.) renders Arabic with Noto Sans Arabic
+ * without needing explicit .font-arabic classes.
+ */
+@font-face {
+  font-family: "Arabic Override";
+  src: url("/fonts/noto-sans-arabic.ttf") format("truetype");
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+  font-display: swap;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --font-sans: "Arabic Override", var(--font-noto-sans), var(--font-noto-arabic), "Noto Sans Arabic", "DroidNaskh", ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
 .font-arabic {
   font-family: var(--font-noto-arabic), "Noto Sans Arabic", "DroidNaskh", "Traditional Arabic", var(--font-amiri), sans-serif;
   direction: rtl;

@@ -114,7 +114,9 @@ function ChatPageInner() {
     const userMsgCount = messages.filter((m) => m.role === "user").length;
     if (userMsgCount > prevMsgCount.current) {
       prevMsgCount.current = userMsgCount;
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     }
   }, [messages]);
 
