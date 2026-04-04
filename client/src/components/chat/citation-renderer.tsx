@@ -244,10 +244,10 @@ function CitationOverlay({
                     </span>
                   </>
                 )}
-                {source.part_title && (
+                {source.part_title && source.part_title !== meta?.bookNameAr && source.part_title !== meta?.bookName && (
                   <>
                     <span className="text-border">&middot;</span>
-                    <span className="text-muted-foreground">{source.part_title}</span>
+                    <span className="text-muted-foreground font-arabic-family">Part: {source.part_title}</span>
                   </>
                 )}
               </div>

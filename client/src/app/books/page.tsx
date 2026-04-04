@@ -514,7 +514,7 @@ function BooksPage() {
                     onChange={(e) => setSearchInput(e.target.value)}
                     placeholder="Search books by title..."
                     dir={detectDirection(searchInput)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border-none bg-card text-sm text-foreground placeholder:text-muted-foreground !outline-none !ring-0 focus:shadow-md transition-all"
+                    className={cn("w-full pl-10 pr-4 py-2.5 rounded-xl border-none bg-card text-sm text-foreground placeholder:text-muted-foreground !outline-none !ring-0 focus:shadow-md transition-all", detectDirection(searchInput) === "rtl" && "font-arabic-family text-right")}
                   />
                 </div>
 

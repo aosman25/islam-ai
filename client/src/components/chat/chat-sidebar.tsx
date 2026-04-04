@@ -23,9 +23,10 @@ interface ChatSidebarProps {
   open: boolean;
   onToggle: () => void;
   onLoadMore?: () => Promise<void>;
+  synced?: boolean;
 }
 
-export function ChatSidebar({ open, onToggle, onLoadMore }: ChatSidebarProps) {
+export function ChatSidebar({ open, onToggle, onLoadMore, synced = true }: ChatSidebarProps) {
   const { chats, activeChatId, setActiveChat, deleteChat, updateChatTitle, clearChats, isAuthenticated } =
     useChatStore();
 
@@ -95,7 +96,11 @@ export function ChatSidebar({ open, onToggle, onLoadMore }: ChatSidebarProps) {
           {open && "New Chat"}
         </button>
 
-        {isAuthenticated ? (
+        {!synced ? (
+          <div className={cn("flex-1 flex items-center justify-center", !open && "hidden")}>
+            <Loader2 size={20} className="animate-spin text-muted-foreground" />
+          </div>
+        ) : isAuthenticated ? (
           <ChatList
             open={open}
             chats={chats}
@@ -104,6 +109,7 @@ export function ChatSidebar({ open, onToggle, onLoadMore }: ChatSidebarProps) {
             onDelete={deleteChat}
             onRename={updateChatTitle}
             onLoadMore={onLoadMore}
+            synced={synced}
           />
         ) : (
           /* Anonymous: prompt to sign in */
@@ -137,6 +143,7 @@ function ChatList({
   onDelete,
   onRename,
   onLoadMore,
+  synced,
 }: {
   open: boolean;
   chats: Chat[];
@@ -145,6 +152,7 @@ function ChatList({
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
   onLoadMore?: () => Promise<void>;
+  synced?: boolean;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
@@ -179,7 +187,11 @@ function ChatList({
       ref={listRef}
       className={cn("flex-1 overflow-y-auto py-2", !open && "hidden")}
     >
-      {chats.length === 0 ? (
+      {!synced ? (
+        <div className="flex justify-center py-8">
+          <Loader2 size={20} className="animate-spin text-muted-foreground" />
+        </div>
+      ) : chats.length === 0 ? (
         <div className="px-4 py-8 text-center">
           <MessageSquare size={28} className="mx-auto text-border mb-3" />
           <p className="text-xs text-muted-foreground">No conversations yet</p>
@@ -326,7 +338,7 @@ function ChatItem({
             isActive ? "bg-muted" : "hover:bg-muted"
           )}
         >
-          <p className={cn("text-sm truncate min-w-0 flex-1 text-foreground", detectDirection(chat.title) === "rtl" && "font-arabic")}>
+          <p className={cn("text-sm truncate min-w-0 flex-1 text-foreground", detectDirection(chat.title) === "rtl" && "font-arabic-family")}>
             {truncate(chat.title, 40)}
           </p>
           {/* Desktop: hover buttons */}

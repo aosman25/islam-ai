@@ -16,7 +16,7 @@ import {
   Star,
   Sparkles,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, detectDirection } from "@/lib/utils";
 import { GeometricBotIcon } from "@/components/chat/geometric-bot-icon";
 import { CitationGroupBadge, CitationOverlayProvider } from "@/components/chat/citation-renderer";
 import { PREVIEW_SOURCE_MAP } from "@/data/preview-sources";
@@ -711,7 +711,8 @@ export default function HomePage() {
                       onChange={(e) => setQuery(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                       placeholder="Ask any question about Islamic knowledge..."
-                      className="flex-1 px-4 py-4 bg-transparent text-foreground placeholder:text-muted-foreground/70 focus:outline-none text-base"
+                      dir={detectDirection(query)}
+                      className={cn("flex-1 px-4 py-4 bg-transparent text-foreground placeholder:text-muted-foreground/70 focus:outline-none text-base", detectDirection(query) === "rtl" && "font-arabic-family text-right")}
                     />
                     <button
                       onClick={() => handleSearch()}

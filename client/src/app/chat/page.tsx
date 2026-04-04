@@ -24,6 +24,7 @@ import {
   PenSquare,
   PanelLeftOpen,
   ScrollText,
+  Loader2,
 } from "lucide-react";
 
 const SUGGESTED_ACTIONS = [
@@ -79,7 +80,7 @@ function ChatPageInner() {
   const initialQuerySent = useRef(false);
 
   // Sync auth state and load conversations
-  const { synced, loadMoreConversations, loadMessages, loadOlderMessages } = useChatSync();
+  const { synced, loadingMessages, loadMoreConversations, loadMessages, loadOlderMessages } = useChatSync();
 
   const { messages, isLoading, sendMessage, stopGeneration } = useChat();
   const shouldBlock = useChatStore((s) => s.shouldBlockAnonymous());
@@ -92,9 +93,22 @@ function ChatPageInner() {
   // Load messages when a chat is selected
   useEffect(() => {
     if (activeChatId) {
+      // Reset scroll to bottom before messages render to avoid flicker
+      const container = messagesContainerRef.current;
+      if (container) container.scrollTop = container.scrollHeight;
       loadMessages(activeChatId);
     }
   }, [activeChatId, loadMessages]);
+
+  // Pin scroll to bottom after messages load for active chat (not for older messages)
+  const prevChatIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (activeChatId && activeChatId !== prevChatIdRef.current && messages.length > 0) {
+      prevChatIdRef.current = activeChatId;
+      const container = messagesContainerRef.current;
+      if (container) container.scrollTop = container.scrollHeight;
+    }
+  }, [activeChatId, messages]);
 
   // Handle initial query from URL (wait for auth sync to avoid race condition)
   useEffect(() => {
@@ -194,6 +208,7 @@ function ChatPageInner() {
           open={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           onLoadMore={loadMoreConversations}
+          synced={synced}
         />
 
         {/* Main Chat Area */}
@@ -214,7 +229,11 @@ function ChatPageInner() {
             ref={messagesContainerRef}
             className="relative flex min-w-0 flex-1 flex-col gap-6 overflow-y-auto pt-10"
           >
-            {isEmpty ? (
+            {activeChatId && loadingMessages ? (
+              <div className="flex flex-1 items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : isEmpty ? (
               <Greeting sendMessage={sendMessage} />
             ) : (
               <div className="mx-auto w-full max-w-3xl px-5 space-y-6">
@@ -300,7 +319,7 @@ function ChatPageInner() {
                   className={cn(
                     "w-full resize-none rounded-3xl border border-border bg-background px-5 pt-5 pb-16 text-base placeholder:text-muted-foreground focus:outline-none focus-visible:!outline-none min-h-24 max-h-[65dvh] overflow-y-auto transition-shadow duration-300",
                     "md:rounded-b-3xl rounded-b-none border-b-0 md:border-b md:shadow-[0px_16px_32px_0px_#0000000A] md:focus:shadow-[0px_16px_32px_0px_#0000001A] focus-visible:!rounded-3xl md:focus-visible:!rounded-3xl focus-visible:!rounded-b-none md:focus-visible:!rounded-b-3xl",
-                    dir === "rtl" && "text-right font-arabic"
+                    dir === "rtl" && "text-right font-arabic-family"
                   )}
                 />
 

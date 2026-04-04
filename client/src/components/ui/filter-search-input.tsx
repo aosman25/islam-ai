@@ -28,7 +28,7 @@ export function FilterSearchInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         dir={detectDirection(value)}
-        className="w-full pl-8 pr-3 py-2 rounded-lg border-none bg-background text-sm text-foreground placeholder:text-muted-foreground !outline-none !ring-0 focus:shadow-md transition-all"
+        className={`w-full pl-8 pr-3 py-2 rounded-lg border-none bg-background text-sm text-foreground placeholder:text-muted-foreground !outline-none !ring-0 focus:shadow-md transition-all ${detectDirection(value) === "rtl" ? "font-arabic-family text-right" : ""}`}
       />
     </div>
   );

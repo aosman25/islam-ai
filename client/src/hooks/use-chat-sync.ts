@@ -70,6 +70,7 @@ export function useChatSync() {
   const sessionPending = session.isPending;
   const syncingRef = useRef(false);
   const [synced, setSynced] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   const { setAuth, loadChats, clearChats, isAuthenticated } = useChatStore();
 
@@ -155,6 +156,7 @@ export function useChatSync() {
     const chat = useChatStore.getState().chats.find((c) => c.id === chatId);
     if (!chat || chat.messages.length > 0) return; // Already loaded
 
+    setLoadingMessages(true);
     try {
       const detail = await getConversation(userId, chatId, {
         messagesLimit: 10,
@@ -179,6 +181,8 @@ export function useChatSync() {
       }));
     } catch (error) {
       console.error("Failed to load messages:", error);
+    } finally {
+      setLoadingMessages(false);
     }
   }, []);
 
@@ -218,5 +222,5 @@ export function useChatSync() {
     }
   }, []);
 
-  return { synced, loadMoreConversations, loadMessages, loadOlderMessages };
+  return { synced, loadingMessages, loadMoreConversations, loadMessages, loadOlderMessages };
 }

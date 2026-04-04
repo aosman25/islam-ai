@@ -342,6 +342,10 @@ textarea:focus-visible {
    TYPOGRAPHY
    ============================================================ */
 
+.font-arabic-family {
+  font-family: var(--font-noto-arabic), "Noto Sans Arabic", "DroidNaskh", "Traditional Arabic", var(--font-amiri), sans-serif;
+}
+
 .font-arabic {
   font-family: var(--font-noto-arabic), "Noto Sans Arabic", "DroidNaskh", "Traditional Arabic", var(--font-amiri), sans-serif;
   direction: rtl;
