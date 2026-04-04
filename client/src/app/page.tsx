@@ -712,12 +712,12 @@ export default function HomePage() {
                       onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                       placeholder="Ask any question about Islamic knowledge..."
                       dir={detectDirection(query)}
-                      className={cn("flex-1 px-4 py-4 bg-transparent text-foreground placeholder:text-muted-foreground/70 focus:outline-none text-base", detectDirection(query) === "rtl" && "font-arabic-family text-right")}
+                      className={cn("flex-1 min-w-0 px-4 py-4 bg-transparent text-foreground placeholder:text-muted-foreground/70 focus:outline-none text-base", detectDirection(query) === "rtl" && "font-arabic-family text-right")}
                     />
                     <button
                       onClick={() => handleSearch()}
                       disabled={!query.trim()}
-                      className="mr-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:shadow-md hover:brightness-110 disabled:opacity-30 disabled:shadow-none transition-all duration-300 flex items-center gap-2"
+                      className="mr-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:shadow-md hover:brightness-110 disabled:opacity-30 disabled:shadow-none transition-all duration-300 flex items-center gap-2 flex-shrink-0"
                     >
                       <span className="hidden sm:inline">Ask</span>
                       <ArrowRight size={15} />

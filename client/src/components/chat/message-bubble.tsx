@@ -265,7 +265,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   )}
                 >
                   <BookOpen size={13} className={cn(isStreaming && "text-primary animate-pulse-gentle")} />
-                  <span>{dir === "rtl" ? "عرض الإجابة التفصيلية" : "Show detailed answer"}</span>
+                  <span>{dir === "rtl" ? <span className="font-arabic">عرض الإجابة التفصيلية</span> : "Show detailed answer"}</span>
                   <ChevronDown
                     size={13}
                     className={cn(

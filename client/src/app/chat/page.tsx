@@ -139,7 +139,13 @@ function ChatPageInner() {
     prevFirstIdRef.current = firstId;
 
     if (wasPrepend || !hasNewAppended) return;
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (container) {
+      // RAF ensures the DOM has painted the new message before scrolling
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
+    }
   }, [messages]);
 
   // Auto-resize textarea
