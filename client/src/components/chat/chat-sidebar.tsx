@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useChatStore } from "@/stores/chat-store";
 import type { Chat } from "@/types";
-import { cn, truncate } from "@/lib/utils";
+import { cn, truncate, detectDirection } from "@/lib/utils";
 import {
   PenSquare,
   MessageSquare,
@@ -326,7 +326,7 @@ function ChatItem({
             isActive ? "bg-muted" : "hover:bg-muted"
           )}
         >
-          <p className="text-sm truncate min-w-0 flex-1 text-foreground">
+          <p className={cn("text-sm truncate min-w-0 flex-1 text-foreground", detectDirection(chat.title) === "rtl" && "font-arabic")}>
             {truncate(chat.title, 40)}
           </p>
           {/* Desktop: hover buttons */}

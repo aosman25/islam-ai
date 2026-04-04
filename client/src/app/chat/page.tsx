@@ -300,7 +300,7 @@ function ChatPageInner() {
                   className={cn(
                     "w-full resize-none rounded-3xl border border-border bg-background px-5 pt-5 pb-16 text-base placeholder:text-muted-foreground focus:outline-none focus-visible:!outline-none min-h-24 max-h-[65dvh] overflow-y-auto transition-shadow duration-300",
                     "md:rounded-b-3xl rounded-b-none border-b-0 md:border-b md:shadow-[0px_16px_32px_0px_#0000000A] md:focus:shadow-[0px_16px_32px_0px_#0000001A] focus-visible:!rounded-3xl md:focus-visible:!rounded-3xl focus-visible:!rounded-b-none md:focus-visible:!rounded-b-3xl",
-                    dir === "rtl" && "text-right"
+                    dir === "rtl" && "text-right font-arabic"
                   )}
                 />
 

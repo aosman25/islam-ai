@@ -703,7 +703,7 @@ function TocTreeNode({
         style={{ paddingInlineStart: `${8 + depth * 16}px`, paddingInlineEnd: 8 }}
         dir={dir}
       >
-        <span className={cn("truncate", isSelected ? "font-medium" : "text-muted-foreground")} title={item.title}>
+        <span className={cn("truncate", isSelected ? "font-medium" : "text-muted-foreground", dir === "rtl" && "font-arabic")} title={item.title}>
           {item.title}
         </span>
       </button>
@@ -734,7 +734,7 @@ function TocTreeNode({
             isExpanded && "!rotate-90"
           )}
         />
-        <span className={cn("truncate font-medium", isSelected ? "text-primary" : "text-foreground")} title={item.title}>
+        <span className={cn("truncate font-medium", isSelected ? "text-primary" : "text-foreground", dir === "rtl" && "font-arabic")} title={item.title}>
           {item.title}
         </span>
       </button>

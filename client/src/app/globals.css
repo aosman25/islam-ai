@@ -49,7 +49,7 @@
   --toaster-bg: oklch(0.24 0.06 155);
   --toaster-text: oklch(0.97 0.02 130);
 
-  --font-sans: var(--font-noto-sans), var(--font-noto-arabic), "Noto Sans Arabic Fallback", "Noto Sans Arabic", "DroidNaskh", arabesque, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-noto-sans), var(--font-noto-arabic), "Noto Sans Arabic", "DroidNaskh", arabesque, ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-amiri), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
@@ -341,18 +341,6 @@ textarea:focus-visible {
 /* ============================================================
    TYPOGRAPHY
    ============================================================ */
-
-/*
- * Ensure Arabic characters always use Noto Sans Arabic globally.
- * This @font-face with unicode-range acts as a reliable fallback
- * that activates only for Arabic glyphs, even if CSS variables fail to resolve.
- */
-@font-face {
-  font-family: "Noto Sans Arabic Fallback";
-  src: url("/fonts/noto-sans-arabic.ttf") format("truetype");
-  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
-  font-display: swap;
-}
 
 .font-arabic {
   font-family: var(--font-noto-arabic), "Noto Sans Arabic", "DroidNaskh", "Traditional Arabic", var(--font-amiri), sans-serif;
