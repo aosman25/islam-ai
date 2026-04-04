@@ -12,6 +12,7 @@ const notoSansArabic = localFont({
   src: "../../public/fonts/noto-sans-arabic.ttf",
   variable: "--font-noto-arabic",
   display: "swap",
+  adjustFontFallback: false,
 });
 
 const notoSerif = localFont({
