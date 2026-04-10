@@ -159,7 +159,7 @@ export function useChatSync() {
     setLoadingMessages(true);
     try {
       const detail = await getConversation(userId, chatId, {
-        messagesLimit: 10,
+        messagesLimit: 2,
       });
       const messages: ChatMessage[] = detail.messages.map((m) => ({
         id: m.id,
@@ -200,7 +200,7 @@ export function useChatSync() {
 
     try {
       const detail = await getConversation(userId, chatId, {
-        messagesLimit: 10,
+        messagesLimit: 2,
         before: oldestTimestamp,
       });
       const olderMessages: ChatMessage[] = detail.messages.map((m) => ({

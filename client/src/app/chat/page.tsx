@@ -104,14 +104,23 @@ function ChatPageInner() {
 
   // Pin scroll to bottom after initial messages load for active chat (not for older messages)
   const prevChatIdRef = useRef<string | null>(null);
+  const prevFirstMsgIdRef = useRef<string | null>(null);
   const hasMessages = messages.length > 0;
+  const firstMsgId = messages[0]?.id ?? null;
   useEffect(() => {
     if (activeChatId && activeChatId !== prevChatIdRef.current && hasMessages) {
+      // If the first message id is unchanged, this is just a chat-id rename
+      // (e.g., local id → server id after persistence) — not a real chat switch.
+      const isRename =
+        prevFirstMsgIdRef.current !== null &&
+        prevFirstMsgIdRef.current === firstMsgId;
       prevChatIdRef.current = activeChatId;
+      prevFirstMsgIdRef.current = firstMsgId;
+      if (isRename) return;
       const container = messagesContainerRef.current;
       if (container) container.scrollTop = container.scrollHeight;
     }
-  }, [activeChatId, hasMessages]);
+  }, [activeChatId, hasMessages, firstMsgId]);
 
   // Handle initial query from URL (wait for auth sync to avoid race condition)
   useEffect(() => {
@@ -157,55 +166,71 @@ function ChatPageInner() {
     }
   }, [input]);
 
-  // Scroll-to-bottom visibility + load older messages on scroll up
+  // Scroll-to-bottom visibility
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const onScroll = async () => {
+    const onScroll = () => {
       const threshold = 100;
       setIsAtBottom(
         container.scrollHeight - container.scrollTop - container.clientHeight <
           threshold
       );
-
-      // Load older messages when scrolling near top
-      if (
-        container.scrollTop < 100 &&
-        !loadingOlderRef.current &&
-        activeChat?.hasMoreMessages &&
-        activeChatId
-      ) {
-        loadingOlderRef.current = true;
-        // Show skeleton and adjust scroll so it doesn't shift the view
-        const preSkeletonHeight = container.scrollHeight;
-        const preSkeletonScroll = container.scrollTop;
-        flushSync(() => setLoadingOlder(true));
-        container.scrollTop = preSkeletonScroll + (container.scrollHeight - preSkeletonHeight);
-
-        const result = await fetchOlderMessages(activeChatId);
-        if (result) {
-          const prevScrollHeight = container.scrollHeight;
-          const prevScrollTop = container.scrollTop;
-          // flushSync forces React to commit DOM changes synchronously
-          // so we can adjust scrollTop immediately after
-          flushSync(() => {
-            useChatStore
-              .getState()
-              .prependMessages(activeChatId, result.messages, result.hasMore);
-            setLoadingOlder(false);
-          });
-          container.scrollTop = prevScrollTop + (container.scrollHeight - prevScrollHeight);
-        } else {
-          flushSync(() => setLoadingOlder(false));
-          container.scrollTop = preSkeletonScroll;
-        }
-        loadingOlderRef.current = false;
-      }
     };
-    container.addEventListener("scroll", onScroll);
+    container.addEventListener("scroll", onScroll, { passive: true });
     return () => container.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Load older messages via IntersectionObserver on a top sentinel.
+  // More reliable than scroll events on mobile (iOS momentum/rubber-band
+  // scrolling often skips scrollTop<threshold checks, and imperative
+  // scrollTop writes during an active touch scroll are ignored).
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    const sentinel = topSentinelRef.current;
+    if (!container || !sentinel) return;
+    if (!activeChatId || !activeChat?.hasMoreMessages) return;
+
+    const loadOlder = async () => {
+      if (loadingOlderRef.current) return;
+      loadingOlderRef.current = true;
+
+      const preSkeletonHeight = container.scrollHeight;
+      const preSkeletonScroll = container.scrollTop;
+      flushSync(() => setLoadingOlder(true));
+      container.scrollTop =
+        preSkeletonScroll + (container.scrollHeight - preSkeletonHeight);
+
+      const result = await fetchOlderMessages(activeChatId);
+      if (result) {
+        const prevScrollHeight = container.scrollHeight;
+        const prevScrollTop = container.scrollTop;
+        flushSync(() => {
+          useChatStore
+            .getState()
+            .prependMessages(activeChatId, result.messages, result.hasMore);
+          setLoadingOlder(false);
+        });
+        container.scrollTop =
+          prevScrollTop + (container.scrollHeight - prevScrollHeight);
+      } else {
+        flushSync(() => setLoadingOlder(false));
+        container.scrollTop = preSkeletonScroll;
+      }
+      loadingOlderRef.current = false;
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadOlder();
+      },
+      { root: container, rootMargin: "200px 0px 0px 0px", threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, [activeChatId, activeChat?.hasMoreMessages, fetchOlderMessages]);
 
   const scrollToBottom = () => {
@@ -269,6 +294,7 @@ function ChatPageInner() {
               <Greeting sendMessage={sendMessage} />
             ) : (
               <div className="mx-auto w-full max-w-3xl px-5 space-y-6">
+                <div ref={topSentinelRef} aria-hidden className="h-px" />
                 {loadingOlder && (
                   <div className="space-y-6">
                     {/* User message skeleton */}
