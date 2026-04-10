@@ -159,7 +159,7 @@ export function useChatSync() {
     setLoadingMessages(true);
     try {
       const detail = await getConversation(userId, chatId, {
-        messagesLimit: 2,
+        messagesLimit: 10,
       });
       const messages: ChatMessage[] = detail.messages.map((m) => ({
         id: m.id,
@@ -168,6 +168,7 @@ export function useChatSync() {
         sources: undefined,
         categories: undefined,
         timestamp: Number(m.timestamp),
+        is_triage: m.is_triage ?? false,
       }));
 
       await resolveSources(messages);
@@ -200,7 +201,7 @@ export function useChatSync() {
 
     try {
       const detail = await getConversation(userId, chatId, {
-        messagesLimit: 2,
+        messagesLimit: 10,
         before: oldestTimestamp,
       });
       const olderMessages: ChatMessage[] = detail.messages.map((m) => ({
@@ -210,6 +211,7 @@ export function useChatSync() {
         sources: undefined,
         categories: undefined,
         timestamp: Number(m.timestamp),
+        is_triage: m.is_triage ?? false,
       }));
 
       await resolveSources(olderMessages);

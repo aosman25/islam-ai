@@ -105,6 +105,10 @@ class GatewayResponse(BaseModel):
         description="Keywords used for sparse retrieval"
     )
     request_id: str
+    is_triage: bool = Field(
+        default=False,
+        description="True if the reply was produced by the triage classifier (small-talk / out-of-scope) and skipped retrieval",
+    )
 
 
 class StreamMetadataChunk(BaseModel):

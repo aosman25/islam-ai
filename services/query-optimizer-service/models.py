@@ -14,13 +14,24 @@ class OptimizedQueryResponse(BaseModel):
     categories: Optional[List[str]] = Field(None)
 
 
+class TriageResponse(BaseModel):
+    """Front-door classification: should we run retrieval, or reply directly?"""
+
+    intent: Literal["retrieve", "smalltalk", "out_of_scope"]
+    reply: Optional[str] = None
+
+
 class QueryRequest(BaseModel):
     queries: List[str] = Field(
         ..., min_items=1, max_items=10
     )
     chat_history: Optional[List[ChatHistoryMessage]] = Field(
         default=None,
-        description="Previous conversation messages for context",
+        description="Previous user queries used by the contextualizer",
+    )
+    recent_messages: Optional[List[ChatHistoryMessage]] = Field(
+        default=None,
+        description="Recent conversation (mixed user/assistant roles) for the triage classifier",
     )
 
     @field_validator("queries")
@@ -36,6 +47,7 @@ class QueryResponse(BaseModel):
     results: List[OptimizedQueryResponse]
     processed_count: int
     request_id: str
+    triage: Optional[TriageResponse] = None
 
 
 class HealthResponse(BaseModel):

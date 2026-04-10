@@ -19,11 +19,17 @@ from tenacity import (
     wait_exponential,
 )
 from dotenv import load_dotenv
-from utils import generate_contextualize_prompt, generate_prompt, resolve_categories
+from utils import (
+    generate_contextualize_prompt,
+    generate_prompt,
+    generate_triage_prompt,
+    resolve_categories,
+)
 from models import (
     OptimizedQueryResponse,
     QueryRequest,
     QueryResponse,
+    TriageResponse,
     HealthResponse,
     ErrorResponse,
 )
@@ -274,6 +280,38 @@ async def call_gemini_api(query: str) -> List[OptimizedQueryResponse]:
         raise
 
 
+# Triage: classify the query as retrieve / smalltalk / out_of_scope
+@retry(
+    retry=retry_if_exception_type((Exception,)),
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    reraise=True,
+)
+async def triage_query(query: str, recent_messages=None) -> TriageResponse:
+    """Classify whether the query needs retrieval, is small-talk, or is out of scope."""
+    try:
+        response = await asyncio.to_thread(
+            gemini_client.models.generate_content,
+            model=Config.GEMINI_MODEL,
+            contents=generate_triage_prompt(query, recent_messages),
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": TriageResponse,
+                "thinking_config": {"thinking_budget": 0},
+            },
+        )
+
+        if not response.parsed:
+            logger.warning("Empty triage response from Gemini API", query=query)
+            return TriageResponse(intent="retrieve", reply=None)
+
+        return response.parsed
+
+    except Exception as e:
+        logger.error("Triage call failed", error=str(e), query=query)
+        raise
+
+
 async def process_single_query(
     query: str, request_id: str, chat_history=None
 ) -> List[OptimizedQueryResponse]:
@@ -373,11 +411,65 @@ async def optimize_queries(request: QueryRequest, http_request: Request):
                 detail="Service unavailable - Gemini client not initialized",
             )
 
-        # Process all queries concurrently
-        tasks = [
-            process_single_query(query, request_id, request.chat_history)
-            for query in request.queries
-        ]
+        # Triage the first query before doing any expensive optimization.
+        # If it's small-talk or out-of-scope, short-circuit and return a direct reply
+        # so the gateway can stream it without running the rest of the RAG pipeline.
+        first_query = request.queries[0]
+        triage_input = first_query
+        if request.chat_history:
+            try:
+                triage_input = await asyncio.wait_for(
+                    contextualize_query(first_query, request.chat_history),
+                    timeout=Config.REQUEST_TIMEOUT,
+                )
+            except Exception as e:
+                logger.warning(
+                    "Contextualization for triage failed, using raw query",
+                    error=str(e),
+                    request_id=request_id,
+                )
+                triage_input = first_query
+
+        try:
+            triage = await asyncio.wait_for(
+                triage_query(triage_input, request.recent_messages),
+                timeout=Config.REQUEST_TIMEOUT,
+            )
+        except Exception as e:
+            logger.warning(
+                "Triage failed, defaulting to retrieve",
+                error=str(e),
+                request_id=request_id,
+            )
+            triage = TriageResponse(intent="retrieve", reply=None)
+
+        logger.info(
+            "Triage decision",
+            intent=triage.intent,
+            has_reply=bool(triage.reply),
+            request_id=request_id,
+        )
+
+        if triage.intent != "retrieve":
+            # Short-circuit: skip HyDE entirely and return the direct reply.
+            return QueryResponse(
+                results=[],
+                processed_count=0,
+                request_id=request_id,
+                triage=triage,
+            )
+
+        # Process all queries concurrently. For the first query we already
+        # contextualized it during triage, so reuse that result and skip
+        # chat_history to avoid a duplicate LLM call.
+        tasks = []
+        for idx, query in enumerate(request.queries):
+            if idx == 0:
+                tasks.append(process_single_query(triage_input, request_id, None))
+            else:
+                tasks.append(
+                    process_single_query(query, request_id, request.chat_history)
+                )
 
         results = await asyncio.gather(*tasks, return_exceptions=False)
 
@@ -395,6 +487,7 @@ async def optimize_queries(request: QueryRequest, http_request: Request):
             results=optimized_queries,
             processed_count=len(optimized_queries),
             request_id=request_id,
+            triage=triage,
         )
 
     except Exception as e:

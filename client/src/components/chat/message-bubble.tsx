@@ -83,7 +83,7 @@ function ElapsedTime({ startedAt }: { startedAt: number }) {
 
 /* ── Phase indicator ── */
 const PHASE_CONFIG = {
-  searching: { icon: Search, label: "Searching sources..." },
+  searching: { icon: Search, label: "Thinking..." },
   reading: { icon: BookOpen, label: "Reading documents..." },
   generating: { icon: Sparkles, label: "Generating answer..." },
 } as const;
@@ -157,9 +157,10 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         isStreaming && !displayContent.trim() ? "items-center py-2 -mx-2 px-2 bg-primary/[0.07] shadow-[0_0_24px_-2px] shadow-primary/25" : isStreaming && !scholarly ? "items-start py-2 -mx-2 px-2 bg-primary/[0.07] shadow-[0_0_24px_-2px] shadow-primary/25" : "items-start"
       )}
     >
-      <GeometricBotIcon isAnimating={isStreaming} className={cn(displayContent.trim() && "mt-1")} />
+      <GeometricBotIcon isAnimating={isStreaming} />
 
-      <div className={cn("flex-1 min-w-0", displayContent.trim() && "pt-1")}>
+      {/* pt-[10px] aligns the first text line's vertical center with the 40px bot icon's center */}
+      <div className={cn("flex-1 min-w-0", displayContent.trim() && "pt-[10px]")}>
         {/* Phase indicator — shown before content arrives */}
         {isStreaming && !displayContent.trim() && message.streamPhase && (
           <StreamPhaseIndicator

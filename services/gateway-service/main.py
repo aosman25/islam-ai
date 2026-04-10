@@ -275,6 +275,50 @@ def aggregate_results_rrf(
     return results
 
 
+def _build_direct_reply_response(reply: str, request_id: str, stream: bool):
+    """
+    Build a response that bypasses the RAG pipeline entirely. Used for triage
+    short-circuits (small-talk, out-of-scope). Mirrors the regular streaming
+    contract so the client needs no changes.
+    """
+    if stream:
+        async def direct_stream():
+            # Metadata chunk with empty sources/keywords + triage flag
+            metadata_chunk = {
+                "type": "metadata",
+                "sources": [],
+                "hypothetical_passages": [],
+                "keywords": [],
+                "request_id": request_id,
+                "is_triage": True,
+            }
+            yield json_module.dumps(metadata_chunk) + "\n"
+
+            # Stream the reply word-by-word so the client sees a stream,
+            # not a single blob.
+            for token in reply.split(" "):
+                content_chunk = {"type": "content", "delta": token + " "}
+                yield json_module.dumps(content_chunk) + "\n"
+                await asyncio.sleep(0)
+
+            yield json_module.dumps({"type": "done"}) + "\n"
+
+        return StreamingResponse(
+            direct_stream(),
+            media_type="application/x-ndjson",
+            headers={"x-request-id": request_id},
+        )
+
+    return GatewayResponse(
+        response=reply,
+        sources=[],
+        hypothetical_passages=[],
+        keywords=[],
+        request_id=request_id,
+        is_triage=True,
+    )
+
+
 # Main RAG Pipeline Orchestration
 @app.post(
     "/query",
@@ -346,6 +390,11 @@ async def process_query(request: GatewayRequest, http_request: Request):
                 if msg.role == "user"
             ][-15:]
             optimize_payload["chat_history"] = user_queries
+            # Triage classifier needs mixed-role recent turns so it can avoid
+            # repeating self-introductions and resolve follow-ups.
+            optimize_payload["recent_messages"] = [
+                msg.model_dump() for msg in request.chat_history
+            ][-6:]
         optimize_response = await http_client.post(
             f"{Config.QUERY_OPTIMIZER_URL}/optimize-queries",
             json=optimize_payload,
@@ -353,6 +402,24 @@ async def process_query(request: GatewayRequest, http_request: Request):
         )
         optimize_response.raise_for_status()
         optimize_data = optimize_response.json()
+
+        # Triage short-circuit: if the optimizer classified this as small-talk
+        # or out-of-scope, it returned a direct reply. Skip the rest of the
+        # RAG pipeline (embed / search / ask) and return the reply directly.
+        triage = optimize_data.get("triage") or {}
+        triage_intent = triage.get("intent")
+        triage_reply = triage.get("reply")
+        if triage_intent and triage_intent != "retrieve" and triage_reply:
+            logger.info(
+                "Triage short-circuit",
+                intent=triage_intent,
+                request_id=request_id,
+            )
+            return _build_direct_reply_response(
+                reply=triage_reply,
+                request_id=request_id,
+                stream=request.stream,
+            )
 
         # Extract hypothetical passages, keywords, and categories
         first_result = optimize_data["results"][0] if optimize_data["results"] else {}
@@ -528,7 +595,8 @@ async def process_query(request: GatewayRequest, http_request: Request):
                     "sources": sources,
                     "hypothetical_passages": hypothetical_passages,
                     "keywords": keywords,
-                    "request_id": request_id
+                    "request_id": request_id,
+                    "is_triage": False,
                 }
                 yield json.dumps(metadata_chunk) + "\n"
 

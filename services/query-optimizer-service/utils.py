@@ -80,6 +80,26 @@ def generate_contextualize_prompt(query: str, chat_history) -> str:
     return template.format(previous_queries=previous_queries, current_query=query)
 
 
+def generate_triage_prompt(query: str, recent_messages=None) -> str:
+    """Build the prompt for the small-talk / out-of-scope triage LLM call."""
+    with open("triage_prompt.txt", "r", encoding="utf-8") as f:
+        template = f.read()
+
+    if recent_messages:
+        history_lines = []
+        for msg in recent_messages:
+            role = "User" if msg.role == "user" else "Assistant"
+            content = msg.content.strip()
+            if len(content) > 400:
+                content = content[:400] + "..."
+            history_lines.append(f"{role}: {content}")
+        history_block = "\n".join(history_lines)
+    else:
+        history_block = "(no prior messages)"
+
+    return template.replace("{history}", history_block).replace("{query}", query)
+
+
 def generate_prompt(query: str) -> str:
     """Build the prompt for the HyDE optimizer LLM call."""
     with open("prompt.txt", "r", encoding="utf-8") as f:

@@ -114,6 +114,7 @@ export interface GatewayStreamChunk {
   hypothetical_passages?: string[];
   categories?: string[];
   request_id?: string;
+  is_triage?: boolean;
 }
 
 // ============================================================
@@ -130,6 +131,7 @@ export interface ChatMessage {
   isStreaming?: boolean;
   streamPhase?: "searching" | "reading" | "generating";
   streamStartedAt?: number;
+  is_triage?: boolean;
 }
 
 export interface Chat {
@@ -172,6 +174,7 @@ export interface ApiMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  is_triage?: boolean;
 }
 
 export interface ConversationDetail {

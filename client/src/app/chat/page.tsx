@@ -168,20 +168,34 @@ function ChatPageInner() {
 
   // Scroll-to-bottom visibility
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [hasOverflow, setHasOverflow] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const onScroll = () => {
+    const recompute = () => {
       const threshold = 100;
+      const overflow = container.scrollHeight - container.clientHeight > threshold;
+      setHasOverflow(overflow);
       setIsAtBottom(
-        container.scrollHeight - container.scrollTop - container.clientHeight <
-          threshold
+        !overflow ||
+          container.scrollHeight - container.scrollTop - container.clientHeight <
+            threshold
       );
     };
-    container.addEventListener("scroll", onScroll, { passive: true });
-    return () => container.removeEventListener("scroll", onScroll);
+    recompute();
+    container.addEventListener("scroll", recompute, { passive: true });
+    // Re-check when the container or its contents resize (new messages,
+    // streaming tokens, window resize, etc.) so the arrow doesn't get stuck
+    // visible when there's nothing left to scroll to.
+    const ro = new ResizeObserver(recompute);
+    ro.observe(container);
+    Array.from(container.children).forEach((child) => ro.observe(child));
+    return () => {
+      container.removeEventListener("scroll", recompute);
+      ro.disconnect();
+    };
   }, []);
 
   // Load older messages via IntersectionObserver on a top sentinel.
@@ -369,7 +383,7 @@ function ChatPageInner() {
           >
             <div className="relative flex w-full flex-col gap-0 md:gap-4">
               {/* Scroll to bottom */}
-              {!isAtBottom && !isEmpty && (
+              {!isAtBottom && hasOverflow && !isEmpty && (
                 <div className="absolute -top-12 left-1/2 z-20 -translate-x-1/2">
                   <button
                     type="button"

@@ -53,6 +53,10 @@ export function useChat() {
       const DETAILED_ANSWER_MARKER = "<!-- DETAILED_ANSWER -->";
       const chatHistory: ChatHistoryMessage[] = priorMessages
         .filter((m) => m.content.trim())
+        // Exclude triage turns (greetings, small-talk, out-of-scope replies).
+        // They're noise for the RAG pipeline — including them would pollute
+        // the contextualizer, HyDE, and ask-service context.
+        .filter((m) => !m.is_triage)
         .map((m) => {
           let content = m.content;
           if (m.role === "assistant") {
@@ -100,6 +104,7 @@ export function useChat() {
       let accumulatedContent = "";
       let sources: SourceData[] = [];
       let categories: string[] = [];
+      let isTriage = false;
 
       // Set up persist callback so stopGeneration can call it
       pendingPersistRef.current = () => {
@@ -110,11 +115,13 @@ export function useChat() {
           persistMessages(userId, chatId!, priorMessages.length === 0, content.trim(), {
             userMsg,
             assistantContent: accumulatedContent,
+            isTriage,
           });
         } else if (!(isSuggested && priorMessages.length === 0)) {
           persistAnonymousMessages(chatId!, content.trim(), {
             userMsg,
             assistantContent: accumulatedContent,
+            isTriage,
           });
         }
       };
@@ -140,10 +147,13 @@ export function useChat() {
           if (chunk.type === "metadata") {
             if (chunk.sources) sources = chunk.sources;
             if (chunk.categories) categories = chunk.categories;
+            if (chunk.is_triage) isTriage = true;
             updateMessage(chatId!, assistantMsgId, {
               sources,
               categories,
-              streamPhase: "reading",
+              is_triage: isTriage,
+              // Triage replies skip retrieval — no "searching"/"reading" phase.
+              streamPhase: isTriage ? "generating" : "reading",
             });
           }
 
@@ -161,6 +171,7 @@ export function useChat() {
               content: accumulatedContent,
               sources,
               categories,
+              is_triage: isTriage,
               streamPhase: undefined,
               streamStartedAt: undefined,
             });
@@ -251,6 +262,7 @@ async function persistMessages(
   data: {
     userMsg: ChatMessage;
     assistantContent: string;
+    isTriage: boolean;
   }
 ) {
   try {
@@ -264,11 +276,13 @@ async function persistMessages(
             role: "user" as const,
             content: userContent,
             timestamp: data.userMsg.timestamp,
+            is_triage: data.isTriage,
           },
           {
             role: "assistant" as const,
             content: data.assistantContent,
             timestamp: Date.now(),
+            is_triage: data.isTriage,
           },
         ],
       });
@@ -283,11 +297,13 @@ async function persistMessages(
           role: "user",
           content: userContent,
           timestamp: data.userMsg.timestamp,
+          is_triage: data.isTriage,
         },
         {
           role: "assistant",
           content: data.assistantContent,
           timestamp: Date.now(),
+          is_triage: data.isTriage,
         },
       ]);
     }
@@ -308,6 +324,7 @@ async function persistAnonymousMessages(
   data: {
     userMsg: ChatMessage;
     assistantContent: string;
+    isTriage: boolean;
   }
 ) {
   try {
@@ -316,11 +333,13 @@ async function persistAnonymousMessages(
         role: "user" as const,
         content: userContent,
         timestamp: data.userMsg.timestamp,
+        is_triage: data.isTriage,
       },
       {
         role: "assistant" as const,
         content: data.assistantContent,
         timestamp: Date.now(),
+        is_triage: data.isTriage,
       },
     ];
 

@@ -25,6 +25,9 @@ export class Message {
   @Column({ type: 'bigint' })
   timestamp: number;
 
+  @Column({ type: 'boolean', default: false })
+  is_triage: boolean;
+
   @CreateDateColumn()
   created_at: Date;
 
